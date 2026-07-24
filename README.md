@@ -1,36 +1,45 @@
-# MiniTeleport
+# Public Teleport
 
 <p align="center">
-  <img alt="miniteleport logo" src="src/main/resources/assets/miniteleport/icon.png">
+  <img alt="Public Teleport Logo" src="src/main/resources/assets/public-teleport/icon.png">
 </p>
 
-<p align="center">
-Minimal zero-configuration server-side teleport commands.
-</p>
+## Teleport commands done right:
+
+- Homes, Warps, Back, Spawn, TPA, TPAhere
+- Server-side or client-side (Multiplayer/Singleplayer)
+- Minimal configuration with predefined sane values
+- No rights management
 
 ## Commands
 
-| Type | Command                | OP  | Description                                           |
-| :--: | ---------------------- | --- | ----------------------------------------------------- |
-|  🗺️  | `/setspawn`            | ✓   | Create a `spawn` warp and set world spawn             |
-|  🗺️  | `/setwarp <name>`      | ✓   | Create a warp at your location                        |
-|  🗺️  | `/delwarp <name>`      | ✓   | Delete a warp                                         |
-|  🗺️  | `/spawn`               |     | Teleport to spawn                                     |
-|  🗺️  | `/warps`               |     | List all warps                                        |
-|  🗺️  | `/warp <name>`         |     | Teleport to a warp                                    |
-|  🏠  | `/sethome [<name>]`    |     | Set a new home (default: home)                        |
-|  🏠  | `/delhome [<name>]`    |     | Delete an existing home (default: home)               |
-|  🏠  | `/home [<name>]`       |     | Teleport to a home (default: home)                    |
-|  🏠  | `/homes`               |     | List all current homes                                |
-|  🏠  | `/back`                |     | Teleport to your last location (including death)      |
-|  🔮  | `/tpa <player>`        |     | Request teleport to `<player>`                        |
-|  🔮  | `/tpahere <player>`    |     | Request `<player>` to teleport to you                 |
-|  🔮  | `/tpcancel`            |     | Cancel all your sent requests                         |
-|  🔮  | `/tpaccept [<player>]` |     | Accept request from `<player>` (default: most recent) |
-|  🔮  | `/tpdeny [<player>]`   |     | Deny request from `<player>` (default: most recent)   |
+| Command                | Only OP | Description                                          |
+| ---------------------- | :-----: | ---------------------------------------------------- |
+| **Spawn:**             |         |                                                      |
+| `/setspawn`            |    ✓    | Create a`spawn` warp and set world spawn             |
+| `/spawn`               |         | Teleport to spawn                                    |
+| **Warps:**             |         |                                                      |
+| `/setwarp <name>`      |    ✓    | Create a warp at your location                       |
+| `/delwarp <name>`      |    ✓    | Delete a warp                                        |
+| `/warp <name>`         |         | Teleport to a warp                                   |
+| `/warps`               |         | List all warps                                       |
+| **Homes:**             |         |                                                      |
+| `/sethome [<name>]`    |         | Set a new home (default: home)                       |
+| `/delhome [<name>]`    |         | Delete an existing home (default: home)              |
+| `/home [<name>]`       |         | Teleport to a home (default: home)                   |
+| `/homes`               |         | List all current homes                               |
+| **Back:**              |         |                                                      |
+| `/back`                |         | Teleport to your last location (including death)     |
+| **TPA:**               |         |                                                      |
+| `/tpa <player>`        |         | Request teleport to`<player>`                        |
+| `/tpahere <player>`    |         | Request`<player>` to teleport to you                 |
+| `/tpcancel`            |         | Cancel all your sent requests                        |
+| `/tpaccept [<player>]` |         | Accept request from`<player>` (default: most recent) |
+| `/tpdeny [<player>]`   |         | Deny request from`<player>` (default: most recent)   |
 
 ## Installation
 
-- Requires the [Fabric API](https://modrinth.com/mod/fabric-api).
-- Drop the mod `.jar` into your `mods` folder.
+Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
+
+- Download the `.jar` into your `mods` folder.
 - No configuration required.

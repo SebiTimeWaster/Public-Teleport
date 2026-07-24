@@ -1,16 +1,19 @@
 {
     "schemaVersion": 1,
-    "id": "miniteleport",
+    "id": "public-teleport",
     "version": "${version}",
-    "name": "MiniTeleport",
-    "description": "Minimal zero-configuration server-side teleport commands.",
-    "authors": ["luxmiyu"],
-    "contact": {},
+    "name": "Public Teleport",
+    "description": "Teleport commands done right: Homes, Warps, Back, Spawn, TPA, TPAhere; Server-side or client-side; Minimal configuration; No rights management.",
+    "authors": ["TimeWaster"],
+    "contact": {
+        "homepage": "https://fabricmc.net/",
+        "sources": "https://github.com/FabricMC/fabric-example-mod"
+    },
     "license": "MIT",
-    "icon": "assets/miniteleport/icon.png",
+    "icon": "assets/public-teleport/icon.png",
     "environment": "*",
     "entrypoints": {
-        "main": ["dev.luxmiyu.miniteleport.MiniTeleport"]
+        "main": ["timewaster.publicteleport.PublicTeleport"]
     },
     "depends": {
         "fabricloader": ">=${loader_version}",

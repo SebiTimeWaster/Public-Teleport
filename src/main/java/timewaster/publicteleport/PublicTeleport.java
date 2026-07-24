@@ -1,4 +1,4 @@
-package dev.luxmiyu;
+package timewaster.publicteleport;
 
 import java.io.File;
 import java.io.FileReader;
@@ -56,9 +56,9 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelResource;
 
-public class MiniTeleport implements ModInitializer {
+public class PublicTeleport implements ModInitializer {
 
-    static final String MOD_ID = "miniteleport";
+    static final String MOD_ID = "public-teleport";
     static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
