@@ -1,5 +1,3 @@
-# Public Teleport
-
 <p align="center">
   <img alt="Public Teleport Logo" src="src/main/resources/assets/public-teleport/icon.png">
 </p>
