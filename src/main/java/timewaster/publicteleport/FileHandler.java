@@ -20,14 +20,13 @@ import com.google.gson.GsonBuilder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.storage.LevelResource;
+import net.fabricmc.loader.api.FabricLoader;
 
 public class FileHandler {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private String modId;
+    private Path configPath;
     private Logger logger;
 
     public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
@@ -35,23 +34,18 @@ public class FileHandler {
     }
 
     public FileHandler(String modId, Logger logger) {
-        this.modId = modId;
+        this.configPath = FabricLoader.getInstance().getConfigDir().resolve(modId);
         this.logger = logger;
     }
 
-    private Path getDir(MinecraftServer server) {
-        return server.getWorldPath(LevelResource.ROOT).resolve(modId);
-    }
-
-    public File getFile(MinecraftServer server, @Nullable UUID uuid) {
-        Path worldDir = getDir(server);
-        Path path = (uuid == null) ? worldDir.resolve("warps.json") : worldDir.resolve("homes/" + uuid + ".json");
+    public File getFile(@Nullable UUID uuid) {
+        Path path = (uuid == null) ? configPath.resolve("warps.json") : configPath.resolve("homes/" + uuid + ".json");
         return path.toFile();
     }
 
-    public void createDir(MinecraftServer server) {
+    public void createDir() {
         try {
-            Files.createDirectories(getDir(server).resolve("homes"));
+            Files.createDirectories(configPath.resolve("homes"));
         } catch (IOException e) {
             logger.error("Failed to create data directory", e);
         }
@@ -71,8 +65,8 @@ public class FileHandler {
     }
 
     @Nullable
-    public Teleport getWarp(MinecraftServer server, String name, @Nullable UUID uuid) {
-        for (Teleport warp : getWarps(getFile(server, uuid))) {
+    public Teleport getWarp(String name, @Nullable UUID uuid) {
+        for (Teleport warp : getWarps(getFile(uuid))) {
             if (warp.name().equals(name)) {
                 return warp;
             }
@@ -100,8 +94,7 @@ public class FileHandler {
     }
 
     public void setWarp(String name, ServerPlayer player, @Nullable UUID uuid) {
-        MinecraftServer server = player.level().getServer();
-        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(server, uuid))));
+        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(uuid))));
         String dimension = player.level().dimension().identifier().toString();
         Teleport warp = new Teleport(
                 name,
@@ -124,12 +117,11 @@ public class FileHandler {
             warps.add(warp);
         }
 
-        CompletableFuture.runAsync(() -> writeFile(getFile(server, uuid), warps));
+        CompletableFuture.runAsync(() -> writeFile(getFile(uuid), warps));
     }
 
     public int delWarp(String name, ServerPlayer player, @Nullable UUID uuid) {
-        MinecraftServer server = player.level().getServer();
-        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(server, uuid))));
+        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(uuid))));
 
         int delIndex = -1;
         for (int i = 0; i < warps.size(); i++) {
@@ -147,7 +139,7 @@ public class FileHandler {
             return 0;
         } else {
             warps.remove(delIndex);
-            CompletableFuture.runAsync(() -> writeFile(getFile(server, uuid), warps));
+            CompletableFuture.runAsync(() -> writeFile(getFile(uuid), warps));
 
             player.sendSystemMessage(Component.literal(start + name + "' deleted!").withStyle(ChatFormatting.AQUA));
             return 1;

@@ -124,8 +124,8 @@ public class PublicTeleport implements ModInitializer {
         return 1;
     }
 
-    Component listWarps(MinecraftServer server, @Nullable UUID uuid) {
-        FileHandler.Teleport[] warps = fileHandler.getWarps(fileHandler.getFile(server, uuid));
+    Component listWarps(@Nullable UUID uuid) {
+        FileHandler.Teleport[] warps = fileHandler.getWarps(fileHandler.getFile(uuid));
         Arrays.sort(warps, Comparator.comparing(FileHandler.Teleport::name));
 
         if (warps.length == 0) {
@@ -325,14 +325,13 @@ public class PublicTeleport implements ModInitializer {
 
     SuggestionProvider<CommandSourceStack> suggestWarps(boolean player) {
         return (context, builder) -> {
-            MinecraftServer server = getPlayer(context.getSource()).level().getServer();
             UUID uuid = null;
 
             if (player) {
                 uuid = getPlayer(context.getSource()).getUUID();
             }
 
-            for (FileHandler.Teleport warp : fileHandler.getWarps(fileHandler.getFile(server, uuid))) {
+            for (FileHandler.Teleport warp : fileHandler.getWarps(fileHandler.getFile(uuid))) {
                 builder.suggest(warp.name());
             }
             return builder.buildFuture();
@@ -396,25 +395,25 @@ public class PublicTeleport implements ModInitializer {
                             ServerPlayer player = getPlayer(context.getSource());
                             String homeName = StringArgumentType.getString(context, "name");
                             return warpPlayer(player,
-                                    fileHandler.getWarp(getServer(context), homeName, player.getUUID()));
+                                    fileHandler.getWarp(homeName, player.getUUID()));
                         }))
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
 
-                    return warpPlayer(player, fileHandler.getWarp(getServer(context), "home", player.getUUID()));
+                    return warpPlayer(player, fileHandler.getWarp("home", player.getUUID()));
                 }));
 
         dispatcher.register(Commands.literal("homes")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    player.sendSystemMessage(listWarps(getServer(context), player.getUUID()));
+                    player.sendSystemMessage(listWarps(player.getUUID()));
                     return 1;
                 }));
 
         dispatcher.register(Commands.literal("back")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    return warpPlayer(player, fileHandler.getWarp(getServer(context), "back", player.getUUID()));
+                    return warpPlayer(player, fileHandler.getWarp("back", player.getUUID()));
                 }));
 
         dispatcher.register(Commands.literal("setwarp")
@@ -447,13 +446,13 @@ public class PublicTeleport implements ModInitializer {
                         .executes(context -> {
                             ServerPlayer player = getPlayer(context.getSource());
                             String warpName = StringArgumentType.getString(context, "name");
-                            return warpPlayer(player, fileHandler.getWarp(getServer(context), warpName, null));
+                            return warpPlayer(player, fileHandler.getWarp(warpName, null));
                         })));
 
         dispatcher.register(Commands.literal("warps")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    player.sendSystemMessage(listWarps(getServer(context), null));
+                    player.sendSystemMessage(listWarps(null));
                     return 1;
                 }));
 
@@ -478,7 +477,7 @@ public class PublicTeleport implements ModInitializer {
         dispatcher.register(Commands.literal("spawn")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    return warpPlayer(player, fileHandler.getWarp(getServer(context), "spawn", null));
+                    return warpPlayer(player, fileHandler.getWarp("spawn", null));
                 }));
 
         dispatcher.register(Commands.literal("tpa")
@@ -566,7 +565,7 @@ public class PublicTeleport implements ModInitializer {
             }
         });
 
-        ServerLevelEvents.LOAD.register((server, world) -> fileHandler.createDir(server));
+        ServerLevelEvents.LOAD.register((server, world) -> fileHandler.createDir());
 
         LOGGER.info("Initialized!");
     }
