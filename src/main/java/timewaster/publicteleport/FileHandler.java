@@ -4,145 +4,187 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class FileHandler {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private Path configPath;
+    private Path pathConfig;
+    private Path pathConfigHomes;
     private Logger logger;
+    private File fileConfig;
+    private File fileWarps;
+    private List<Teleport> warps;
+    private Config config;
+    private Config configDefault = new Config(10, true, true, true, true, true);
 
     public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
 
     }
 
+    public record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes,
+            boolean enableBack, boolean enableTpa) {
+
+    }
+
     public FileHandler(String modId, Logger logger) {
-        this.configPath = FabricLoader.getInstance().getConfigDir().resolve(modId);
+        this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(modId);
+        this.pathConfigHomes = pathConfig.resolve("homes");
         this.logger = logger;
+        this.fileConfig = pathConfig.resolve("config.json").toFile();
+        this.fileWarps = pathConfig.resolve("warps.json").toFile();
+        createDirectories();
+        this.config = loadFile(fileConfig, configDefault, Config.class);
+        this.warps = loadFile(fileWarps);
     }
 
-    public File getFile(@Nullable UUID uuid) {
-        Path path = (uuid == null) ? configPath.resolve("warps.json") : configPath.resolve("homes/" + uuid + ".json");
-        return path.toFile();
-    }
-
-    public void createDir() {
+    private void createDirectories() {
         try {
-            Files.createDirectories(configPath.resolve("homes"));
+            Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error("Failed to create data directory", e);
+            logger.error("Failed to create config directories!");
+            throw new UncheckedIOException(e);
         }
     }
 
-    public Teleport[] getWarps(File file) {
+    private <T> T loadFile(File file, T defaultValue, Type type) {
         if (!file.exists()) {
-            return new Teleport[0];
+            saveFile(file, defaultValue);
+            return defaultValue;
         }
 
         try (FileReader reader = new FileReader(file)) {
-            return GSON.fromJson(reader, Teleport[].class);
+            return GSON.fromJson(reader, type);
         } catch (IOException e) {
-            logger.error("Failed to load warps from {}", file, e);
-            return new Teleport[0];
+            logger.error("Failed to load from {}:", file, e);
+            return defaultValue;
+        }
+    }
+
+    private List<Teleport> loadFile(File file) {
+        Type type = new TypeToken<List<Teleport>>() {
+        }.getType();
+
+        return loadFile(file, new ArrayList<>(), type);
+    }
+
+    private void saveFile(File file, Object data) {
+        try {
+            Path tempPath = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
+
+            try (FileWriter writer = new FileWriter(tempPath.toFile())) {
+                GSON.toJson(data, writer);
+            }
+
+            Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            logger.error("Failed to save to {}:", file, e);
+        }
+    }
+
+    private File getHomeFileByUuid(UUID uuid) {
+        return pathConfigHomes.resolve(uuid + ".json").toFile();
+    }
+
+    private List<Teleport> getTeleports(@Nullable UUID uuid) {
+        List<Teleport> teleports;
+
+        if (uuid != null) {
+            teleports = loadFile(getHomeFileByUuid(uuid));
+        } else {
+            teleports = warps;
+        }
+
+        return teleports;
+    }
+
+    private void setTeleports(@Nullable UUID uuid, List<Teleport> teleports) {
+        if (uuid != null) {
+            saveFile(getHomeFileByUuid(uuid), teleports);
+        } else {
+            warps = teleports;
+            saveFile(fileWarps, teleports);
         }
     }
 
     @Nullable
-    public Teleport getWarp(String name, @Nullable UUID uuid) {
-        for (Teleport warp : getWarps(getFile(uuid))) {
-            if (warp.name().equals(name)) {
-                return warp;
+    public Teleport getTeleport(@Nullable UUID uuid, String name) {
+        for (Teleport teleport : getTeleports(uuid)) {
+            if (teleport.name().equals(name)) {
+                return teleport;
             }
         }
+
         return null;
     }
 
-    private void writeFile(File file, Object object) {
-        try {
-            Files.createDirectories(file.getParentFile().toPath());
+    public List<String> getTeleportNames(@Nullable UUID uuid) {
+        List<String> names = new ArrayList<String>();
 
-            Path tempFile = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
-            try (FileWriter writer = new FileWriter(tempFile.toFile())) {
-                GSON.toJson(object, writer);
-            }
-
-            Files.move(
-                    tempFile,
-                    file.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            logger.error("Failed to save warps to {}", file, e);
+        for (Teleport teleport : getTeleports(uuid)) {
+            names.add(teleport.name);
         }
+
+        Collections.sort(names);
+
+        return names;
     }
 
-    public void setWarp(String name, ServerPlayer player, @Nullable UUID uuid) {
-        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(uuid))));
-        String dimension = player.level().dimension().identifier().toString();
-        Teleport warp = new Teleport(
-                name,
-                (int) Math.floor(player.getX()),
-                (int) Math.ceil(player.getY()),
-                (int) Math.floor(player.getZ()),
-                (Float) player.getYRot(),
-                (Float) player.getXRot(),
-                dimension);
+    public void setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
+        List<Teleport> teleports = getTeleports(uuid);
+        int index = -1;
 
-        boolean warpExists = false;
-        for (int i = 0; i < warps.size(); i++) {
-            if (warps.get(i).name().equals(name)) {
-                warps.set(i, warp);
-                warpExists = true;
+        for (int i = 0; i < teleports.size(); i++) {
+            if (teleports.get(i).name().equals(newTeleport.name)) {
+                teleports.set(i, newTeleport);
+                index = i;
             }
         }
 
-        if (!warpExists) {
-            warps.add(warp);
+        if (index == -1) {
+            teleports.add(newTeleport);
         }
 
-        CompletableFuture.runAsync(() -> writeFile(getFile(uuid), warps));
+        setTeleports(uuid, teleports);
     }
 
-    public int delWarp(String name, ServerPlayer player, @Nullable UUID uuid) {
-        ArrayList<Teleport> warps = new ArrayList<>(List.of(getWarps(getFile(uuid))));
+    public boolean deleteTeleport(@Nullable UUID uuid, String name) {
+        List<Teleport> teleports = getTeleports(uuid);
+        int index = -1;
 
-        int delIndex = -1;
-        for (int i = 0; i < warps.size(); i++) {
-            if (warps.get(i).name().equals(name)) {
-                delIndex = i;
-                break;
+        for (int i = 0; i < teleports.size(); i++) {
+            if (teleports.get(i).name().equals(name)) {
+                teleports.remove(i);
+                index = i;
             }
         }
 
-        String start = uuid == null ? "Warp '" : "Home '";
-
-        if (delIndex == -1) {
-            player.sendSystemMessage(
-                    Component.literal(start + name + "' does not exist!").withStyle(ChatFormatting.RED));
-            return 0;
+        if (index == -1) {
+            return false;
         } else {
-            warps.remove(delIndex);
-            CompletableFuture.runAsync(() -> writeFile(getFile(uuid), warps));
-
-            player.sendSystemMessage(Component.literal(start + name + "' deleted!").withStyle(ChatFormatting.AQUA));
-            return 1;
+            setTeleports(uuid, teleports);
+            return true;
         }
+    }
+
+    public Config getConfig() {
+        return config;
     }
 }

@@ -23,7 +23,7 @@
 | `/warps`               |         | List all warps                                       |
 | **Homes:**             |         |                                                      |
 | `/sethome [<name>]`    |         | Set a new home (default: home)                       |
-| `/delhome [<name>]`    |         | Delete an existing home (default: home)              |
+| `/delhome <name>`      |         | Delete an existing home                              |
 | `/home [<name>]`       |         | Teleport to a home (default: home)                   |
 | `/homes`               |         | List all current homes                               |
 | **Back:**              |         |                                                      |
@@ -41,3 +41,10 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
 - Download the `.jar` into your `mods` folder.
 - No configuration required.
+
+## Migration from MiniTeleport
+
+If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport):
+
+- Install Public Teleport, start your server and stop it once it was fully started
+- Copy all files in `world/miniteleport/` to `config/public-teleport/`
