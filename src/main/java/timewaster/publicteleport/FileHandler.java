@@ -57,38 +57,6 @@ public class FileHandler {
     private Config config;
 
     /**
-     * A single named teleport destination (used for both warps and homes).
-     *
-     * @param name      the unique (per-list) name identifying this teleport
-     * @param x         block x-coordinate
-     * @param y         block y-coordinate
-     * @param z         block z-coordinate
-     * @param yaw       facing yaw in degrees, or {@code null} if not set
-     * @param pitch     facing pitch in degrees, or {@code null} if not set
-     * @param dimension identifier of the dimension/world this teleport belongs to
-     */
-    public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
-
-    }
-
-    /**
-     * Mod-wide configuration options.
-     *
-     * @param maxHomes    maximum number of homes a single player may set
-     * @param enableSpawn whether the spawn features are enabled
-     * @param enableWarps whether warps are enabled
-     * @param enableHomes whether homes are enabled
-     * @param enableBack  whether the "back" (return to previous location) feature
-     *                    is enabled
-     * @param enableTpa   whether player-to-player teleport requests (tpa) are
-     *                    enabled
-     */
-    public record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes,
-            boolean enableBack, boolean enableTpa) {
-
-    }
-
-    /**
      * Creates a new file handler, ensuring the config directories exist and
      * loading the config and warps from disk (creating them with default
      * values if they don't already exist).
@@ -276,7 +244,7 @@ public class FileHandler {
 
     /**
      * Returns the names of all teleports in the requested scope, sorted
-     * alphabetically.
+     * alphabetically, special keyword "back" is filtered out.
      *
      * @param uuid the player's unique id, or {@code null} to list warp names
      * @return an alphabetically sorted list of teleport names
@@ -285,7 +253,9 @@ public class FileHandler {
         List<String> names = new ArrayList<String>();
 
         for (Teleport teleport : loadTeleports(uuid)) {
-            names.add(teleport.name);
+            if (!teleport.name().equals("back")) {
+                names.add(teleport.name());
+            }
         }
 
         Collections.sort(names);
@@ -308,7 +278,7 @@ public class FileHandler {
         int index = -1;
 
         for (int i = 0; i < teleports.size(); i++) {
-            if (teleports.get(i).name().equals(newTeleport.name)) {
+            if (teleports.get(i).name().equals(newTeleport.name())) {
                 teleports.set(i, newTeleport);
                 index = i;
             }

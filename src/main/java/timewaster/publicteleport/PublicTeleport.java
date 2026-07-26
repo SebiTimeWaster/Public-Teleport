@@ -1,7 +1,6 @@
 package timewaster.publicteleport;
 
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,31 +23,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.LevelData;
-import timewaster.publicteleport.FileHandler.Teleport;
 
 public class PublicTeleport implements ModInitializer {
 
     static final String MOD_ID = "public-teleport";
     static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
-    private FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
+    public FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
 
     static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
             .hasPermission(Permissions.COMMANDS_OWNER);
@@ -60,105 +49,6 @@ public class PublicTeleport implements ModInitializer {
     }
 
     final List<TeleportRequest> pendingRequests = new CopyOnWriteArrayList<>();
-
-    private void setTeleport(ServerPlayer player, String name, boolean isWarp) {
-        String dimension = player.level().dimension().identifier().toString();
-
-        Teleport teleport = new Teleport(
-                name,
-                (int) Math.floor(player.getX()),
-                (int) Math.ceil(player.getY()),
-                (int) Math.floor(player.getZ()),
-                (Float) player.getYRot(),
-                (Float) player.getXRot(),
-                dimension);
-
-        fileHandler.setTeleport(isWarp ? null : player.getUUID(), teleport);
-    }
-
-    private void setTeleport(ServerPlayer player, String name) {
-        setTeleport(player, name, false);
-    }
-
-    // ------ WARPS
-    // ----------------------------------------------------------------------------------------------
-
-    void doTeleportEffect(ServerLevel world, ServerPlayer player) {
-        world.playSound(
-                null,
-                player.getBlockX() + 0.5,
-                player.getBlockY() + 0.5,
-                player.getBlockZ() + 0.5,
-                SoundEvents.ENDERMAN_TELEPORT,
-                SoundSource.PLAYERS,
-                1.0f,
-                1.0f);
-
-        world.sendParticles(
-                ParticleTypes.PORTAL,
-                player.getBlockX() + 0.5,
-                player.getBlockY() + 0.5,
-                player.getBlockZ() + 0.5,
-                25,
-                0.25, 0.25, 0.25,
-                0.0);
-    }
-
-    int warpPlayer(ServerPlayer player, @Nullable FileHandler.Teleport warp) {
-        if (warp == null) {
-            player.sendSystemMessage(Component.literal("That warp/home doesn't exist!").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        ServerLevel world = player.level().getServer()
-                .getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(warp.dimension())));
-        if (world == null) {
-            player.sendSystemMessage(Component.literal("That dimension doesn't exist!").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        setTeleport(player, "back");
-
-        player.teleportTo(
-                world,
-                warp.x() + 0.5,
-                warp.y() + 0.05,
-                warp.z() + 0.5,
-                EnumSet.noneOf(Relative.class),
-                warp.yaw() != null ? (float) warp.yaw() : player.getYRot(),
-                warp.pitch() != null ? (float) warp.pitch() : player.getXRot(),
-                true);
-
-        doTeleportEffect(world, player);
-
-        if (List.of("home", "back").contains(warp.name())) {
-            player.sendSystemMessage(
-                    Component.literal(String.format("Teleported %s!", warp.name())).withStyle(ChatFormatting.AQUA));
-        } else {
-            player.sendSystemMessage(
-                    Component.literal(String.format("Teleported to %s!", warp.name())).withStyle(ChatFormatting.AQUA));
-        }
-
-        return 1;
-    }
-
-    Component listWarps(@Nullable UUID uuid) {
-        MutableComponent text = Component.literal(uuid == null ? "Warps:" : "Homes:");
-        List<String> names = fileHandler.getTeleportNames(uuid);
-
-        if (names.size() == 0) {
-            return Component.literal(uuid == null ? "There are no warps." : "You have no homes.")
-                    .withStyle(ChatFormatting.RED);
-        }
-
-        for (String name : names) {
-            text.append(Component.literal(" "))
-                    .append(Component.literal(name).withStyle(ChatFormatting.GOLD).withStyle(style -> style
-                            .withClickEvent(new ClickEvent.RunCommand((uuid == null ? "/warp " : "/home ") + name))
-                            .withHoverEvent(new HoverEvent.ShowText(Component.literal("Teleport to " + name)))));
-        }
-        return text;
-    }
 
     // ------ REQUESTS
     // -------------------------------------------------------------------------------------------
@@ -270,25 +160,15 @@ public class PublicTeleport implements ModInitializer {
         }
 
         if (request.here()) {
-            warpPlayer(receiver, new FileHandler.Teleport(
-                    actualSender.getName().getString(),
-                    (int) actualSender.getX(),
-                    (int) actualSender.getY(),
-                    (int) actualSender.getZ(),
-                    (Float) actualSender.getYRot(),
-                    (Float) actualSender.getXRot(),
-                    actualSender.level().dimension().identifier().toString()));
+            fileHandler.setTeleport(receiver.getUUID(), Teleport.create(receiver, "back"));
+            TeleportHandler.teleport(receiver, Teleport.create(actualSender, actualSender.getName().getString()));
+
             actualSender
                     .sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
         } else {
-            warpPlayer(actualSender, new FileHandler.Teleport(
-                    receiver.getName().getString(),
-                    (int) receiver.getX(),
-                    (int) receiver.getY(),
-                    (int) receiver.getZ(),
-                    (Float) receiver.getYRot(),
-                    (Float) receiver.getXRot(),
-                    receiver.level().dimension().identifier().toString()));
+            fileHandler.setTeleport(actualSender.getUUID(), Teleport.create(actualSender, "back"));
+            TeleportHandler.teleport(actualSender, Teleport.create(receiver, receiver.getName().getString()));
+
             receiver.sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
         }
 
@@ -369,15 +249,30 @@ public class PublicTeleport implements ModInitializer {
         };
     }
 
+    private boolean teleportPlayer(ServerPlayer player, String target) {
+        Teleport back = Teleport.create(player, "back");
+        boolean result = TeleportHandler.teleport(player, fileHandler.getTeleport(player.getUUID(), target));
+
+        if (result && target != "back") {
+            fileHandler.setTeleport(player.getUUID(), back);
+        }
+
+        return result;
+    }
+
     void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("sethome")
                 .then(Commands.argument("name", StringArgumentType.word())
                         .executes(context -> {
                             ServerPlayer player = getPlayer(context.getSource());
-
                             String homeName = StringArgumentType.getString(context, "name");
 
-                            setTeleport(player, homeName);
+                            if (homeName.equals("back")) {
+                                MessageHandler.sendMessage(player, "reserved_name");
+                                return 0;
+                            }
+
+                            fileHandler.setTeleport(player.getUUID(), Teleport.create(player, homeName));
 
                             player.sendSystemMessage(Component.literal(String.format("Home %s set!", homeName))
                                     .withStyle(ChatFormatting.AQUA));
@@ -385,7 +280,7 @@ public class PublicTeleport implements ModInitializer {
                         }))
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    setTeleport(player, "home");
+                    fileHandler.setTeleport(player.getUUID(), Teleport.create(player, "home"));
                     player.sendSystemMessage(Component.literal("Home set!").withStyle(ChatFormatting.AQUA));
                     return 1;
                 }));
@@ -416,35 +311,48 @@ public class PublicTeleport implements ModInitializer {
                         .executes(context -> {
                             ServerPlayer player = getPlayer(context.getSource());
                             String homeName = StringArgumentType.getString(context, "name");
-                            return warpPlayer(player, fileHandler.getTeleport(player.getUUID(), homeName));
 
+                            if (homeName.equals("back")) {
+                                MessageHandler.sendMessage(player, "no_teleport");
+                                return 0;
+                            }
+
+                            boolean result = teleportPlayer(player, homeName);
+
+                            return result ? 1 : 0;
                         }))
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
+                    boolean result = teleportPlayer(player, "home");
 
-                    return warpPlayer(player, fileHandler.getTeleport(player.getUUID(), "home"));
+                    return result ? 1 : 0;
                 }));
 
         dispatcher.register(Commands.literal("homes")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    player.sendSystemMessage(listWarps(player.getUUID()));
+                    List<String> homes = fileHandler.getTeleportNames(player.getUUID());
+
+                    MessageHandler.listTeleportNames(player, homes, false);
+
                     return 1;
                 }));
 
         dispatcher.register(Commands.literal("back")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    return warpPlayer(player, fileHandler.getTeleport(player.getUUID(), "back"));
+                    boolean result = teleportPlayer(player, "back");
+
+                    return result ? 1 : 0;
                 }));
 
         dispatcher.register(Commands.literal("setwarp")
                 .requires(PERMISSIONS_OWNER)
                 .then(Commands.argument("name", StringArgumentType.word()).executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-
                     String warpName = StringArgumentType.getString(context, "name");
-                    setTeleport(player, warpName, true);
+
+                    fileHandler.setTeleport(null, Teleport.create(player, warpName));
 
                     player.sendSystemMessage(
                             Component.literal(String.format("Warp %s set!", warpName)).withStyle(ChatFormatting.AQUA));
@@ -477,13 +385,18 @@ public class PublicTeleport implements ModInitializer {
                         .executes(context -> {
                             ServerPlayer player = getPlayer(context.getSource());
                             String warpName = StringArgumentType.getString(context, "name");
-                            return warpPlayer(player, fileHandler.getTeleport(null, warpName));
+                            boolean result = teleportPlayer(player, warpName);
+
+                            return result ? 1 : 0;
                         })));
 
         dispatcher.register(Commands.literal("warps")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    player.sendSystemMessage(listWarps(null));
+                    List<String> warps = fileHandler.getTeleportNames(null);
+
+                    MessageHandler.listTeleportNames(player, warps, true);
+
                     return 1;
                 }));
 
@@ -491,7 +404,8 @@ public class PublicTeleport implements ModInitializer {
                 .requires(PERMISSIONS_OWNER)
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    setTeleport(player, "spawn", true);
+
+                    fileHandler.setTeleport(null, Teleport.create(player, "spawn"));
 
                     ServerLevel world = player.level();
                     world.setRespawnData(LevelData.RespawnData.of(
@@ -508,7 +422,9 @@ public class PublicTeleport implements ModInitializer {
         dispatcher.register(Commands.literal("spawn")
                 .executes(context -> {
                     ServerPlayer player = getPlayer(context.getSource());
-                    return warpPlayer(player, fileHandler.getTeleport(null, "spawn"));
+                    boolean result = teleportPlayer(player, "spawn");
+
+                    return result ? 1 : 0;
                 }));
 
         dispatcher.register(Commands.literal("tpa")
@@ -592,7 +508,8 @@ public class PublicTeleport implements ModInitializer {
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
             if (entity instanceof ServerPlayer player) {
-                setTeleport(player, "back");
+                fileHandler.setTeleport(player.getUUID(), Teleport.create(player, "back"));
+
             }
         });
 
