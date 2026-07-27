@@ -14,12 +14,12 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 
 public class RequestHandler {
-    private FileHandler fileHandler;
+    private TeleportHandler teleportHandler;
     private static final long REQUEST_TIMEOUT_MS = 60_000; // 60 seconds
     private final List<Request> pendingRequests = new CopyOnWriteArrayList<>();
 
-    public RequestHandler(FileHandler fileHandler) {
-        this.fileHandler = fileHandler;
+    public RequestHandler(TeleportHandler teleportHandler) {
+        this.teleportHandler = teleportHandler;
     }
 
     void addRequest(Request request) {
@@ -130,14 +130,12 @@ public class RequestHandler {
         }
 
         if (request.here()) {
-            fileHandler.setTeleport(receiver.getUUID(), Teleport.create(receiver, "back"));
-            TeleportHandler.teleport(receiver, Teleport.create(actualSender, actualSender.getName().getString()));
+            teleportHandler.teleportPlayer(receiver, Teleport.create(actualSender, actualSender.getName().getString()));
 
             actualSender
                     .sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
         } else {
-            fileHandler.setTeleport(actualSender.getUUID(), Teleport.create(actualSender, "back"));
-            TeleportHandler.teleport(actualSender, Teleport.create(receiver, receiver.getName().getString()));
+            teleportHandler.teleportPlayer(actualSender, Teleport.create(receiver, receiver.getName().getString()));
 
             receiver.sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
         }

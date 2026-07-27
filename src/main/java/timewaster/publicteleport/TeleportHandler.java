@@ -1,6 +1,7 @@
 package timewaster.publicteleport;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,6 +15,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 
 public class TeleportHandler {
+    private FileHandler fileHandler;
+
+    public TeleportHandler(FileHandler fileHandler) {
+        this.fileHandler = fileHandler;
+    }
+
     private static void doTeleportEffect(ServerLevel world, ServerPlayer player) {
         world.playSound(
                 null,
@@ -37,8 +44,7 @@ public class TeleportHandler {
                 0.0);
     }
 
-    @SuppressWarnings("null")
-    public static boolean teleport(ServerPlayer player, Teleport teleport) {
+    private static boolean teleport(ServerPlayer player, Teleport teleport) {
         if (teleport == null) {
             MessageHandler.sendMessage(player, "no_teleport");
             return false;
@@ -58,7 +64,7 @@ public class TeleportHandler {
                 teleport.x() + 0.5,
                 teleport.y() + 0.05,
                 teleport.z() + 0.5,
-                Set.of(),
+                Objects.requireNonNull(Set.of()),
                 teleport.yaw() != null ? (float) teleport.yaw() : player.getYRot(),
                 teleport.pitch() != null ? (float) teleport.pitch() : player.getXRot(),
                 true);
@@ -68,5 +74,28 @@ public class TeleportHandler {
         MessageHandler.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", teleport.name());
 
         return true;
+    }
+
+    public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
+        Teleport back = Teleport.create(player, "back");
+        boolean result = teleport(player,
+                fileHandler.getTeleport(isWarp ? null : player.getUUID(), target));
+
+        if (result && target != "back") {
+            fileHandler.setTeleport(player.getUUID(), back);
+        }
+
+        return result;
+    }
+
+    public boolean teleportPlayer(ServerPlayer player, Teleport target) {
+        Teleport back = Teleport.create(player, "back");
+        boolean result = teleport(player, target);
+
+        if (result) {
+            fileHandler.setTeleport(player.getUUID(), back);
+        }
+
+        return result;
     }
 }

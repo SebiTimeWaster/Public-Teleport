@@ -13,8 +13,9 @@ public class PublicTeleport implements ModInitializer {
     static final String MOD_ID = "public-teleport";
     static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
-    public RequestHandler requestHandler = new RequestHandler(fileHandler);
-    public CommandHandler commandHandler = new CommandHandler(fileHandler, requestHandler);
+    public TeleportHandler teleportHandler = new TeleportHandler(fileHandler);
+    public RequestHandler requestHandler = new RequestHandler(teleportHandler);
+    public CommandHandler commandHandler = new CommandHandler(fileHandler, requestHandler, teleportHandler);
 
     @Override
     public void onInitialize() {
