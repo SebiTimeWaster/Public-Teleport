@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import java.util.UUID;
+
 import org.jspecify.annotations.NonNull;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -49,5 +51,9 @@ record Teleport(@NonNull String name, int x, int y, int z, Float yaw, Float pitc
  */
 record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes,
         boolean enableBack, boolean enableTpa) {
+
+}
+
+record Request(UUID sender, UUID receiver, boolean here, long expiry) {
 
 }
