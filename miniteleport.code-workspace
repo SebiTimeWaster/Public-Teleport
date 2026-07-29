@@ -1,0 +1,14 @@
+{
+    "folders": [
+        {
+            "path": ".",
+        },
+    ],
+    "settings": {
+        "java.format.settings.url": "eclipse-formatter.xml",
+        "java.format.settings.profile": "PublicTeleportStyle",
+        "java.compile.nullAnalysis.mode": "automatic",
+        "java.compile.nullAnalysis.nullable": ["org.jetbrains.annotations.Nullable"],
+        "java.compile.nullAnalysis.nonnull": ["org.jetbrains.annotations.NotNull"],
+    },
+}

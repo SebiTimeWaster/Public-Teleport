@@ -4,23 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
 
 public class PublicTeleport implements ModInitializer {
 
-    static final String MOD_ID = "public-teleport";
-    static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
-    public TeleportHandler teleportHandler = new TeleportHandler(fileHandler);
-    public RequestHandler requestHandler = new RequestHandler(teleportHandler);
-    public CommandHandler commandHandler = new CommandHandler(fileHandler, requestHandler, teleportHandler);
+    private static final String MOD_ID = "public-teleport";
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
+    private TeleportHandler teleportHandler = new TeleportHandler(fileHandler);
+    private RequestHandler requestHandler = new RequestHandler(teleportHandler);
+    private CommandHandler commandHandler = new CommandHandler(fileHandler, requestHandler, teleportHandler);
 
     @Override
     public void onInitialize() {
-        CommandRegistrationCallback.EVENT.register(
-                (dispatcher, registryAccess, environment) -> commandHandler.registerCommands(dispatcher));
+        commandHandler.registerCommands();
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
             if (entity instanceof ServerPlayer player) {
@@ -28,6 +26,6 @@ public class PublicTeleport implements ModInitializer {
             }
         });
 
-        LOGGER.info("Initialized!");
+        LOGGER.info(MessageHandler.getMessage("init"));
     }
 }

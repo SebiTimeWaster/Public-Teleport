@@ -2,8 +2,6 @@ package timewaster.publicteleport;
 
 import java.util.UUID;
 
-import org.jspecify.annotations.NonNull;
-
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -17,7 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
  * @param pitch     facing pitch in degrees, or {@code null} if not set
  * @param dimension identifier of the dimension/world this teleport belongs to
  */
-record Teleport(@NonNull String name, int x, int y, int z, Float yaw, Float pitch, @NonNull String dimension) {
+record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
     /**
      * Creates a teleport destination from the players current position.
      *
@@ -25,15 +23,15 @@ record Teleport(@NonNull String name, int x, int y, int z, Float yaw, Float pitc
      * @param name   the name of the teleport destination
      * @return the teleport destination created
      */
-    static Teleport create(ServerPlayer player, @NonNull String name) {
+    static Teleport create(ServerPlayer player, String name) {
         return new Teleport(
-                name,
-                (int) Math.floor(player.getX()),
-                (int) Math.ceil(player.getY()),
-                (int) Math.floor(player.getZ()),
-                (Float) player.getYRot(),
-                (Float) player.getXRot(),
-                player.level().dimension().identifier().toString());
+            name,
+            (int) Math.floor(player.getX()),
+            (int) Math.ceil(player.getY()),
+            (int) Math.floor(player.getZ()),
+            (Float) player.getYRot(),
+            (Float) player.getXRot(),
+            player.level().dimension().identifier().toString());
     }
 }
 
@@ -45,12 +43,12 @@ record Teleport(@NonNull String name, int x, int y, int z, Float yaw, Float pitc
  * @param enableWarps whether warps are enabled
  * @param enableHomes whether homes are enabled
  * @param enableBack  whether the "back" (return to previous location) feature
- *                    is enabled
+ *                        is enabled
  * @param enableTpa   whether player-to-player teleport requests (tpa) are
- *                    enabled
+ *                        enabled
  */
-record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes,
-        boolean enableBack, boolean enableTpa) {
+record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes, boolean enableBack,
+    boolean enableTpa) {
 
 }
 

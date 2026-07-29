@@ -3,38 +3,33 @@ package timewaster.publicteleport;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.storage.LevelData.RespawnData;
-import net.minecraft.commands.Commands;
-
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.storage.LevelData.RespawnData;
 
 public class CommandHandler {
     private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
-            .hasPermission(Permissions.COMMANDS_OWNER);
+        .hasPermission(Permissions.COMMANDS_OWNER);
     private FileHandler fileHandler;
     private RequestHandler requestHandler;
     private TeleportHandler teleportHandler;
@@ -45,305 +40,255 @@ public class CommandHandler {
         this.teleportHandler = teleportHandler;
     }
 
-    MinecraftServer getServer(CommandContext<CommandSourceStack> context) {
-        return context.getSource().getServer();
+    private static enum SuggestionType {
+        NONE, HOMES, WARPS, PLAYERS
     }
 
-    ServerPlayer getPlayer(CommandSourceStack source) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayer();
-        if (player == null) {
-            source.sendFailure(Component.literal("You must be a player to use this command."));
-            throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().create();
-        }
-        return player;
+    private static ServerPlayer getPlayer(CommandContext<CommandSourceStack> context) {
+        return context.getSource().getPlayer();
     }
 
-    SuggestionProvider<CommandSourceStack> suggestWarps(boolean player) {
-        return (context, builder) -> {
-            UUID uuid = null;
+    private CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
+        SuggestionsBuilder builder, SuggestionType type) {
+        UUID playerUuid = getPlayer(context).getUUID();
 
-            if (player) {
-                uuid = getPlayer(context.getSource()).getUUID();
-            }
+        if (type != SuggestionType.NONE) {
+            if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
+                List<String> teleportNames = fileHandler
+                    .getTeleportNames(type == SuggestionType.HOMES ? playerUuid : null);
 
-            for (String name : fileHandler.getTeleportNames(uuid)) {
-                builder.suggest(name);
-            }
-            return builder.buildFuture();
-        };
-    }
-
-    SuggestionProvider<CommandSourceStack> suggestPlayers() {
-        return (context, builder) -> {
-            ServerPlayer sender = getPlayer(context.getSource());
-
-            List<ServerPlayer> players = sender.level().getServer().getPlayerList().getPlayers();
-
-            for (ServerPlayer player : players) {
-                if (!sender.getUUID().equals(player.getUUID())) {
-                    builder.suggest(player.getName().getString());
+                if (teleportNames != null) {
+                    for (String name : teleportNames) {
+                        builder.suggest(name);
+                    }
                 }
             }
 
-            return builder.buildFuture();
-        };
-    }
-
-    /*
-     * blka
-     * blka
-     * blka
-     * blka
-     * blka
-     * blka
-     */
-
-    private static LiteralArgumentBuilder<CommandSourceStack> createCommandLiteral(@NonNull String commandName,
-            boolean owner) {
-        if (owner) {
-            return Commands.literal(commandName).requires(PERMISSIONS_OWNER);
-        } else {
-            return Commands.literal(commandName);
+            if (type == SuggestionType.PLAYERS) {
+                for (ServerPlayer activePlayer : context.getSource().getServer().getPlayerList().getPlayers()) {
+                    if (!playerUuid.equals(activePlayer.getUUID())) {
+                        builder.suggest(activePlayer.getName().getString());
+                    }
+                }
+            }
         }
+
+        return builder.buildFuture();
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, String> createCommandArgument(@NonNull String paramName,
-            @Nullable SuggestionProvider<CommandSourceStack> suggestions) {
-        StringArgumentType word = Objects.requireNonNull(StringArgumentType.word());
+    private int contextWrapper(CommandContext<CommandSourceStack> context, Function<ServerPlayer, Boolean> callback) {
+        ServerPlayer player = getPlayer(context);
 
-        if (suggestions != null) {
-            return Commands.argument(paramName, word).suggests(suggestions);
-        } else {
-            return Commands.argument(paramName, word);
-        }
+        return callback.apply(player) ? 1 : 0;
     }
 
-    private void registerWithoutParam(CommandDispatcher<CommandSourceStack> dispatcher, @NonNull String commandName,
-            boolean owner, Function<ServerPlayer, Boolean> callBack) {
-        dispatcher.register(createCommandLiteral(commandName, owner).executes(context -> {
-            ServerPlayer player = getPlayer(context.getSource());
+    private RequiredArgumentBuilder<CommandSourceStack, String> argString(@NotNull String argName,
+        SuggestionType suggestionType, BiFunction<ServerPlayer, String, Boolean> callback) {
+        return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
+            .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
+            .executes(context -> {
+                ServerPlayer player = getPlayer(context);
+                String argValue = Objects.requireNonNull(StringArgumentType.getString(context, argName));
 
-            return callBack.apply(player) ? 1 : 0;
-        }));
+                return callback.apply(player, argValue) ? 1 : 0;
+            });
+
     }
 
-    private void registerWithParam(CommandDispatcher<CommandSourceStack> dispatcher, @NonNull String commandName,
-            @NonNull String paramName, boolean owner, @Nullable SuggestionProvider<CommandSourceStack> suggestions,
-            BiFunction<ServerPlayer, @NonNull String, Boolean> callBack) {
+    private RequiredArgumentBuilder<CommandSourceStack, String> argPlayer(@NotNull String argName,
+        SuggestionType suggestionType, BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
+        return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
+            .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
+            .executes(context -> {
+                ServerPlayer player = getPlayer(context);
+                ServerPlayer target = EntityArgument.getPlayer(Objects.requireNonNull(context), argName);
 
-        dispatcher.register(createCommandLiteral(commandName, owner).then(
-                createCommandArgument(paramName, suggestions).executes(context -> {
-                    ServerPlayer player = getPlayer(context.getSource());
-                    String paramValue = Objects.requireNonNull(StringArgumentType.getString(context, paramName));
+                return callback.apply(player, target) ? 1 : 0;
+            });
 
-                    return callBack.apply(player, paramValue) ? 1 : 0;
-                })));
     }
 
-    public void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+    public void registerCommands() {
         Config config = fileHandler.getConfig();
 
-        if (config.enableSpawn()) {
-            registerWithoutParam(dispatcher, "setspawn", true, player -> {
-                ServerLevel world = player.level();
-                RespawnData spawn = RespawnData.of(player.level().dimension(), player.blockPosition(), 0, 0);
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            if (config.enableSpawn()) {
 
-                fileHandler.setTeleport(null, Teleport.create(player, "spawn"));
-                world.setRespawnData(spawn);
-                world.getServer().getGameRules().set(GameRules.RESPAWN_RADIUS, 0, world.getServer());
-                MessageHandler.sendMessage(player, "spawn_set");
+                dispatcher.register(Commands.literal("setspawn").requires(PERMISSIONS_OWNER)
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        ServerLevel world = player.level();
+                        RespawnData spawn = RespawnData.of(player.level().dimension(), player.blockPosition(), 0,
+                            0);
+                        MinecraftServer server = world.getServer();
 
-                return true;
-            });
+                        fileHandler.setTeleport(null, Teleport.create(player, "spawn"));
+                        world.setRespawnData(spawn);
+                        server.getGameRules().set(GameRules.RESPAWN_RADIUS, 0, server);
+                        MessageHandler.sendMessage(player, "spawn_set");
 
-            registerWithoutParam(dispatcher, "spawn", false, player -> {
-                return (Boolean) teleportHandler.teleportPlayer(player, "spawn", true);
-            });
-        } else if (config.enableWarps()) {
-            registerWithParam(dispatcher, "setwarp", "name", true, null, (player, warpName) -> {
-                fileHandler.setTeleport(null, Teleport.create(player, warpName));
-                MessageHandler.sendMessage(player, "warp_set", warpName);
+                        return true;
+                    })));
 
-                return true;
-            });
+                dispatcher.register(Commands.literal("spawn")
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        return teleportHandler.teleportPlayer(player, "spawn", true);
+                    })));
 
-            registerWithParam(dispatcher, "delwarp", "name", true, suggestWarps(false), (player, warpName) -> {
-                boolean success = fileHandler.deleteTeleport(null, warpName);
+            } else if (config.enableWarps()) {
 
-                if (success) {
-                    MessageHandler.sendMessage(player, "warp_deleted", warpName);
-                } else {
-                    MessageHandler.sendMessage(player, "warp_not_exist", warpName);
-                }
+                dispatcher.register(Commands.literal("setwarp").requires(PERMISSIONS_OWNER)
+                    .then(argString("name", SuggestionType.NONE, (ServerPlayer player, String argValue) -> {
+                        fileHandler.setTeleport(null, Teleport.create(player, argValue));
 
-                return success;
-            });
+                        MessageHandler.sendMessage(player, "warp_set", argValue);
 
-            registerWithParam(dispatcher, "warp", "name", false, suggestWarps(false), (player, warpName) -> {
-                return teleportHandler.teleportPlayer(player, warpName, true);
-            });
+                        return true;
+                    })));
 
-            registerWithoutParam(dispatcher, "warps", false, player -> {
-                MessageHandler.listTeleportNames(player, fileHandler.getTeleportNames(null), true);
+                dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
+                    .then(argString("name", SuggestionType.WARPS, (ServerPlayer player, String argValue) -> {
+                        boolean success = fileHandler.deleteTeleport(null, argValue);
 
-                return true;
-            });
-        } else if (config.enableHomes()) {
-            dispatcher.register(Commands.literal("sethome")
-                    .then(Commands.argument("name", StringArgumentType.word())
-                            .executes(context -> {
-                                ServerPlayer player = getPlayer(context.getSource());
-                                String homeName = StringArgumentType.getString(context, "name");
-                                if (homeName.equals("back")) {
-                                    MessageHandler.sendMessage(player, "reserved_name");
-                                    return 0;
-                                }
-                                fileHandler.setTeleport(player.getUUID(), Teleport.create(player, homeName));
-                                player.sendSystemMessage(
-                                        Component.literal(String.format("Home %s set!", homeName))
-                                                .withStyle(ChatFormatting.AQUA));
-                                return 1;
-                            }))
-                    .executes(context -> {
-                        ServerPlayer player = getPlayer(context.getSource());
+                        MessageHandler.sendMessage(player, success ? "warp_deleted" : "warp_not_exist", argValue);
+
+                        return success;
+                    })));
+
+                dispatcher.register(Commands.literal("warp")
+                    .then(argString("name", SuggestionType.WARPS, (ServerPlayer player, String argValue) -> {
+                        return teleportHandler.teleportPlayer(player, argValue, true);
+                    })));
+
+                dispatcher.register(Commands.literal("warps")
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        return MessageHandler.listTeleportNames(player, fileHandler.getTeleportNames(null), true);
+                    })));
+
+            } else if (config.enableHomes()) {
+
+                dispatcher.register(Commands.literal("sethome")
+                    .then(argString("name", SuggestionType.NONE, (ServerPlayer player, String argValue) -> {
+                        if (argValue.equals("back")) {
+                            MessageHandler.sendMessage(player, "reserved_name");
+                            return false;
+                        }
+
+                        fileHandler.setTeleport(player.getUUID(), Teleport.create(player, argValue));
+                        MessageHandler.sendMessage(player, "named_home_set", argValue);
+
+                        return true;
+                    })).executes(context -> contextWrapper(context, (ServerPlayer player) -> {
                         fileHandler.setTeleport(player.getUUID(), Teleport.create(player, "home"));
-                        player.sendSystemMessage(Component.literal("Home set!").withStyle(ChatFormatting.AQUA));
-                        return 1;
-                    }));
+                        MessageHandler.sendMessage(player, "home_set");
 
-            dispatcher.register(Commands.literal("delhome")
-                    .then(Commands.argument("name", StringArgumentType.word())
-                            .suggests(suggestWarps(true))
-                            .executes(context -> {
-                                ServerPlayer player = getPlayer(context.getSource());
+                        return true;
+                    })));
 
-                                String homeName = StringArgumentType.getString(context, "name");
-                                boolean success = fileHandler.deleteTeleport(player.getUUID(), homeName);
+                dispatcher.register(Commands.literal("delhome")
+                    .then(argString("name", SuggestionType.HOMES, (ServerPlayer player, String argValue) -> {
+                        if (argValue.equals("back")) {
+                            MessageHandler.sendMessage(player, "reserved_name");
+                            return false;
+                        }
 
-                                if (success) {
-                                    player.sendSystemMessage(Component.literal("Home '" + homeName + "' deleted!")
-                                            .withStyle(ChatFormatting.AQUA));
-                                } else {
-                                    player.sendSystemMessage(
-                                            Component.literal("Home '" + homeName + "' does not exist!")
-                                                    .withStyle(ChatFormatting.RED));
-                                }
+                        boolean success = fileHandler.deleteTeleport(player.getUUID(), argValue);
+                        MessageHandler.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
 
-                                return success ? 1 : 0;
-                            })));
+                        return success;
+                    })));
 
-            dispatcher.register(Commands.literal("home")
-                    .then(Commands.argument("name", StringArgumentType.word())
-                            .suggests(suggestWarps(true))
-                            .executes(context -> {
-                                ServerPlayer player = getPlayer(context.getSource());
-                                String homeName = StringArgumentType.getString(context, "name");
+                dispatcher.register(Commands.literal("home")
+                    .then(argString("name", SuggestionType.HOMES, (ServerPlayer player, String argValue) -> {
+                        if (argValue.equals("back")) {
+                            MessageHandler.sendMessage(player, "reserved_name");
+                            return false;
+                        }
 
-                                if (homeName.equals("back")) {
-                                    MessageHandler.sendMessage(player, "no_teleport");
-                                    return 0;
-                                }
+                        return teleportHandler.teleportPlayer(player, argValue, false);
+                    })).executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        return teleportHandler.teleportPlayer(player, "home", false);
+                    })));
 
-                                boolean result = teleportHandler.teleportPlayer(player, homeName, false);
+                dispatcher.register(Commands.literal("homes")
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        return MessageHandler.listTeleportNames(player,
+                            fileHandler.getTeleportNames(player.getUUID()), false);
+                    })));
 
-                                return result ? 1 : 0;
-                            }))
-                    .executes(context -> {
-                        ServerPlayer player = getPlayer(context.getSource());
-                        boolean result = teleportHandler.teleportPlayer(player, "home", false);
+            } else if (config.enableBack()) {
 
-                        return result ? 1 : 0;
-                    }));
-
-            dispatcher.register(Commands.literal("homes")
-                    .executes(context -> {
-                        ServerPlayer player = getPlayer(context.getSource());
-                        List<String> homes = fileHandler.getTeleportNames(player.getUUID());
-
-                        MessageHandler.listTeleportNames(player, homes, false);
-
-                        return 1;
-                    }));
-        } else if (config.enableBack()) {
-            dispatcher.register(Commands.literal("back")
-                    .executes(context -> {
-                        ServerPlayer player = getPlayer(context.getSource());
+                dispatcher.register(Commands.literal("back")
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
                         boolean result = teleportHandler.teleportPlayer(player, "back", false);
 
-                        return result ? 1 : 0;
-                    }));
+                        if (!result) {
+                            MessageHandler.sendMessage(player, "home_not_exist", "back");
+                            return false;
+                        }
 
-        } else if (config.enableTpa()) {
-            dispatcher.register(Commands.literal("tpa")
-                    .then(Commands.argument("target", EntityArgument.player())
-                            .suggests(suggestPlayers())
-                            .executes(context -> {
-                                ServerPlayer sender = getPlayer(context.getSource());
-                                ServerPlayer target = EntityArgument.getPlayer(context, "target");
+                        return result;
+                    })));
 
-                                if (sender.equals(target)) {
-                                    sender.sendSystemMessage(Component.literal("You cannot teleport to yourself!")
-                                            .withStyle(ChatFormatting.RED));
-                                    return 0;
-                                }
+            } else if (config.enableTpa()) {
 
-                                requestHandler.sendTeleportRequest(sender, target, false);
-                                return 1;
-                            })));
+                dispatcher.register(Commands.literal("tpa")
+                    .then(argPlayer("target", SuggestionType.PLAYERS, (ServerPlayer player, ServerPlayer target) -> {
+                        if (player.getName().equals(target.getName())) {
+                            MessageHandler.sendMessage(player, "no_teleport_self");
 
-            dispatcher.register(Commands.literal("tpahere")
-                    .then(Commands.argument("target", EntityArgument.player())
-                            .suggests(suggestPlayers())
-                            .executes(context -> {
-                                ServerPlayer sender = getPlayer(context.getSource());
-                                ServerPlayer target = EntityArgument.getPlayer(context, "target");
+                            return false;
+                        }
 
-                                if (sender.equals(target)) {
-                                    sender.sendSystemMessage(Component.literal("You cannot teleport to yourself!")
-                                            .withStyle(ChatFormatting.RED));
-                                    return 0;
-                                }
+                        requestHandler.sendTeleportRequest(player, target, false);
 
-                                requestHandler.sendTeleportRequest(sender, target, true);
-                                return 1;
-                            })));
+                        return true;
+                    })));
 
-            dispatcher.register(Commands.literal("tpcancel")
-                    .executes(context -> {
-                        ServerPlayer sender = getPlayer(context.getSource());
-                        requestHandler.cancelTeleportRequest(sender);
-                        return 1;
-                    }));
+                dispatcher.register(Commands.literal("tpahere")
+                    .then(argPlayer("target", SuggestionType.PLAYERS, (ServerPlayer player, ServerPlayer target) -> {
+                        if (player.getName().equals(target.getName())) {
+                            MessageHandler.sendMessage(player, "no_teleport_self");
 
-            dispatcher.register(Commands.literal("tpaccept")
-                    .executes(context -> {
-                        ServerPlayer receiver = getPlayer(context.getSource());
-                        requestHandler.acceptTeleportRequest(receiver, null);
-                        return 1;
-                    })
-                    .then(Commands.argument("sender", EntityArgument.player())
-                            .suggests(suggestPlayers())
-                            .executes(context -> {
-                                ServerPlayer receiver = getPlayer(context.getSource());
-                                ServerPlayer sender = EntityArgument.getPlayer(context, "sender");
-                                requestHandler.acceptTeleportRequest(receiver, sender);
-                                return 1;
-                            })));
+                            return false;
+                        }
 
-            dispatcher.register(Commands.literal("tpdeny")
-                    .executes(context -> {
-                        ServerPlayer receiver = getPlayer(context.getSource());
-                        requestHandler.denyTeleportRequest(receiver, null);
-                        return 1;
-                    })
-                    .then(Commands.argument("sender", EntityArgument.player())
-                            .suggests(suggestPlayers())
-                            .executes(context -> {
-                                ServerPlayer receiver = getPlayer(context.getSource());
-                                ServerPlayer sender = EntityArgument.getPlayer(context, "sender");
-                                requestHandler.denyTeleportRequest(receiver, sender);
-                                return 1;
-                            })));
-        }
+                        requestHandler.sendTeleportRequest(player, target, true);
+
+                        return true;
+                    })));
+
+                dispatcher.register(Commands.literal("tpcancel")
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        requestHandler.cancelTeleportRequest(player);
+
+                        return true;
+                    })));
+
+                dispatcher.register(Commands.literal("tpaccept")
+                    .then(argPlayer("sender", SuggestionType.PLAYERS, (ServerPlayer player, ServerPlayer target) -> {
+                        requestHandler.acceptTeleportRequest(player, target);
+
+                        return true;
+                    }))
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        requestHandler.acceptTeleportRequest(player, null);
+
+                        return true;
+                    })));
+
+                dispatcher.register(Commands.literal("tpdeny")
+                    .then(argPlayer("sender", SuggestionType.PLAYERS, (ServerPlayer player, ServerPlayer target) -> {
+                        requestHandler.denyTeleportRequest(player, target);
+
+                        return true;
+                    }))
+                    .executes(context -> contextWrapper(context, (ServerPlayer player) -> {
+                        requestHandler.denyTeleportRequest(player, null);
+
+                        return true;
+                    })));
+
+            }
+        });
     }
 }

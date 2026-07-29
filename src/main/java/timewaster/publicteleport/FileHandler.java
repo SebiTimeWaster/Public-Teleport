@@ -25,15 +25,16 @@ import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Handles all persistence for the mod: reading and writing the mod's
- * configuration file, the shared "warps" list, and per-player "homes" lists.
+ * configuration file, the shared "warps" list, and per-player "homes"
+ * lists.
  * <p>
- * Data is stored as JSON on disk under the Fabric config directory
- * (e.g. {@code config/<modId>/}), with one file for the global config,
- * one file for warps, and one file per player (named by UUID) under the
+ * Data is stored as JSON on disk under the Fabric config directory (e.g.
+ * {@code config/<modId>/}), with one file for the global config, one
+ * file for warps, and one file per player (named by UUID) under the
  * {@code homes} subdirectory.
  * <p>
- * This class is not thread-safe; callers are expected to only access it
- * from a single thread (e.g. the server thread) at a time.
+ * This class is not thread-safe; callers are expected to only access it from a
+ * single thread (e.g. the server thread) at a time.
  */
 public class FileHandler {
 
@@ -57,14 +58,14 @@ public class FileHandler {
     private Config config;
 
     /**
-     * Creates a new file handler, ensuring the config directories exist and
-     * loading the config and warps from disk (creating them with default
-     * values if they don't already exist).
+     * Creates a new file handler, ensuring the config directories exist and loading
+     * the config and warps from disk (creating them with
+     * default values if they don't already exist).
      *
      * @param modId  the mod's identifier, used to resolve the config directory
      * @param logger logger used to report I/O errors during load/save operations
      * @throws UncheckedIOException if the config directories and config/data files
-     *                              cannot be created
+     *                                  cannot be created
      */
     public FileHandler(String modId, Logger logger) {
         this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(modId);
@@ -73,13 +74,13 @@ public class FileHandler {
         this.fileConfig = pathConfig.resolve("config.json").toFile();
         this.fileWarps = pathConfig.resolve("warps.json").toFile();
         createDirectories();
-        this.config = loadFile(fileConfig, configDefault, Config.class, true);
+        loadConfig();
         this.warps = loadFile(fileWarps, true);
     }
 
     /**
-     * Ensures the mod's config directory and the homes subdirectory exist,
-     * creating any missing parent directories as needed.
+     * Ensures the mod's config directory and the homes subdirectory exist, creating
+     * any missing parent directories as needed.
      *
      * @throws UncheckedIOException if directory creation fails
      */
@@ -87,91 +88,101 @@ public class FileHandler {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error("Failed to create config directories!");
+            logger.error(MessageHandler.getMessage("err_create_dir"));
             throw new UncheckedIOException(e);
         }
     }
 
     /**
-     * Loads and deserializes JSON data from the given file.
+     * Loads and deserializes JSON data from the config file.
+     * <p>
+     * If the file {@code fileConfig} does not exist yet it is created,
+     * {@code configDefault} is written to it and then used.
+     *
+     * @throws UncheckedIOException if the config could not be loaded
+     */
+    private void loadConfig() {
+        if (!fileConfig.exists()) {
+            saveFile(fileConfig, configDefault, true);
+            this.config = configDefault;
+        }
+
+        try {
+            this.config = GSON.fromJson(new FileReader(fileConfig), Config.class);
+        } catch (IOException e) {
+            logger.error(MessageHandler.getMessage("err_load_config"), fileConfig, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Loads and deserializes JSON data from the given file as a {@code List} of
+     * {@code Teleport}.
      * <p>
      * If the file does not exist yet it is created, {@code defaultValue} is written
-     * to it and then returned. If reading or parsing fails, the error is logged and
-     * {@code defaultValue} is returned.
+     * to it and then returned.
      *
-     * @param file         the file to read from
-     * @param defaultValue the value to use (and persist) if the file is missing,
-     *                     and to fall back to if loading fails
-     * @param type         the Gson type to deserialize into
-     * @return the deserialized value, or {@code defaultValue} if the file was
-     *         missing or could not be read
+     * @param file        the file to read from
+     * @param failOnError if an UncheckedIOException should be thrown on error
+     * @return the deserialized value, or {@code defaultValue} if the file does not
+     *         exist, or null if the file could not be read and
+     *         {@code failOnError} is false
      * @throws UncheckedIOException if the file could not be loaded and
-     *                              {@code failOnError} is true
+     *                                  {@code failOnError} is true
      */
-    private <T> T loadFile(File file, T defaultValue, Type type, boolean failOnError) {
+    private @Nullable List<Teleport> loadFile(File file, boolean failOnError) {
+        Type listType = new TypeToken<List<Teleport>>() {
+        }.getType();
+        List<Teleport> defaultValue = new ArrayList<Teleport>();
+
         if (!file.exists()) {
             saveFile(file, defaultValue, failOnError);
             return defaultValue;
         }
 
-        try (FileReader reader = new FileReader(file)) {
-            return GSON.fromJson(reader, type);
+        try {
+            return GSON.fromJson(new FileReader(file), listType);
         } catch (IOException e) {
-            logger.error("Failed to load from {}:", file, e);
+            logger.error(MessageHandler.getMessage("err_load_file"), file, e);
             if (failOnError) {
                 throw new UncheckedIOException(e);
             } else {
-                return defaultValue;
+                return null;
             }
         }
-    }
-
-    /**
-     * Overload to specifically load an arraylist of {@link Teleport} entries from
-     * the given file.
-     *
-     * @param file the file to read the teleport list from
-     * @return the list of teleports stored in the file, or an empty list if
-     *         the file was missing or could not be read
-     */
-    private List<Teleport> loadFile(File file, boolean failOnError) {
-        Type type = new TypeToken<List<Teleport>>() {
-        }.getType();
-
-        return loadFile(file, new ArrayList<>(), type, failOnError);
     }
 
     /**
      * Serializes {@code data} to JSON and writes it to {@code file} atomically.
      * <p>
-     * Writes are performed atomically: data is first written to a temporary
-     * file in the same directory, then moved into place with
-     * {@link StandardCopyOption#ATOMIC_MOVE}, so a crash or power loss during
-     * a save cannot leave a half-written or corrupted file behind.
-     * <p>
-     * Failures are logged rather than thrown, so callers should not assume
-     * a save always succeeds.
+     * Writes are performed atomically: data is first written to a temporary file in
+     * the same directory, then moved into place with
+     * {@link StandardCopyOption#ATOMIC_MOVE}, so a crash or power loss during a
+     * save cannot leave a half-written or corrupted file behind.
      *
      * @param file the destination file to write to
      * @param data the object to serialize as JSON
+     * @return true if save was successful, false if file could not be saved
      * @throws UncheckedIOException if the file could not be saved and
-     *                              {@code failOnError} is true
+     *                                  {@code failOnError} is true
      */
-    private void saveFile(File file, Object data, boolean failOnError) {
+    private boolean saveFile(File file, Object data, boolean failOnError) {
         try {
             Path tempPath = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
 
-            try (FileWriter writer = new FileWriter(tempPath.toFile())) {
-                GSON.toJson(data, writer);
-            }
+            GSON.toJson(data, new FileWriter(tempPath.toFile()));
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            logger.error("Failed to save to {}:", file, e);
+            logger.error(MessageHandler.getMessage("err_save_file"), file, e);
             if (failOnError) {
                 throw new UncheckedIOException(e);
+            } else {
+                return false;
             }
         }
+
+        return true;
     }
 
     /**
@@ -185,16 +196,13 @@ public class FileHandler {
     }
 
     /**
-     * Returns the current list of teleports for the given player, or the
-     * shared warps list if {@code uuid} is {@code null}.
-     * <p>
-     * When {@code uuid} is non-null, the player's homes are loaded fresh
-     * from disk on every call. When {@code uuid} is {@code null}, the
-     * in-memory {@link #warps} cache is returned directly.
+     * Returns the current list of teleports for the given player, or the shared
+     * warps list if {@code uuid} is {@code null}.
      *
      * @param uuid the player's unique id, or {@code null} to access warps
      * @return the mutable list of teleports for the requested scope
      */
+    @Nullable
     private List<Teleport> loadTeleports(@Nullable UUID uuid) {
         List<Teleport> teleports;
 
@@ -213,13 +221,14 @@ public class FileHandler {
      *
      * @param uuid      the player's unique id, or {@code null} to update warps
      * @param teleports the full list of teleports to save
+     * @return true if save was successful
      */
-    private void saveTeleports(@Nullable UUID uuid, List<Teleport> teleports) {
+    private boolean saveTeleports(@Nullable UUID uuid, List<Teleport> teleports) {
         if (uuid != null) {
-            saveFile(getHomeFileByUuid(uuid), teleports, false);
+            return saveFile(getHomeFileByUuid(uuid), teleports, false);
         } else {
             warps = teleports;
-            saveFile(fileWarps, teleports, false);
+            return saveFile(fileWarps, teleports, false);
         }
     }
 
@@ -228,14 +237,18 @@ public class FileHandler {
      *
      * @param uuid the player's unique id, or {@code null} to search warps
      * @param name the exact name of the teleport to find
-     * @return the matching {@link Teleport}, or {@code null} if none exists
-     *         with that name in the requested scope
+     * @return the matching {@link Teleport}, or {@code null} if none exists with
+     *         that name in the requested scope
      */
     @Nullable
     public Teleport getTeleport(@Nullable UUID uuid, String name) {
-        for (Teleport teleport : loadTeleports(uuid)) {
-            if (teleport.name().equals(name)) {
-                return teleport;
+        List<Teleport> teleports = loadTeleports(uuid);
+
+        if (teleports != null) {
+            for (Teleport teleport : teleports) {
+                if (teleport.name().equals(name)) {
+                    return teleport;
+                }
             }
         }
 
@@ -247,76 +260,92 @@ public class FileHandler {
      * alphabetically, special keyword "back" is filtered out.
      *
      * @param uuid the player's unique id, or {@code null} to list warp names
-     * @return an alphabetically sorted list of teleport names
+     * @return an alphabetically sorted list of teleport names or {@code null} on
+     *         error
      */
+    @Nullable
     public List<String> getTeleportNames(@Nullable UUID uuid) {
         List<String> names = new ArrayList<String>();
+        List<Teleport> teleports = loadTeleports(uuid);
 
-        for (Teleport teleport : loadTeleports(uuid)) {
-            if (!teleport.name().equals("back")) {
-                names.add(teleport.name());
+        if (teleports != null) {
+            for (Teleport teleport : teleports) {
+                if (!teleport.name().equals("back")) {
+                    names.add(teleport.name());
+                }
             }
+
+            Collections.sort(names);
+
+            return names;
         }
 
-        Collections.sort(names);
-
-        return names;
+        return null;
     }
 
     /**
-     * Creates or updates a teleport with the given name and persists the
-     * change to disk.
+     * Creates or updates a teleport with the given name and persists the change to
+     * disk.
      * <p>
-     * If a teleport with the same name already exists, it is replaced
-     * in-place; otherwise the new teleport is added.
+     * If a teleport with the same name already exists, it is replaced in-place;
+     * otherwise the new teleport is added.
      *
      * @param uuid        the player's unique id, or {@code null} to modify warps
      * @param newTeleport the teleport to add or update, identified by its name
+     * @return {@code true} if set was successful
      */
-    public void setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
+    public boolean setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
         List<Teleport> teleports = loadTeleports(uuid);
-        int index = -1;
 
-        for (int i = 0; i < teleports.size(); i++) {
-            if (teleports.get(i).name().equals(newTeleport.name())) {
-                teleports.set(i, newTeleport);
-                index = i;
+        if (teleports != null) {
+            boolean exists = false;
+
+            for (int i = 0; i < teleports.size(); i++) {
+                if (teleports.get(i).name().equals(newTeleport.name())) {
+                    teleports.set(i, newTeleport);
+                    exists = true;
+                }
+            }
+
+            if (!exists) {
+                teleports.add(newTeleport);
+            }
+
+            if (saveTeleports(uuid, teleports)) {
+                return true;
             }
         }
 
-        if (index == -1) {
-            teleports.add(newTeleport);
-        }
-
-        saveTeleports(uuid, teleports);
+        return false;
     }
 
     /**
-     * Deletes the teleport with the given name (If it exists) and persists the
-     * change to disk.
+     * Deletes the teleport with the given name if it exists and persists the change
+     * to disk.
      *
      * @param uuid the player's unique id, or {@code null} to modify warps
      * @param name the teleport to delete, identified by its name
-     * @return {@code true} if a teleport was found and removed, {@code false}
-     *         if no teleport with that name existed
+     * @return {@code true} if a teleport was found and removed
      */
     public boolean deleteTeleport(@Nullable UUID uuid, String name) {
         List<Teleport> teleports = loadTeleports(uuid);
-        int index = -1;
 
-        for (int i = 0; i < teleports.size(); i++) {
-            if (teleports.get(i).name().equals(name)) {
-                teleports.remove(i);
-                index = i;
+        if (teleports != null) {
+            boolean exists = false;
+
+            for (int i = 0; i < teleports.size(); i++) {
+                if (teleports.get(i).name().equals(name)) {
+                    teleports.remove(i);
+                    exists = true;
+                }
+            }
+
+            if (exists && saveTeleports(uuid, teleports)) {
+                return true;
             }
         }
 
-        if (index == -1) {
-            return false;
-        } else {
-            saveTeleports(uuid, teleports);
-            return true;
-        }
+        return false;
     }
 
     /**

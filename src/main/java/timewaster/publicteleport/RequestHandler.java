@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
@@ -33,13 +33,12 @@ public class RequestHandler {
     }
 
     Request getMostRecentRequest(UUID receiver) {
-        return pendingRequests.stream().filter(r -> r.receiver().equals(receiver))
-                .max(Comparator.comparingLong(Request::expiry)).orElse(null);
+        return pendingRequests.stream().filter(r -> r.receiver().equals(receiver)).max(Comparator.comparingLong(Request::expiry))
+                .orElse(null);
     }
 
     Request getRequest(UUID receiver, UUID sender) {
-        return pendingRequests.stream().filter(r -> r.receiver().equals(receiver) && r.sender().equals(sender))
-                .findFirst().orElse(null);
+        return pendingRequests.stream().filter(r -> r.receiver().equals(receiver) && r.sender().equals(sender)).findFirst().orElse(null);
     }
 
     void cleanupExpiredRequests() {
@@ -54,38 +53,30 @@ public class RequestHandler {
         Request request = new Request(sender.getUUID(), receiver.getUUID(), here, expiry);
         addRequest(request);
 
-        Component message = Component.literal(
-                String.format("%s wants to teleport %s. ", sender.getName().getString(),
-                        here ? "you to them" : "to you"))
+        Component message = Component
+                .literal(String.format("%s wants to teleport %s. ", sender.getName().getString(), here ? "you to them" : "to you"))
                 .withStyle(ChatFormatting.YELLOW)
-                .append(Component.literal("[Accept]").withStyle(ChatFormatting.GREEN).withStyle(
-                        style -> style
-                                .withClickEvent(new ClickEvent.RunCommand("/tpaccept " + sender.getName().getString()))
+                .append(Component.literal("[Accept]").withStyle(ChatFormatting.GREEN)
+                        .withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/tpaccept " + sender.getName().getString()))
                                 .withHoverEvent(new HoverEvent.ShowText(
-                                        Component.literal(
-                                                "Accept teleport request from " + sender.getName().getString())))))
+                                        Component.literal("Accept teleport request from " + sender.getName().getString())))))
                 .append(Component.literal(" "))
                 .append(Component.literal("[Deny]").withStyle(ChatFormatting.RED).withStyle(
-                        style -> style
-                                .withClickEvent(new ClickEvent.RunCommand("/tpdeny " + sender.getName().getString()))
-                                .withHoverEvent(new HoverEvent.ShowText(
-                                        Component.literal(
-                                                "Deny teleport request from " + sender.getName().getString())))));
+                        style -> style.withClickEvent(new ClickEvent.RunCommand("/tpdeny " + sender.getName().getString())).withHoverEvent(
+                                new HoverEvent.ShowText(Component.literal("Deny teleport request from " + sender.getName().getString())))));
 
         receiver.sendSystemMessage(message);
-        sender.sendSystemMessage(Component.literal("Teleport request sent to " + receiver.getName().getString())
-                .withStyle(ChatFormatting.AQUA));
+        sender.sendSystemMessage(
+                Component.literal("Teleport request sent to " + receiver.getName().getString()).withStyle(ChatFormatting.AQUA));
     }
 
     void cancelTeleportRequest(ServerPlayer sender) {
         cleanupExpiredRequests();
 
-        List<Request> requests = pendingRequests.stream().filter(r -> r.sender().equals(sender.getUUID()))
-                .toList();
+        List<Request> requests = pendingRequests.stream().filter(r -> r.sender().equals(sender.getUUID())).toList();
 
         if (requests.isEmpty()) {
-            sender.sendSystemMessage(
-                    Component.literal("You have no pending teleport requests.").withStyle(ChatFormatting.RED));
+            sender.sendSystemMessage(Component.literal("You have no pending teleport requests.").withStyle(ChatFormatting.RED));
             return;
         }
 
@@ -93,9 +84,8 @@ public class RequestHandler {
             ServerPlayer receiver = sender.level().getServer().getPlayerList().getPlayer(request.receiver());
 
             if (receiver != null) {
-                receiver.sendSystemMessage(
-                        Component.literal(sender.getName().getString() + " cancelled their teleport request.")
-                                .withStyle(ChatFormatting.YELLOW));
+                receiver.sendSystemMessage(Component.literal(sender.getName().getString() + " cancelled their teleport request.")
+                        .withStyle(ChatFormatting.YELLOW));
             }
 
             removeRequest(request);
@@ -116,15 +106,13 @@ public class RequestHandler {
         }
 
         if (request == null) {
-            receiver.sendSystemMessage(
-                    Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
+            receiver.sendSystemMessage(Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
             return;
         }
 
         ServerPlayer actualSender = receiver.level().getServer().getPlayerList().getPlayer(request.sender());
         if (actualSender == null) {
-            receiver.sendSystemMessage(
-                    Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
+            receiver.sendSystemMessage(Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
             removeRequest(request);
             return;
         }
@@ -132,8 +120,7 @@ public class RequestHandler {
         if (request.here()) {
             teleportHandler.teleportPlayer(receiver, Teleport.create(actualSender, actualSender.getName().getString()));
 
-            actualSender
-                    .sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
+            actualSender.sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
         } else {
             teleportHandler.teleportPlayer(actualSender, Teleport.create(receiver, receiver.getName().getString()));
 
@@ -155,15 +142,13 @@ public class RequestHandler {
         }
 
         if (request == null) {
-            receiver.sendSystemMessage(
-                    Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
+            receiver.sendSystemMessage(Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
             return;
         }
 
         ServerPlayer actualSender = receiver.level().getServer().getPlayerList().getPlayer(request.sender());
         if (actualSender == null) {
-            receiver.sendSystemMessage(
-                    Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
+            receiver.sendSystemMessage(Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
             removeRequest(request);
             return;
         }

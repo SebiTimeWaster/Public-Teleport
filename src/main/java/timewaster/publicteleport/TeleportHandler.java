@@ -4,14 +4,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import net.minecraft.core.particles.ParticleTypes;
+// import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+// import net.minecraft.sounds.SoundEvents;
+// import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 
 public class TeleportHandler {
@@ -22,80 +22,62 @@ public class TeleportHandler {
     }
 
     private static void doTeleportEffect(ServerLevel world, ServerPlayer player) {
-        world.playSound(
-                null,
-                player.getBlockX() + 0.5,
-                player.getBlockY() + 0.5,
-                player.getBlockZ() + 0.5,
-                SoundEvents.ENDERMAN_TELEPORT,
-                SoundSource.PLAYERS,
-                1.0f,
-                1.0f);
+        // TODO: fix sound and particles
+        // world.playSound(null, player.getBlockX() + 0.5, player.getBlockY() + 0.5,
+        // player.getBlockZ() + 0.5,
+        // SoundEvents.ENDERMAN_TELEPORT,
+        // SoundSource.PLAYERS, 1.0f, 1.0f);
 
-        world.sendParticles(
-                ParticleTypes.PORTAL,
-                player.getBlockX() + 0.5,
-                player.getBlockY() + 0.5,
-                player.getBlockZ() + 0.5,
-                25,
-                0.25,
-                0.25,
-                0.25,
-                0.0);
+        // world.sendParticles(ParticleTypes.PORTAL, player.getBlockX() + 0.5,
+        // player.getBlockY() + 0.5,
+        // player.getBlockZ() + 0.5, 25, 0.25,
+        // 0.25, 0.25, 0.0);
     }
 
-    private static boolean teleport(ServerPlayer player, Teleport teleport) {
-        if (teleport == null) {
-            MessageHandler.sendMessage(player, "no_teleport");
-            return false;
-        }
-
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(teleport.dimension()));
+    private static boolean teleport(ServerPlayer player, Teleport target) {
+        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
+                Identifier.parse(Objects.requireNonNull(target.dimension())));
         ServerLevel world = player.level().getServer().getLevel(dimension);
-        boolean isHomeOrBack = List.of("home", "back").contains(teleport.name());
+        boolean isHomeOrBack = List.of("home", "back").contains(target.name());
 
-        if (world == null) {
-            MessageHandler.sendMessage(player, "no_dimension");
-            return false;
-        }
-
-        player.teleportTo(
-                world,
-                teleport.x() + 0.5,
-                teleport.y() + 0.05,
-                teleport.z() + 0.5,
+        boolean result = player.teleportTo(world, target.x() + 0.5, target.y() + 0.05, target.z() + 0.5,
                 Objects.requireNonNull(Set.of()),
-                teleport.yaw() != null ? (float) teleport.yaw() : player.getYRot(),
-                teleport.pitch() != null ? (float) teleport.pitch() : player.getXRot(),
-                true);
+                target.yaw() != null ? (float) target.yaw() : player.getYRot(),
+                target.pitch() != null ? (float) target.pitch() : player.getXRot(), true);
 
-        doTeleportEffect(world, player);
-
-        MessageHandler.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", teleport.name());
-
-        return true;
-    }
-
-    public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
-        Teleport back = Teleport.create(player, "back");
-        boolean result = teleport(player,
-                fileHandler.getTeleport(isWarp ? null : player.getUUID(), target));
-
-        if (result && target != "back") {
-            fileHandler.setTeleport(player.getUUID(), back);
+        if (result) {
+            doTeleportEffect(world, player);
+            MessageHandler.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
+        } else {
+            MessageHandler.sendMessage(player, "unknown_error");
         }
 
         return result;
     }
 
-    public boolean teleportPlayer(ServerPlayer player, Teleport target) {
+    private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, boolean isWarp) {
+        if (target == null) {
+            MessageHandler.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", "back");
+            return false;
+        }
+
         Teleport back = Teleport.create(player, "back");
         boolean result = teleport(player, target);
 
-        if (result) {
+        if (result && target.name() != "back") {
             fileHandler.setTeleport(player.getUUID(), back);
         }
 
         return result;
+    }
+
+    public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
+        Teleport teleportTarget = fileHandler.getTeleport(isWarp ? null : player.getUUID(), target);
+
+        return teleportPlayerImpl(player, teleportTarget, isWarp);
+    }
+
+    public boolean teleportPlayer(ServerPlayer player, Teleport target) {
+        return teleportPlayerImpl(player, target, false);
     }
 }
