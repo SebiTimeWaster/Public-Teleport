@@ -260,10 +260,8 @@ public class FileHandler {
      * alphabetically, special keyword "back" is filtered out.
      *
      * @param uuid the player's unique id, or {@code null} to list warp names
-     * @return an alphabetically sorted list of teleport names or {@code null} on
-     *         error
+     * @return an alphabetically sorted list of teleport names
      */
-    @Nullable
     public List<String> getTeleportNames(@Nullable UUID uuid) {
         List<String> names = new ArrayList<String>();
         List<Teleport> teleports = loadTeleports(uuid);
@@ -276,11 +274,9 @@ public class FileHandler {
             }
 
             Collections.sort(names);
-
-            return names;
         }
 
-        return null;
+        return names;
     }
 
     /**
@@ -292,9 +288,8 @@ public class FileHandler {
      *
      * @param uuid        the player's unique id, or {@code null} to modify warps
      * @param newTeleport the teleport to add or update, identified by its name
-     * @return {@code true} if set was successful
      */
-    public boolean setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
+    public void setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
         List<Teleport> teleports = loadTeleports(uuid);
 
         if (teleports != null) {
@@ -311,12 +306,8 @@ public class FileHandler {
                 teleports.add(newTeleport);
             }
 
-            if (saveTeleports(uuid, teleports)) {
-                return true;
-            }
+            saveTeleports(uuid, teleports);
         }
-
-        return false;
     }
 
     /**
@@ -340,7 +331,9 @@ public class FileHandler {
                 }
             }
 
-            if (exists && saveTeleports(uuid, teleports)) {
+            if (exists) {
+                saveTeleports(uuid, teleports);
+
                 return true;
             }
         }

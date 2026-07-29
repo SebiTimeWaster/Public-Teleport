@@ -36,14 +36,19 @@ public class TeleportHandler {
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
-                Identifier.parse(Objects.requireNonNull(target.dimension())));
+            Identifier.parse(Objects.requireNonNull(target.dimension())));
         ServerLevel world = player.level().getServer().getLevel(dimension);
         boolean isHomeOrBack = List.of("home", "back").contains(target.name());
 
-        boolean result = player.teleportTo(world, target.x() + 0.5, target.y() + 0.05, target.z() + 0.5,
-                Objects.requireNonNull(Set.of()),
-                target.yaw() != null ? (float) target.yaw() : player.getYRot(),
-                target.pitch() != null ? (float) target.pitch() : player.getXRot(), true);
+        boolean result = player.teleportTo(
+            world,
+            target.x() + 0.5,
+            target.y() + 0.05,
+            target.z() + 0.5,
+            Objects.requireNonNull(Set.of()),
+            target.yaw() != null ? (float) target.yaw() : player.getYRot(),
+            target.pitch() != null ? (float) target.pitch() : player.getXRot(),
+            true);
 
         if (result) {
             doTeleportEffect(world, player);
