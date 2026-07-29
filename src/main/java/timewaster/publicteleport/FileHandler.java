@@ -1,14 +1,16 @@
 package timewaster.publicteleport;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -104,11 +106,10 @@ public class FileHandler {
     private void loadConfig() {
         if (!fileConfig.exists()) {
             saveFile(fileConfig, configDefault, true);
-            this.config = configDefault;
         }
 
-        try {
-            this.config = GSON.fromJson(new FileReader(fileConfig), Config.class);
+        try (BufferedReader reader = Files.newBufferedReader(fileConfig.toPath(), StandardCharsets.UTF_8)) {
+            this.config = GSON.fromJson(reader, Config.class);
         } catch (IOException e) {
             logger.error(MessageHandler.getMessage("err_load_config"), fileConfig, e);
             throw new UncheckedIOException(e);
@@ -140,8 +141,8 @@ public class FileHandler {
             return defaultValue;
         }
 
-        try {
-            return GSON.fromJson(new FileReader(file), listType);
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            return GSON.fromJson(reader, listType);
         } catch (IOException e) {
             logger.error(MessageHandler.getMessage("err_load_file"), file, e);
             if (failOnError) {
@@ -170,7 +171,11 @@ public class FileHandler {
         try {
             Path tempPath = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
 
-            GSON.toJson(data, new FileWriter(tempPath.toFile()));
+            try (BufferedWriter writer = Files.newBufferedWriter(tempPath, StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE)) {
+                GSON.toJson(data, writer);
+                writer.flush();
+            }
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
