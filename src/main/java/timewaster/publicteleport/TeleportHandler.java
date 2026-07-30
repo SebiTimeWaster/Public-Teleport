@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 // import net.minecraft.sounds.SoundEvents;
 // import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
+import timewaster.publicteleport.records.Teleport;
 
 public class TeleportHandler {
     private FileHandler fileHandler;
@@ -60,9 +61,9 @@ public class TeleportHandler {
         return result;
     }
 
-    private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, boolean isWarp) {
+    private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
         if (target == null) {
-            MessageHandler.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", "back");
+            MessageHandler.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", targetName);
             return false;
         }
 
@@ -79,10 +80,10 @@ public class TeleportHandler {
     public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
         Teleport teleportTarget = fileHandler.getTeleport(isWarp ? null : player.getUUID(), target);
 
-        return teleportPlayerImpl(player, teleportTarget, isWarp);
+        return teleportPlayerImpl(player, teleportTarget, target, isWarp);
     }
 
     public boolean teleportPlayer(ServerPlayer player, Teleport target) {
-        return teleportPlayerImpl(player, target, false);
+        return teleportPlayerImpl(player, target, target.name(), false);
     }
 }

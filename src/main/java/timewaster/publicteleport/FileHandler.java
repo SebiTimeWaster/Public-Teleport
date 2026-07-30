@@ -24,6 +24,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import net.fabricmc.loader.api.FabricLoader;
+import timewaster.publicteleport.records.Config;
+import timewaster.publicteleport.records.Teleport;
 
 /**
  * Handles all persistence for the mod: reading and writing the mod's

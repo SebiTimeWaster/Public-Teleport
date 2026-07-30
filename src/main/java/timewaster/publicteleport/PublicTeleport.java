@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
+import timewaster.publicteleport.commands.Registrar;
+import timewaster.publicteleport.records.Teleport;
 
 public class PublicTeleport implements ModInitializer {
 
@@ -14,11 +16,10 @@ public class PublicTeleport implements ModInitializer {
     private FileHandler fileHandler = new FileHandler(MOD_ID, LOGGER);
     private TeleportHandler teleportHandler = new TeleportHandler(fileHandler);
     private RequestHandler requestHandler = new RequestHandler(teleportHandler);
-    private CommandHandler commandHandler = new CommandHandler(fileHandler, requestHandler, teleportHandler);
 
     @Override
     public void onInitialize() {
-        commandHandler.registerCommands();
+        new Registrar(fileHandler, requestHandler, teleportHandler);
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
             if (entity instanceof ServerPlayer player) {

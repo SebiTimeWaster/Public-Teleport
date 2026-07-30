@@ -1,6 +1,4 @@
-package timewaster.publicteleport;
-
-import java.util.UUID;
+package timewaster.publicteleport.records;
 
 import net.minecraft.server.level.ServerPlayer;
 
@@ -15,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
  * @param pitch     facing pitch in degrees, or {@code null} if not set
  * @param dimension identifier of the dimension/world this teleport belongs to
  */
-record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
+public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
     /**
      * Creates a teleport destination from the players current position.
      *
@@ -23,7 +21,7 @@ record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String
      * @param name   the name of the teleport destination
      * @return the teleport destination created
      */
-    static Teleport create(ServerPlayer player, String name) {
+    public static Teleport create(ServerPlayer player, String name) {
         return new Teleport(
             name,
             (int) Math.floor(player.getX()),
@@ -33,25 +31,4 @@ record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String
             (Float) player.getXRot(),
             player.level().dimension().identifier().toString());
     }
-}
-
-/**
- * Mod-wide configuration options.
- *
- * @param maxHomes    maximum number of homes a single player may set
- * @param enableSpawn whether the spawn features are enabled
- * @param enableWarps whether warps are enabled
- * @param enableHomes whether homes are enabled
- * @param enableBack  whether the "back" (return to previous location) feature
- *                        is enabled
- * @param enableTpa   whether player-to-player teleport requests (tpa) are
- *                        enabled
- */
-record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes, boolean enableBack,
-    boolean enableTpa) {
-
-}
-
-record Request(UUID sender, UUID receiver, boolean here, long expiry) {
-
 }
