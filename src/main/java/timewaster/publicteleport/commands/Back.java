@@ -5,13 +5,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.TeleportHandler;
+import timewaster.publicteleport.Teleports;
 
 public class Back {
-    private TeleportHandler teleportHandler;
+    private final Teleports teleports;
 
-    public Back(CommandDispatcher<CommandSourceStack> dispatcher, TeleportHandler teleportHandler) {
-        this.teleportHandler = teleportHandler;
+    public Back(CommandDispatcher<CommandSourceStack> dispatcher, Teleports teleports) {
+        this.teleports = teleports;
 
         register(dispatcher);
     }
@@ -19,7 +19,7 @@ public class Back {
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("back")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return teleportHandler.teleportPlayer(player, "back", false);
+                return teleports.teleportPlayer(player, "back", false);
             })));
     }
 }

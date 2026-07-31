@@ -12,7 +12,12 @@ package timewaster.publicteleport.records;
  * @param enableTpa   whether player-to-player teleport requests (tpa) are
  *                        enabled
  */
-public record Config(int maxHomes, boolean enableSpawn, boolean enableWarps, boolean enableHomes, boolean enableBack,
+public final record Config(
+    int maxHomes,
+    int requestTimeout,
+    boolean enableSpawn,
+    boolean enableWarps,
+    boolean enableHomes,
+    boolean enableBack,
     boolean enableTpa) {
-
 }

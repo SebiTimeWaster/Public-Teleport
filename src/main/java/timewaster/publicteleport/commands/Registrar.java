@@ -20,24 +20,24 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.FileHandler;
-import timewaster.publicteleport.RequestHandler;
-import timewaster.publicteleport.TeleportHandler;
+import timewaster.publicteleport.Storage;
+import timewaster.publicteleport.Requests;
+import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Config;
 
 public class Registrar {
-    private FileHandler fileHandler;
-    private RequestHandler requestHandler;
-    private TeleportHandler teleportHandler;
+    private final Storage storage;
+    private final Requests requests;
+    private final Teleports teleports;
 
     public static enum SuggestionType {
         NONE, HOMES, WARPS, PLAYERS
     }
 
-    public Registrar(FileHandler fileHandler, RequestHandler requestHandler, TeleportHandler teleportHandler) {
-        this.fileHandler = fileHandler;
-        this.requestHandler = requestHandler;
-        this.teleportHandler = teleportHandler;
+    public Registrar(Storage storage, Requests requests, Teleports teleports) {
+        this.storage = storage;
+        this.requests = requests;
+        this.teleports = teleports;
 
         register();
     }
@@ -52,7 +52,7 @@ public class Registrar {
 
         if (type != SuggestionType.NONE) {
             if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
-                List<String> teleportNames = fileHandler
+                List<String> teleportNames = storage
                     .getTeleportNames(type == SuggestionType.HOMES ? playerUuid : null);
 
                 if (teleportNames != null) {
@@ -75,23 +75,23 @@ public class Registrar {
     }
 
     private void register() {
-        Config config = fileHandler.getConfig();
+        Config config = storage.getConfig();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (config.enableSpawn())
-                new Spawn(dispatcher, fileHandler, teleportHandler);
+                new Spawn(dispatcher, storage, teleports);
 
             if (config.enableWarps())
-                new Warps(dispatcher, this, fileHandler, teleportHandler);
+                new Warps(dispatcher, this, storage, teleports);
 
             if (config.enableHomes())
-                new Homes(dispatcher, this, fileHandler, teleportHandler);
+                new Homes(dispatcher, this, storage, teleports);
 
             if (config.enableBack())
-                new Back(dispatcher, teleportHandler);
+                new Back(dispatcher, teleports);
 
             if (config.enableTpa())
-                new Tpa(dispatcher, this, requestHandler);
+                new Tpa(dispatcher, this, requests);
         });
     }
 

@@ -5,16 +5,16 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.MessageHandler;
-import timewaster.publicteleport.RequestHandler;
+import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Requests;
 
 public class Tpa {
     private final Registrar registrar;
-    private RequestHandler requestHandler;
+    private final Requests requests;
 
-    public Tpa(CommandDispatcher<CommandSourceStack> dispatcher, Registrar registrar, RequestHandler requestHandler) {
+    public Tpa(CommandDispatcher<CommandSourceStack> dispatcher, Registrar registrar, Requests requests) {
         this.registrar = registrar;
-        this.requestHandler = requestHandler;
+        this.requests = requests;
 
         register(dispatcher);
     }
@@ -24,11 +24,11 @@ public class Tpa {
             .then(registrar.buildArgumentPlayer("target", Registrar.SuggestionType.PLAYERS,
                 (ServerPlayer player, ServerPlayer target) -> {
                     if (player.getName().equals(target.getName())) {
-                        MessageHandler.sendMessage(player, "no_teleport_self");
+                        Messages.sendMessage(player, "no_teleport_self");
                         return false;
                     }
 
-                    requestHandler.sendTeleportRequest(player, target, false);
+                    requests.sendRequest(player, target, false);
 
                     return true;
                 })));
@@ -37,18 +37,18 @@ public class Tpa {
             .then(registrar.buildArgumentPlayer("target", Registrar.SuggestionType.PLAYERS,
                 (ServerPlayer player, ServerPlayer target) -> {
                     if (player.getName().equals(target.getName())) {
-                        MessageHandler.sendMessage(player, "no_teleport_self");
+                        Messages.sendMessage(player, "no_teleport_self");
                         return false;
                     }
 
-                    requestHandler.sendTeleportRequest(player, target, true);
+                    requests.sendRequest(player, target, true);
 
                     return true;
                 })));
 
         dispatcher.register(Commands.literal("tpcancel")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                requestHandler.cancelTeleportRequest(player);
+                requests.cancelRequest(player);
 
                 return true;
             })));
@@ -56,12 +56,12 @@ public class Tpa {
         dispatcher.register(Commands.literal("tpaccept")
             .then(registrar.buildArgumentPlayer("sender", Registrar.SuggestionType.PLAYERS,
                 (ServerPlayer player, ServerPlayer target) -> {
-                    requestHandler.acceptTeleportRequest(player, target);
+                    requests.acceptRequest(player, target);
 
                     return true;
                 }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                requestHandler.acceptTeleportRequest(player, null);
+                requests.acceptRequest(player, null);
 
                 return true;
             })));
@@ -69,12 +69,12 @@ public class Tpa {
         dispatcher.register(Commands.literal("tpdeny")
             .then(registrar.buildArgumentPlayer("sender", Registrar.SuggestionType.PLAYERS,
                 (ServerPlayer player, ServerPlayer target) -> {
-                    requestHandler.denyTeleportRequest(player, target);
+                    requests.denyRequest(player, target);
 
                     return true;
                 }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                requestHandler.denyTeleportRequest(player, null);
+                requests.denyRequest(player, null);
 
                 return true;
             })));

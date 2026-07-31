@@ -13,7 +13,14 @@ import net.minecraft.server.level.ServerPlayer;
  * @param pitch     facing pitch in degrees, or {@code null} if not set
  * @param dimension identifier of the dimension/world this teleport belongs to
  */
-public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch, String dimension) {
+public final record Teleport(
+    String name,
+    int x,
+    int y,
+    int z,
+    Float yaw,
+    Float pitch,
+    String dimension) {
     /**
      * Creates a teleport destination from the players current position.
      *
@@ -21,7 +28,7 @@ public record Teleport(String name, int x, int y, int z, Float yaw, Float pitch,
      * @param name   the name of the teleport destination
      * @return the teleport destination created
      */
-    public static Teleport create(ServerPlayer player, String name) {
+    public static final Teleport create(ServerPlayer player, String name) {
         return new Teleport(
             name,
             (int) Math.floor(player.getX()),

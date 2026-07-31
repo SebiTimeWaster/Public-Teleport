@@ -12,21 +12,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.LevelData.RespawnData;
-import timewaster.publicteleport.FileHandler;
-import timewaster.publicteleport.MessageHandler;
-import timewaster.publicteleport.TeleportHandler;
+import timewaster.publicteleport.Storage;
+import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
 public class Spawn {
     private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
         .hasPermission(Permissions.COMMANDS_OWNER);
-    private FileHandler fileHandler;
-    private TeleportHandler teleportHandler;
+    private final Storage storage;
+    private final Teleports teleports;
 
-    public Spawn(CommandDispatcher<CommandSourceStack> dispatcher, FileHandler fileHandler,
-        TeleportHandler teleportHandler) {
-        this.fileHandler = fileHandler;
-        this.teleportHandler = teleportHandler;
+    public Spawn(CommandDispatcher<CommandSourceStack> dispatcher, Storage storage, Teleports teleports) {
+        this.storage = storage;
+        this.teleports = teleports;
 
         register(dispatcher);
     }
@@ -38,17 +37,17 @@ public class Spawn {
                 RespawnData spawn = RespawnData.of(player.level().dimension(), player.blockPosition(), 0, 0);
                 MinecraftServer server = world.getServer();
 
-                fileHandler.setTeleport(null, Teleport.create(player, "spawn"));
+                storage.setTeleport(null, Teleport.create(player, "spawn"));
                 world.setRespawnData(spawn);
                 server.getGameRules().set(GameRules.RESPAWN_RADIUS, 0, server);
-                MessageHandler.sendMessage(player, "spawn_set");
+                Messages.sendMessage(player, "spawn_set");
 
                 return true;
             })));
 
         dispatcher.register(Commands.literal("spawn")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return teleportHandler.teleportPlayer(player, "spawn", true);
+                return teleports.teleportPlayer(player, "spawn", true);
             })));
     }
 }

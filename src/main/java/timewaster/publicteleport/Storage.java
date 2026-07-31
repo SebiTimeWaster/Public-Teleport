@@ -40,26 +40,26 @@ import timewaster.publicteleport.records.Teleport;
  * This class is not thread-safe; callers are expected to only access it from a
  * single thread (e.g. the server thread) at a time.
  */
-public class FileHandler {
+public class Storage {
 
     /** Fallback configuration used when no config file exists yet. */
-    private static final Config configDefault = new Config(10, true, true, true, true, true);
+    private static final Config configDefault = new Config(10, 60, true, true, true, true, true);
     /** Shared Gson instance used for all JSON (de)serialization. */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     /** Directory containing this mod's config, e.g. {@code config/<modId>/}. */
-    private Path pathConfig;
+    private final Path pathConfig;
     /** Path for per-player home files, e.g. {@code config/<modId>/homes/}. */
-    private Path pathConfigHomes;
+    private final Path pathConfigHomes;
     /** Logger used to report I/O failures. */
-    private Logger logger;
+    private final Logger logger;
     /** The {@code config.json} file on disk. */
-    private File fileConfig;
+    private final File fileConfig;
     /** The {@code warps.json} file on disk. */
-    private File fileWarps;
+    private final File fileWarps;
+    /** The currently loaded mod configuration. */
+    private final Config config;
     /** Cache of the shared warp list, kept in sync with {@link #fileWarps}. */
     private List<Teleport> warps;
-    /** The currently loaded mod configuration. */
-    private Config config;
 
     /**
      * Creates a new file handler, ensuring the config directories exist and loading
@@ -71,14 +71,14 @@ public class FileHandler {
      * @throws UncheckedIOException if the config directories and config/data files
      *                                  cannot be created
      */
-    public FileHandler(String modId, Logger logger) {
+    public Storage(String modId, Logger logger) {
         this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(modId);
         this.pathConfigHomes = pathConfig.resolve("homes");
         this.logger = logger;
         this.fileConfig = pathConfig.resolve("config.json").toFile();
         this.fileWarps = pathConfig.resolve("warps.json").toFile();
         createDirectories();
-        loadConfig();
+        this.config = loadConfig();
         this.warps = loadFile(fileWarps, true);
     }
 
@@ -92,7 +92,7 @@ public class FileHandler {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error(MessageHandler.getMessage("err_create_dir"));
+            logger.error(Messages.getMessage("err_create_dir"));
             throw new UncheckedIOException(e);
         }
     }
@@ -105,15 +105,15 @@ public class FileHandler {
      *
      * @throws UncheckedIOException if the config could not be loaded
      */
-    private void loadConfig() {
+    private Config loadConfig() {
         if (!fileConfig.exists()) {
             saveFile(fileConfig, configDefault, true);
         }
 
         try (BufferedReader reader = Files.newBufferedReader(fileConfig.toPath(), StandardCharsets.UTF_8)) {
-            this.config = GSON.fromJson(reader, Config.class);
+            return GSON.fromJson(reader, Config.class);
         } catch (IOException e) {
-            logger.error(MessageHandler.getMessage("err_load_config"), fileConfig, e);
+            logger.error(Messages.getMessage("err_load_config"), fileConfig, e);
             throw new UncheckedIOException(e);
         }
     }
@@ -146,7 +146,7 @@ public class FileHandler {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             return GSON.fromJson(reader, listType);
         } catch (IOException e) {
-            logger.error(MessageHandler.getMessage("err_load_file"), file, e);
+            logger.error(Messages.getMessage("err_load_file"), file, e);
             if (failOnError) {
                 throw new UncheckedIOException(e);
             } else {
@@ -181,7 +181,7 @@ public class FileHandler {
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            logger.error(MessageHandler.getMessage("err_save_file"), file, e);
+            logger.error(Messages.getMessage("err_save_file"), file, e);
             if (failOnError) {
                 throw new UncheckedIOException(e);
             } else {

@@ -15,11 +15,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
-public class TeleportHandler {
-    private FileHandler fileHandler;
+public class Teleports {
+    private final Storage storage;
 
-    public TeleportHandler(FileHandler fileHandler) {
-        this.fileHandler = fileHandler;
+    public Teleports(Storage storage) {
+        this.storage = storage;
     }
 
     private static void doTeleportEffect(ServerLevel world, ServerPlayer player) {
@@ -53,9 +53,9 @@ public class TeleportHandler {
 
         if (result) {
             doTeleportEffect(world, player);
-            MessageHandler.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
+            Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
         } else {
-            MessageHandler.sendMessage(player, "unknown_error");
+            Messages.sendMessage(player, "unknown_error");
         }
 
         return result;
@@ -63,7 +63,7 @@ public class TeleportHandler {
 
     private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
         if (target == null) {
-            MessageHandler.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", targetName);
+            Messages.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", targetName);
             return false;
         }
 
@@ -71,19 +71,42 @@ public class TeleportHandler {
         boolean result = teleport(player, target);
 
         if (result && target.name() != "back") {
-            fileHandler.setTeleport(player.getUUID(), back);
+            storage.setTeleport(player.getUUID(), back);
         }
 
         return result;
     }
 
     public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
-        Teleport teleportTarget = fileHandler.getTeleport(isWarp ? null : player.getUUID(), target);
+        Teleport teleportTarget = storage.getTeleport(isWarp ? null : player.getUUID(), target);
 
         return teleportPlayerImpl(player, teleportTarget, target, isWarp);
     }
 
     public boolean teleportPlayer(ServerPlayer player, Teleport target) {
         return teleportPlayerImpl(player, target, target.name(), false);
+    }
+
+    public static boolean listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
+        if (teleportNames == null) {
+            Messages.sendMessage(player, "unknown_error");
+            return false;
+        }
+
+        if (teleportNames.size() == 0) {
+            Messages.sendMessage(player, isWarps ? "no_warps" : "no_homes");
+        } else {
+            Messages.Builder builder = new Messages.Builder().append(isWarps ? "warps" : "homes");
+
+            for (String name : teleportNames) {
+                builder.append("line");
+                builder.button(String.format("[%s]", name), isWarps ? "/warp " + name : "/home " + name,
+                    Messages.getMessage("teleport_to", name));
+            }
+
+            builder.send(player);
+        }
+
+        return true;
     }
 }

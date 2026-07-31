@@ -5,21 +5,21 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.FileHandler;
-import timewaster.publicteleport.MessageHandler;
-import timewaster.publicteleport.TeleportHandler;
+import timewaster.publicteleport.Storage;
+import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
 public class Homes {
     private final Registrar registrar;
-    private FileHandler fileHandler;
-    private TeleportHandler teleportHandler;
+    private final Storage storage;
+    private final Teleports teleports;
 
-    public Homes(CommandDispatcher<CommandSourceStack> dispatcher, Registrar registrar, FileHandler fileHandler,
-        TeleportHandler teleportHandler) {
+    public Homes(CommandDispatcher<CommandSourceStack> dispatcher, Registrar registrar, Storage storage,
+        Teleports teleports) {
         this.registrar = registrar;
-        this.fileHandler = fileHandler;
-        this.teleportHandler = teleportHandler;
+        this.storage = storage;
+        this.teleports = teleports;
 
         register(dispatcher);
     }
@@ -29,18 +29,18 @@ public class Homes {
             .then(registrar.buildArgumentString("name", Registrar.SuggestionType.NONE,
                 (ServerPlayer player, String argValue) -> {
                     if (argValue.equals("back")) {
-                        MessageHandler.sendMessage(player, "reserved_name");
+                        Messages.sendMessage(player, "reserved_name");
                         return false;
                     }
 
-                    fileHandler.setTeleport(player.getUUID(), Teleport.create(player, argValue));
-                    MessageHandler.sendMessage(player, "named_home_set", argValue);
+                    storage.setTeleport(player.getUUID(), Teleport.create(player, argValue));
+                    Messages.sendMessage(player, "named_home_set", argValue);
 
                     return true;
                 }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                fileHandler.setTeleport(player.getUUID(), Teleport.create(player, "home"));
-                MessageHandler.sendMessage(player, "home_set");
+                storage.setTeleport(player.getUUID(), Teleport.create(player, "home"));
+                Messages.sendMessage(player, "home_set");
 
                 return true;
             })));
@@ -49,12 +49,12 @@ public class Homes {
             .then(registrar.buildArgumentString("name", Registrar.SuggestionType.HOMES,
                 (ServerPlayer player, String argValue) -> {
                     if (argValue.equals("back")) {
-                        MessageHandler.sendMessage(player, "reserved_name");
+                        Messages.sendMessage(player, "reserved_name");
                         return false;
                     }
 
-                    boolean success = fileHandler.deleteTeleport(player.getUUID(), argValue);
-                    MessageHandler.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
+                    boolean success = storage.deleteTeleport(player.getUUID(), argValue);
+                    Messages.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
 
                     return success;
                 })));
@@ -63,19 +63,19 @@ public class Homes {
             .then(registrar.buildArgumentString("name", Registrar.SuggestionType.HOMES,
                 (ServerPlayer player, String argValue) -> {
                     if (argValue.equals("back")) {
-                        MessageHandler.sendMessage(player, "reserved_name");
+                        Messages.sendMessage(player, "reserved_name");
                         return false;
                     }
 
-                    return teleportHandler.teleportPlayer(player, argValue, false);
+                    return teleports.teleportPlayer(player, argValue, false);
                 }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return teleportHandler.teleportPlayer(player, "home", false);
+                return teleports.teleportPlayer(player, "home", false);
             })));
 
         dispatcher.register(Commands.literal("homes")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return MessageHandler.listTeleportNames(player, fileHandler.getTeleportNames(player.getUUID()), false);
+                return Teleports.listTeleportNames(player, storage.getTeleportNames(player.getUUID()), false);
             })));
     }
 }
