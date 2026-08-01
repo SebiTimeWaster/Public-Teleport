@@ -43,7 +43,7 @@ On first run a config file is created in `config/public-teleport/config.json` wi
 
 | Field            | Default | Description                                                                 |
 | ---------------- | ------- | --------------------------------------------------------------------------- |
-| `maxHomes`       | 10      | The maximum amount of homes a player can have                               |
+| `maxHomes`       | 10      | The maximum amount of homes a player can have (Set to `0` to disable limit) |
 | `requestTimeout` | 60      | How long a teleport request is active before it is removed in seconds       |
 | `enableSpawn`    | true    | If the `/setspawn, /spawn` commands are enabled                             |
 | `enableWarps`    | true    | If the `/setwarp, /delwarp, /warp, /warps` commands are enabled             |

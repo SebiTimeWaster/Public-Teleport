@@ -110,6 +110,7 @@ public class Messages {
             case "home_no_exist" -> error("Home '%s' does not exist!", params);
             case "home_reserved_name" -> error("The name 'back' cannot be used!");
             case "home_set_named" -> success("Home %s set!", params);
+            case "home_set_max_reached" -> error("Could not set home, your limit of %s homes is full!", params);
             case "home_set" -> success("Home set!");
             case "no_homes" -> error("You have no homes.");
             case "no_requests" -> error("You have no pending teleport requests.");

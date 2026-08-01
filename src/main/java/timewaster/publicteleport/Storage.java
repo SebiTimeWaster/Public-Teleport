@@ -295,26 +295,40 @@ public class Storage {
      *
      * @param uuid        the player's unique id, or {@code null} to modify warps
      * @param newTeleport the teleport to add or update, identified by its name
+     * @return {@code false} if a new teleport would go over the {@code maxHomes}
+     *         limit and is not saved
      */
-    public void setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
+    public boolean setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
         List<Teleport> teleports = loadTeleports(uuid);
 
         if (teleports != null) {
             boolean exists = false;
+            int numTeleports = 0;
 
             for (int i = 0; i < teleports.size(); i++) {
                 if (teleports.get(i).name().equals(newTeleport.name())) {
                     teleports.set(i, newTeleport);
                     exists = true;
                 }
+
+                if (!teleports.get(i).name().equals("back")) {
+                    numTeleports++;
+                }
             }
 
             if (!exists) {
+                if (uuid != null && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
+                    && newTeleport.name() != "back") {
+                    return false;
+                }
+
                 teleports.add(newTeleport);
             }
 
             saveTeleports(uuid, teleports);
         }
+
+        return true;
     }
 
     /**

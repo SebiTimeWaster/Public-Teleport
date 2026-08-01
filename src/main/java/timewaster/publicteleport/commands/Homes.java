@@ -34,16 +34,26 @@ public class Homes {
                     return false;
                 }
 
-                storage.setTeleport(player.getUUID(), Teleport.create(player, argValue));
-                Messages.sendMessage(player, "home_set_named", argValue);
+                if (!storage.setTeleport(player.getUUID(), Teleport.create(player, argValue))) {
+                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
 
-                return true;
+                    return false;
+                } else {
+                    Messages.sendMessage(player, "home_set_named", argValue);
+
+                    return true;
+                }
             }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                storage.setTeleport(player.getUUID(), Teleport.create(player, "home"));
-                Messages.sendMessage(player, "home_set");
+                if (!storage.setTeleport(player.getUUID(), Teleport.create(player, "home"))) {
+                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
 
-                return true;
+                    return false;
+                } else {
+                    Messages.sendMessage(player, "home_set");
+
+                    return true;
+                }
             })));
 
         dispatcher.register(Commands.literal("delhome")
