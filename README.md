@@ -6,10 +6,10 @@
 
 An easy to use Fabric Teleport Mod
 
-- Homes, Warps, Back, Spawn, TPA, TPAhere
-- Server-side or client-side (Multiplayer/Singleplayer, client-side installation is NOT need for server-side installation!)
-- Minimal configuration with predefined sane values
-- The only language is English at the moment, if you want to provide translations open an Issue
+- Homes, Warps, Back, Spawn, TPA
+- Server or client-side (Multi/Singleplayer, client-side installation is NOT needed for server-side installation!)
+- Minimal configuration with predefined values
+- The only language is English at the moment, if you want to provide translations feel free to open an Issue
 
 ## Commands
 
@@ -57,7 +57,7 @@ To change these defaults edit the config file and restart your server.
 
 Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
-- Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) page that fits your Minecraft version and put it into your `mods` folder on your server or client
+- Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into your `mods` folder on your server or client
 - Edit the configuration as described in Configuration if needed
 - Restart your server or client
 
