@@ -24,7 +24,7 @@ public class Messages {
 
         ChatFormatting color = switch (type) {
             case TEXT -> null;
-            case SUCCESS -> ChatFormatting.AQUA;
+            case SUCCESS -> ChatFormatting.GREEN;
             case ERROR -> ChatFormatting.RED;
             case BUTTON -> ChatFormatting.GOLD;
             case REQUEST -> ChatFormatting.YELLOW;

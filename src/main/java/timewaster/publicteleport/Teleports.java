@@ -63,7 +63,7 @@ public class Teleports {
 
     private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
         if (target == null) {
-            Messages.sendMessage(player, isWarp ? "warp_not_exist" : "home_no_exist", targetName);
+            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", targetName);
             return false;
         }
 

@@ -19,7 +19,9 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
+import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Requests;
 import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Teleports;
@@ -114,9 +116,9 @@ public class Registrar {
             });
     }
 
-    public RequiredArgumentBuilder<CommandSourceStack, String> buildArgumentPlayer(@NotNull String argName,
+    public RequiredArgumentBuilder<CommandSourceStack, EntitySelector> buildArgumentPlayer(@NotNull String argName,
         SuggestionType suggestionType, BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
-        return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
+        return Commands.argument(argName, EntityArgument.player())
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
             .executes(context -> {
                 ServerPlayer player = getPlayer(context);
