@@ -86,6 +86,7 @@ public class Messages {
         }
     }
 
+    // TODO: split into sendError. sendSuccess, send...
     public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
         Component message = switch (identifier) {
             case "home_deleted" -> createText(String.format("Home '%s' deleted!", params), Type.SUCCESS);
