@@ -63,7 +63,7 @@ public class Teleports {
 
     private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
         if (target == null) {
-            Messages.sendMessage(player, isWarp ? "warp_not_exist" : "home_not_exist", targetName);
+            Messages.sendMessage(player, isWarp ? "warp_not_exist" : "home_no_exist", targetName);
             return false;
         }
 
@@ -96,7 +96,7 @@ public class Teleports {
         if (teleportNames.size() == 0) {
             Messages.sendMessage(player, isWarps ? "no_warps" : "no_homes");
         } else {
-            Messages.Builder builder = new Messages.Builder().append(isWarps ? "warps" : "homes");
+            Messages.Builder builder = new Messages.Builder().append(isWarps ? "headline_warps" : "headline_homes");
 
             for (String name : teleportNames) {
                 builder.append("line");

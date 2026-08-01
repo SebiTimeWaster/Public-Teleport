@@ -73,19 +73,19 @@ public class Requests {
             receiver.getName().toString(), reverse, expires);
 
         if (oldRequest != null) {
-            Messages.sendMessage(sender, "old_request_exist", oldRequest.receiverName());
+            Messages.sendMessage(sender, "request_old_exist", oldRequest.receiverName());
             return false;
         }
 
         pendingRequests.add(newRequest);
 
         new Messages.Builder()
-            .append(reverse ? "teleport_request_rev" : "teleport_request", Messages.Type.REQUEST, senderName)
+            .append(reverse ? "request_received_rev" : "request_received", Messages.Type.REQUEST, senderName)
             .button(Messages.getMessage("button_accept"), "/tpaccept " + senderName,
-                Messages.getMessage("accept_request", senderName), Messages.Type.SUCCESS)
+                Messages.getMessage("request_accept", senderName), Messages.Type.SUCCESS)
             .append(" ")
             .button(Messages.getMessage("button_deny"), "/tpdeny " + senderName,
-                Messages.getMessage("deny_request", senderName), Messages.Type.ERROR)
+                Messages.getMessage("request_deny", senderName), Messages.Type.ERROR)
             .send(receiver);
         Messages.sendMessage(sender, "request_sent", receiver.getName().getString());
 
@@ -125,19 +125,19 @@ public class Requests {
         }
 
         if (sender == null) {
-            Messages.sendMessage(receiver, "sender_no_ingame", request.senderName());
+            Messages.sendMessage(receiver, "request_sender_no_ingame", request.senderName());
             pendingRequests.remove(request);
             return false;
         }
+
+        Messages.sendMessage(sender, "request_accepted_sender", request.receiverName());
+        Messages.sendMessage(receiver, "request_accepted_receiver", request.senderName());
 
         if (!request.reverse()) {
             teleports.teleportPlayer(sender, Teleport.create(receiver, request.receiverName()));
         } else {
             teleports.teleportPlayer(receiver, Teleport.create(sender, sender.getName().getString()));
         }
-
-        Messages.sendMessage(sender, "request_accepted_sender", request.receiverName());
-        Messages.sendMessage(receiver, "request_accepted_receiver", request.senderName());
 
         pendingRequests.remove(request);
 

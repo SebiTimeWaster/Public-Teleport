@@ -30,12 +30,12 @@ public class Homes {
         dispatcher.register(Commands.literal("sethome")
             .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "reserved_name");
+                    Messages.sendMessage(player, "home_reserved_name");
                     return false;
                 }
 
                 storage.setTeleport(player.getUUID(), Teleport.create(player, argValue));
-                Messages.sendMessage(player, "named_home_set", argValue);
+                Messages.sendMessage(player, "home_set_named", argValue);
 
                 return true;
             }))
@@ -49,12 +49,12 @@ public class Homes {
         dispatcher.register(Commands.literal("delhome")
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "reserved_name");
+                    Messages.sendMessage(player, "home_reserved_name");
                     return false;
                 }
 
                 boolean success = storage.deleteTeleport(player.getUUID(), argValue);
-                Messages.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
+                Messages.sendMessage(player, success ? "home_deleted" : "home_no_exist", argValue);
 
                 return success;
             })));
@@ -62,7 +62,7 @@ public class Homes {
         dispatcher.register(Commands.literal("home")
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "reserved_name");
+                    Messages.sendMessage(player, "home_reserved_name");
                     return false;
                 }
 

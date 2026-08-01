@@ -43,7 +43,7 @@ public class Warps {
         dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
             .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 boolean success = storage.deleteTeleport(null, argValue);
-                Messages.sendMessage(player, success ? "warp_deleted" : "warp_not_exist", argValue);
+                Messages.sendMessage(player, success ? "warp_deleted" : "warp_no_exist", argValue);
 
                 return success;
             })));
