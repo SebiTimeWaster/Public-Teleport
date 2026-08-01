@@ -21,7 +21,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Requests;
 import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Teleports;

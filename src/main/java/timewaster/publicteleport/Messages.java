@@ -38,6 +38,24 @@ public class Messages {
         }
     }
 
+    @NotNull
+    private static Component colorFormat(String text, Type color, Object... params) {
+        if (params != null)
+            text = String.format(text, params);
+
+        return createText(text, color);
+    }
+
+    @NotNull
+    private static Component error(String text, Object... params) {
+        return colorFormat(text, Type.ERROR, params);
+    }
+
+    @NotNull
+    private static Component success(String text, Object... params) {
+        return colorFormat(text, Type.SUCCESS, params);
+    }
+
     private static void sendMessage(ServerPlayer player, @NotNull Component message) {
         player.sendSystemMessage(message);
     }
@@ -86,48 +104,38 @@ public class Messages {
         }
     }
 
-    // TODO: split into sendError. sendSuccess, send...
     public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
         Component message = switch (identifier) {
-            case "home_deleted" -> createText(String.format("Home '%s' deleted!", params), Type.SUCCESS);
-            case "home_no_exist" -> createText(String.format("Home '%s' does not exist!", params), Type.ERROR);
-            case "home_reserved_name" -> createText("The name 'back' cannot be used!", Type.ERROR);
-            case "home_set_named" -> createText(String.format("Home %s set!", params), Type.SUCCESS);
-            case "home_set" -> createText("Home set!", Type.SUCCESS);
-            case "no_homes" -> createText("You have no homes.", Type.ERROR);
-            case "no_requests" -> createText("You have no pending teleport requests.", Type.ERROR);
-            case "no_warps" -> createText("There are no warps.", Type.ERROR);
-            case "request_accepted_receiver" ->
-                createText(String.format("The teleport request from %s was accepted!", params), Type.SUCCESS);
-            case "request_accepted_sender" ->
-                createText(String.format("The teleport request to %s was accepted!", params), Type.SUCCESS);
-            case "request_cancelled_receiver" ->
-                createText(String.format("%s cancelled their teleport request.", params), Type.ERROR);
-            case "request_cancelled_sender" -> createText("Teleport request cancelled.", Type.ERROR);
-            case "request_denied_receiver" ->
-                createText(String.format("The teleport request from %s was denied!", params), Type.ERROR);
-            case "request_denied_sender" ->
-                createText(String.format("The teleport request to %s was denied!", params), Type.ERROR);
-            case "request_no_exist" -> createText("Teleport request doesn't exist.", Type.ERROR);
-            case "request_old_exist" -> createText(String
-                .format("You have a running teleport request to %s, please cancel it with '/tpcancel' first!", params),
-                Type.ERROR);
-            case "request_sender_no_ingame" ->
-                createText(String.format("%s is no longer in-game, request cancelled!", params), Type.SUCCESS);
-            case "request_sent" -> createText(String.format("Teleport request sent to %s!", params), Type.SUCCESS);
-            case "request_teleport_self" -> createText("You cannot teleport to yourself!", Type.ERROR);
-            case "request_timedout_receiver" ->
-                createText(String.format("The teleport request from %s has timed out!", params), Type.ERROR);
-            case "request_timedout_sender" ->
-                createText(String.format("The teleport request to %s has timed out!", params), Type.ERROR);
-            case "spawn_set" -> createText("Spawn set!", Type.SUCCESS);
-            case "teleported_to" -> createText(String.format("Teleported to %s!", params), Type.SUCCESS);
-            case "teleported" -> createText(String.format("Teleported %s!", params), Type.SUCCESS);
-            case "unknown_error" -> createText("Unknown error!", Type.ERROR);
-            case "warp_deleted" -> createText(String.format("Warp '%s' deleted!", params), Type.SUCCESS);
-            case "warp_no_exist" -> createText(String.format("Warp '%s' does not exist!", params), Type.ERROR);
-            case "warp_set" -> createText(String.format("Warp %s set!", params), Type.SUCCESS);
-            default -> createText("Unknown Error", Type.ERROR);
+            case "home_deleted" -> success("Home '%s' deleted!", params);
+            case "home_no_exist" -> error("Home '%s' does not exist!", params);
+            case "home_reserved_name" -> error("The name 'back' cannot be used!");
+            case "home_set_named" -> success("Home %s set!", params);
+            case "home_set" -> success("Home set!");
+            case "no_homes" -> error("You have no homes.");
+            case "no_requests" -> error("You have no pending teleport requests.");
+            case "no_warps" -> error("There are no warps.");
+            case "request_accepted_receiver" -> success("The teleport request from %s was accepted!", params);
+            case "request_accepted_sender" -> success("The teleport request to %s was accepted!", params);
+            case "request_cancelled_receiver" -> error("%s cancelled their teleport request.", params);
+            case "request_cancelled_sender" -> error("Teleport request cancelled.");
+            case "request_denied_receiver" -> error("The teleport request from %s was denied!", params);
+            case "request_denied_sender" -> error("The teleport request to %s was denied!", params);
+            case "request_no_exist" -> error("Teleport request doesn't exist.");
+            case "request_old_exist" ->
+                error("You have a running teleport request to %s, please cancel it with '/tpcancel' first!", params);
+            case "request_sender_no_ingame" -> success("%s is no longer in-game, request cancelled!", params);
+            case "request_sent" -> success("Teleport request sent to %s!", params);
+            case "request_teleport_self" -> error("You cannot teleport to yourself!");
+            case "request_timedout_receiver" -> error("The teleport request from %s has timed out!", params);
+            case "request_timedout_sender" -> error("The teleport request to %s has timed out!", params);
+            case "spawn_set" -> success("Spawn set!");
+            case "teleported_to" -> success("Teleported to %s!", params);
+            case "teleported" -> success("Teleported %s!", params);
+            case "unknown_error" -> error("Unknown error!");
+            case "warp_deleted" -> success("Warp '%s' deleted!", params);
+            case "warp_no_exist" -> error("Warp '%s' does not exist!", params);
+            case "warp_set" -> success("Warp %s set!", params);
+            default -> error("Unknown Error");
         };
 
         sendMessage(player, message);
