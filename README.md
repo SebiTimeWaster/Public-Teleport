@@ -13,29 +13,29 @@ An easy to use Fabric Teleport Mod
 
 ## Commands
 
-| Command                | Only OP | Description                                                            |
-| ---------------------- | :-----: | ---------------------------------------------------------------------- |
-| **Spawn:**             |         |                                                                        |
-| `/setspawn`            |    ✓    | Create a`spawn` warp and set world spawn at your present location/view |
-| `/spawn`               |         | Teleport to spawn                                                      |
-| **Warps:**             |         |                                                                        |
-| `/setwarp <name>`      |    ✓    | Create a warp at your present location/view                            |
-| `/delwarp <name>`      |    ✓    | Delete a warp                                                          |
-| `/warp <name>`         |         | Teleport to a warp                                                     |
-| `/warps`               |         | List all warps                                                         |
-| **Homes:**             |         |                                                                        |
-| `/sethome [<name>]`    |         | Set a new home (Default: `home`) at your present location/view         |
-| `/delhome <name>`      |         | Delete an existing home                                                |
-| `/home [<name>]`       |         | Teleport to a home (Default: `home`)                                   |
-| `/homes`               |         | List all your current homes                                            |
-| **Back:**              |         |                                                                        |
-| `/back`                |         | Teleport to your last location before teleporting or dying             |
-| **TPA:**               |         |                                                                        |
-| `/tpa <player>`        |         | Request teleportation to`<player>`                                     |
-| `/tpahere <player>`    |         | Request`<player>` to teleport to you                                   |
-| `/tpcancel`            |         | Cancel your teleportation request                                      |
-| `/tpaccept [<player>]` |         | Accept request from`<player>` (Default: Most recent)                   |
-| `/tpdeny [<player>]`   |         | Deny request from`<player>` (Default: Most recent)                     |
+| Command                | Only OP | Description                                                                |
+| ---------------------- | :-----: | -------------------------------------------------------------------------- |
+| **Spawn:**             |         |                                                                            |
+| `/setspawn`            |    ✓    | Create a `spawn` warp and set world spawn at<br>your present location/view |
+| `/spawn`               |         | Teleport to spawn                                                          |
+| **Warps:**             |         |                                                                            |
+| `/setwarp <name>`      |    ✓    | Create a warp at your present location/view                                |
+| `/delwarp <name>`      |    ✓    | Delete a warp                                                              |
+| `/warp <name>`         |         | Teleport to a warp                                                         |
+| `/warps`               |         | List all warps                                                             |
+| **Homes:**             |         |                                                                            |
+| `/sethome [<name>]`    |         | Set a new home (Default: `home`) at your present location/view             |
+| `/delhome <name>`      |         | Delete an existing home                                                    |
+| `/home [<name>]`       |         | Teleport to a home (Default: `home`)                                       |
+| `/homes`               |         | List all your current homes                                                |
+| **Back:**              |         |                                                                            |
+| `/back`                |         | Teleport to your last location before teleporting or dying                 |
+| **TPA:**               |         |                                                                            |
+| `/tpa <player>`        |         | Request teleportation to`<player>`                                         |
+| `/tpahere <player>`    |         | Request`<player>` to teleport to you                                       |
+| `/tpcancel`            |         | Cancel your teleportation request                                          |
+| `/tpaccept [<player>]` |         | Accept request from`<player>` (Default: Most recent)                       |
+| `/tpdeny [<player>]`   |         | Deny request from`<player>` (Default: Most recent)                         |
 
 ## Configuration
 
