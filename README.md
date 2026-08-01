@@ -30,7 +30,7 @@ An easy to use Fabric Teleport Mod
 | `/homes`               |         | List all your current homes                                                |
 | **Back:**              |         |                                                                            |
 | `/back`                |         | Teleport to your last location before teleporting or dying                 |
-| **TPA:**               |         |                                                                            |
+| **TPA:**               |         | TPA functionality is disabled when run client-side!                        |
 | `/tpa <player>`        |         | Request teleportation to`<player>`                                         |
 | `/tpahere <player>`    |         | Request`<player>` to teleport to you                                       |
 | `/tpcancel`            |         | Cancel your teleportation request                                          |

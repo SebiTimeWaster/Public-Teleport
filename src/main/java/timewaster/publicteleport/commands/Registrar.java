@@ -15,7 +15,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -91,7 +93,7 @@ public class Registrar {
             if (config.enableBack())
                 new Back(dispatcher, teleports);
 
-            if (config.enableTpa())
+            if (config.enableTpa() && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER)
                 new Tpa(dispatcher, this, requests);
         });
     }
