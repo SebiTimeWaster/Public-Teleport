@@ -43,7 +43,7 @@ public class Requests {
     }
 
     @Nullable
-    private ServerPlayer getPlayerByOtherPlayer(UUID playerToGet, ServerPlayer otherPlayer) {
+    private ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
         return otherPlayer.level().getServer().getPlayerList().getPlayer(playerToGet);
     }
 
