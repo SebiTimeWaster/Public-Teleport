@@ -5,12 +5,14 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
 public class Homes {
+    private static final Registrar.SuggestionType typeNone = Registrar.SuggestionType.NONE;
+    private static final Registrar.SuggestionType typeHomes = Registrar.SuggestionType.HOMES;
     private final Registrar registrar;
     private final Storage storage;
     private final Teleports teleports;
@@ -26,18 +28,17 @@ public class Homes {
 
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("sethome")
-            .then(registrar.buildArgumentString("name", Registrar.SuggestionType.NONE,
-                (ServerPlayer player, String argValue) -> {
-                    if (argValue.equals("back")) {
-                        Messages.sendMessage(player, "reserved_name");
-                        return false;
-                    }
+            .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
+                if (argValue.equals("back")) {
+                    Messages.sendMessage(player, "reserved_name");
+                    return false;
+                }
 
-                    storage.setTeleport(player.getUUID(), Teleport.create(player, argValue));
-                    Messages.sendMessage(player, "named_home_set", argValue);
+                storage.setTeleport(player.getUUID(), Teleport.create(player, argValue));
+                Messages.sendMessage(player, "named_home_set", argValue);
 
-                    return true;
-                }))
+                return true;
+            }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 storage.setTeleport(player.getUUID(), Teleport.create(player, "home"));
                 Messages.sendMessage(player, "home_set");
@@ -46,29 +47,27 @@ public class Homes {
             })));
 
         dispatcher.register(Commands.literal("delhome")
-            .then(registrar.buildArgumentString("name", Registrar.SuggestionType.HOMES,
-                (ServerPlayer player, String argValue) -> {
-                    if (argValue.equals("back")) {
-                        Messages.sendMessage(player, "reserved_name");
-                        return false;
-                    }
+            .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
+                if (argValue.equals("back")) {
+                    Messages.sendMessage(player, "reserved_name");
+                    return false;
+                }
 
-                    boolean success = storage.deleteTeleport(player.getUUID(), argValue);
-                    Messages.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
+                boolean success = storage.deleteTeleport(player.getUUID(), argValue);
+                Messages.sendMessage(player, success ? "home_deleted" : "home_not_exist", argValue);
 
-                    return success;
-                })));
+                return success;
+            })));
 
         dispatcher.register(Commands.literal("home")
-            .then(registrar.buildArgumentString("name", Registrar.SuggestionType.HOMES,
-                (ServerPlayer player, String argValue) -> {
-                    if (argValue.equals("back")) {
-                        Messages.sendMessage(player, "reserved_name");
-                        return false;
-                    }
+            .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
+                if (argValue.equals("back")) {
+                    Messages.sendMessage(player, "reserved_name");
+                    return false;
+                }
 
-                    return teleports.teleportPlayer(player, argValue, false);
-                }))
+                return teleports.teleportPlayer(player, argValue, false);
+            }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 return teleports.teleportPlayer(player, "home", false);
             })));

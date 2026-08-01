@@ -12,8 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.LevelData.RespawnData;
-import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 

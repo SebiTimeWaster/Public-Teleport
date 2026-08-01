@@ -1,15 +1,12 @@
 package timewaster.publicteleport;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.records.Teleport;
@@ -20,8 +17,8 @@ public class Requests {
     private final Teleports teleports;
 
     private static final record Request(
-        UUID sender,
-        UUID receiver,
+        @NotNull UUID sender,
+        @NotNull UUID receiver,
         String senderName,
         String receiverName,
         boolean reverse,
@@ -33,23 +30,21 @@ public class Requests {
         this.teleports = teleports;
     }
 
-    private static boolean compareRequests(Request request, @Nullable UUID sender, @Nullable UUID receiver) {
-        return (sender == null || request.sender().equals(sender))
-            && (receiver == null || request.receiver().equals(receiver));
-    }
-
-    private boolean compareRequests(Request request, Request otherRequest) {
-        return compareRequests(request, otherRequest.sender(), otherRequest.receiver());
-    }
-
-    private Request getRequest(UUID sender, UUID receiver) {
+    private Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
         return pendingRequests.stream()
-            .filter(request -> compareRequests(request, sender, receiver)).findFirst().orElse(null);
+            .filter(request -> {
+                return (sender == null || request.sender().equals(sender))
+                    && (receiver == null || request.receiver().equals(receiver));
+            }).findFirst().orElse(null);
     }
 
     private Request getRequest(UUID sender) {
-        return pendingRequests.stream()
-            .filter(request -> compareRequests(request, sender, null)).findFirst().orElse(null);
+        return getRequest(sender, null);
+    }
+
+    @Nullable
+    private ServerPlayer getPlayerByOtherPlayer(UUID playerToGet, ServerPlayer otherPlayer) {
+        return otherPlayer.level().getServer().getPlayerList().getPlayer(playerToGet);
     }
 
     public void cleanup(MinecraftServer server) {
@@ -70,7 +65,7 @@ public class Requests {
         pendingRequests.removeIf(request -> request.expires() < now);
     }
 
-    public void sendRequest(ServerPlayer sender, ServerPlayer receiver, boolean reverse) {
+    public boolean sendRequest(ServerPlayer sender, ServerPlayer receiver, boolean reverse) {
         long expires = System.currentTimeMillis() + storage.getConfig().requestTimeout();
         String senderName = sender.getName().getString();
         Request oldRequest = getRequest(sender.getUUID());
@@ -79,7 +74,7 @@ public class Requests {
 
         if (oldRequest != null) {
             Messages.sendMessage(sender, "old_request_exist", oldRequest.receiverName());
-            return;
+            return false;
         }
 
         pendingRequests.add(newRequest);
@@ -93,91 +88,82 @@ public class Requests {
                 Messages.getMessage("deny_request", senderName), Messages.Type.ERROR)
             .send(receiver);
         Messages.sendMessage(sender, "request_sent", receiver.getName().getString());
+
+        return true;
     }
 
-    public void cancelRequest(ServerPlayer sender) {
-        List<Request> requests = pendingRequests.stream()
-            .filter(request -> compareRequests(request, sender.getUUID(), null)).toList();
+    public boolean cancelRequest(ServerPlayer sender) {
+        Request request = getRequest(sender.getUUID());
 
-        if (requests.isEmpty()) {
+        if (request == null) {
             Messages.sendMessage(sender, "no_requests");
-            return;
+            return false;
         }
 
-        for (Request request : requests) {
-            ServerPlayer receiver = sender.level().getServer().getPlayerList().getPlayer(request.receiver());
-
-            if (receiver != null) {
-                Messages.sendMessage(receiver, "request_cancelled_receiver", sender.getName().getString());
-            }
-
-            pendingRequests.remove(request);
+        ServerPlayer receiver = getPlayerByOtherPlayer(request.receiver(), sender);
+        if (receiver != null) {
+            Messages.sendMessage(receiver, "request_cancelled_receiver", sender.getName().getString());
         }
-
         Messages.sendMessage(sender, "request_cancelled_sender");
-    }
-
-    public void acceptRequest(ServerPlayer receiver, @Nullable ServerPlayer sender) {
-        Request request;
-
-        if (sender != null) {
-            request = getRequest(receiver.getUUID(), sender.getUUID());
-        } else {
-            request = getMostRecentRequest(receiver.getUUID());
-        }
-
-        if (request == null) {
-            receiver.sendSystemMessage(
-                Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
-            return;
-        }
-
-        ServerPlayer actualSender = receiver.level().getServer().getPlayerList().getPlayer(request.sender());
-        if (actualSender == null) {
-            receiver.sendSystemMessage(
-                Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
-            pendingRequests.remove(request);
-            return;
-        }
-
-        if (request.reverse()) {
-            teleports.teleportPlayer(receiver, Teleport.create(actualSender, actualSender.getName().getString()));
-
-            actualSender
-                .sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
-        } else {
-            teleports.teleportPlayer(actualSender, Teleport.create(receiver, receiver.getName().getString()));
-
-            receiver.sendSystemMessage(Component.literal("Teleport request accepted!").withStyle(ChatFormatting.AQUA));
-        }
 
         pendingRequests.remove(request);
+
+        return true;
     }
 
-    public void denyRequest(ServerPlayer receiver, @Nullable ServerPlayer sender) {
-        Request request;
-
-        if (sender != null) {
-            request = getRequest(receiver.getUUID(), sender.getUUID());
-        } else {
-            request = getMostRecentRequest(receiver.getUUID());
-        }
+    @SuppressWarnings("unused")
+    public boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
         if (request == null) {
-            receiver.sendSystemMessage(
-                Component.literal("Teleport request expired or doesn't exist.").withStyle(ChatFormatting.RED));
-            return;
+            Messages.sendMessage(receiver, "request_no_exist");
+            return false;
         }
 
-        ServerPlayer actualSender = receiver.level().getServer().getPlayerList().getPlayer(request.sender());
-        if (actualSender == null) {
-            receiver.sendSystemMessage(
-                Component.literal("Request sender is no longer online.").withStyle(ChatFormatting.RED));
-            pendingRequests.remove(request);
-            return;
+        if (sender == null) {
+            sender = getPlayerByOtherPlayer(request.sender(), receiver);
         }
+
+        if (sender == null) {
+            Messages.sendMessage(receiver, "sender_no_ingame", request.senderName());
+            pendingRequests.remove(request);
+            return false;
+        }
+
+        if (!request.reverse()) {
+            teleports.teleportPlayer(sender, Teleport.create(receiver, request.receiverName()));
+        } else {
+            teleports.teleportPlayer(receiver, Teleport.create(sender, sender.getName().getString()));
+        }
+
+        Messages.sendMessage(sender, "request_accepted_sender", request.receiverName());
+        Messages.sendMessage(receiver, "request_accepted_receiver", request.senderName());
 
         pendingRequests.remove(request);
+
+        return true;
+    }
+
+    public boolean denyRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
+
+        if (request == null) {
+            Messages.sendMessage(receiver, "request_no_exist");
+            return false;
+        }
+
+        if (sender == null) {
+            sender = getPlayerByOtherPlayer(request.sender(), receiver);
+        }
+
+        if (sender != null) {
+            Messages.sendMessage(sender, "request_denied_sender", request.receiverName());
+        }
+        Messages.sendMessage(receiver, "request_denied_receiver", request.senderName());
+
+        pendingRequests.remove(request);
+
+        return true;
     }
 
 }

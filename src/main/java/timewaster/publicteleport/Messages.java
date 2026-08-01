@@ -103,6 +103,7 @@ public class Messages {
             case "request_cancelled_sender" -> createText("Teleport request cancelled.", Type.ERROR);
             case "request_cancelled_receiver" ->
                 createText(String.format("%s cancelled their teleport request.", params), Type.ERROR);
+            case "request_no_exist" -> createText("Teleport request doesn't exist.", Type.ERROR);
             case "no_teleport_self" -> createText("You cannot teleport to yourself!", Type.ERROR);
             case "no_warps" -> createText("There are no warps.", Type.ERROR);
             case "no_homes" -> createText("You have no homes.", Type.ERROR);
@@ -111,7 +112,17 @@ public class Messages {
                 createText(String.format("The teleport request to %s has timed out!", params), Type.ERROR);
             case "request_timedout_receiver" ->
                 createText(String.format("The teleport request from %s has timed out!", params), Type.ERROR);
+            case "request_denied_sender" ->
+                createText(String.format("The teleport request to %s was denied!", params), Type.ERROR);
+            case "request_denied_receiver" ->
+                createText(String.format("The teleport request from %s was denied!", params), Type.ERROR);
+            case "request_accepted_sender" ->
+                createText(String.format("The teleport request to %s was accepted!", params), Type.SUCCESS);
+            case "request_accepted_receiver" ->
+                createText(String.format("The teleport request from %s was accepted!", params), Type.SUCCESS);
             case "request_sent" -> createText(String.format("Teleport request sent to %s!", params), Type.SUCCESS);
+            case "sender_no_ingame" ->
+                createText(String.format("%s is no longer in-game, request cancelled!", params), Type.SUCCESS);
             case "old_request_exist" -> createText(String
                 .format("You have a running teleport request to %s, please cancel it with '/tpcancel' first!", params),
                 Type.ERROR);
