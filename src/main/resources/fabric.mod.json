@@ -7,7 +7,7 @@
     "authors": ["TimeWaster"],
     "contact": {
         "homepage": "https://fabricmc.net/",
-        "sources": "https://github.com/FabricMC/fabric-example-mod"
+        "sources": "https://github.com/SebiTimeWaster/Public-Teleport"
     },
     "license": "MIT",
     "icon": "assets/public-teleport/icon.png",
