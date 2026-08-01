@@ -139,6 +139,7 @@ public class Messages {
             case " " -> "  ";
             case "button_accept" -> "[Accept]";
             case "button_deny" -> "[Deny]";
+            case "button_named" -> String.format("[%s]", params);
             case "err_create_dir" -> "Failed to create config directories!";
             case "err_load_config" -> "Failed to load config from {}:";
             case "err_load_file" -> "Failed to load from {}:";

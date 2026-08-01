@@ -100,7 +100,7 @@ public class Teleports {
 
             for (String name : teleportNames) {
                 builder.append("line");
-                builder.button(String.format("[%s]", name), isWarps ? "/warp " + name : "/home " + name,
+                builder.button(Messages.getMessage("button_named", name), isWarps ? "/warp " + name : "/home " + name,
                     Messages.getMessage("teleport_to", name));
             }
 
