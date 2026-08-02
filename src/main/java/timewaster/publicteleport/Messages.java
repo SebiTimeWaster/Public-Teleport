@@ -106,37 +106,38 @@ public class Messages {
 
     public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
         Component message = switch (identifier) {
-            case "home_deleted" -> success("Home '%s' deleted!", params);
-            case "home_no_exist" -> error("Home '%s' does not exist!", params);
-            case "home_reserved_name" -> error("The name 'back' cannot be used!");
-            case "home_set_named" -> success("Home %s set!", params);
-            case "home_set_max_reached" -> error("Could not set home, your limit of %s homes is full!", params);
-            case "home_set" -> success("Home set!");
+            case "home_deleted" -> success("Home \"%s\" deleted.", params);
+            case "home_no_exist" -> error("Home \"%s\" does not exist.", params);
+            case "home_reserved_name" -> error("The name \"back\" cannot be used.");
+            case "home_set_named" -> success("Home \"%s\" set.", params);
+            case "home_set_max_reached" ->
+                error("Could not set home, your have reached the limit of %s homes.", params);
+            case "home_set" -> success("Home set.");
             case "no_homes" -> error("You have no homes.");
             case "no_requests" -> error("You have no pending teleport requests.");
             case "no_warps" -> error("There are no warps.");
-            case "request_accepted_receiver" -> success("The teleport request from %s was accepted!", params);
-            case "request_accepted_sender" -> success("The teleport request to %s was accepted!", params);
+            case "request_accepted_receiver" -> success("The teleport request from %s was accepted.", params);
+            case "request_accepted_sender" -> success("%s has accepted your teleport request.", params);
             case "request_cancelled_receiver" -> error("%s cancelled their teleport request.", params);
             case "request_cancelled_sender" -> error("Teleport request cancelled.");
-            case "request_denied_receiver" -> error("The teleport request from %s was denied!", params);
-            case "request_denied_sender" -> error("The teleport request to %s was denied!", params);
-            case "request_no_exist" -> error("Teleport request doesn't exist.");
+            case "request_denied_receiver" -> error("The teleport request from %s was denied.", params);
+            case "request_denied_sender" -> error("%s has denied your teleport request.", params);
+            case "request_no_exist" -> error("This teleport request does not exist.");
             case "request_old_exist" ->
-                error("You have a running teleport request to %s, please cancel it with '/tpcancel' first!", params);
-            case "request_sender_no_ingame" -> success("%s is no longer in-game, request cancelled!", params);
-            case "request_sent" -> success("Teleport request sent to %s!", params);
-            case "request_teleport_self" -> error("You cannot teleport to yourself!");
-            case "request_timedout_receiver" -> error("The teleport request from %s has timed out!", params);
-            case "request_timedout_sender" -> error("The teleport request to %s has timed out!", params);
-            case "spawn_set" -> success("Spawn set!");
-            case "teleported_to" -> success("Teleported to %s!", params);
-            case "teleported" -> success("Teleported %s!", params);
+                error("You have an open teleport request to %s, please cancel it with \"/tpcancel\" first.", params);
+            case "request_sender_no_ingame" -> success("%s is no longer in-game, teleport request cancelled.", params);
+            case "request_sent" -> success("Teleport request sent to %s.", params);
+            case "request_teleport_self" -> error("You cannot teleport to yourself.");
+            case "request_timedout_receiver" -> error("The teleport request from %s has timed out.", params);
+            case "request_timedout_sender" -> error("The teleport request to %s has timed out.", params);
+            case "spawn_set" -> success("Spawn set.");
+            case "teleported_to" -> success("Teleported to %s.", params);
+            case "teleported" -> success("Teleported %s.", params);
             case "unknown_error" -> error("Unknown error!");
-            case "warp_deleted" -> success("Warp '%s' deleted!", params);
-            case "warp_no_exist" -> error("Warp '%s' does not exist!", params);
-            case "warp_set" -> success("Warp %s set!", params);
-            default -> error("Unknown Error");
+            case "warp_deleted" -> success("Warp \"%s\" deleted.", params);
+            case "warp_no_exist" -> error("Warp \"%s\" does not exist.", params);
+            case "warp_set" -> success("Warp \"%s\" set.", params);
+            default -> error("Unknown Error!");
         };
 
         sendMessage(player, message);
@@ -153,16 +154,16 @@ public class Messages {
             case "err_load_config" -> "Failed to load config from {}:";
             case "err_load_file" -> "Failed to load from {}:";
             case "err_save_file" -> "Failed to save to {}:";
-            case "headline_homes" -> "Homes:";
-            case "headline_warps" -> "Warps:";
+            case "headline_homes" -> "Your homes:";
+            case "headline_warps" -> "Public warps:";
             case "init" -> "Public Teleport initialized!";
             case "line" -> "\n  ";
             case "request_accept" -> String.format("Accept teleport request from %s", params);
             case "request_deny" -> String.format("Deny teleport request from %s", params);
-            case "request_received_rev" -> String.format("%s wants to teleport you to them.\n", params);
-            case "request_received" -> String.format("%s wants to teleport to you.\n", params);
+            case "request_received_rev" -> String.format("%s wants you to teleport to them:\n", params);
+            case "request_received" -> String.format("%s wants to teleport to you:\n", params);
             case "teleport_to" -> String.format("Teleport to %s", params);
-            default -> "Unknown Error";
+            default -> "Unknown Error!";
         };
 
         return Objects.requireNonNull(message);
