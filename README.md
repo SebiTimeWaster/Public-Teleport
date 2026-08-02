@@ -59,7 +59,7 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
 - Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into your `mods` folder on your server or client
 - Restart your server or client
-- If needed edit the configuration as described in Configuration and restart your server or client
+- If needed edit the configuration as described in "Configuration"
 
 ## Migration from MiniTeleport
 
