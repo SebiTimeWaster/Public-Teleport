@@ -54,7 +54,7 @@ public class Requests {
             ServerPlayer sender = server.getPlayerList().getPlayer(request.sender());
             ServerPlayer receiver = server.getPlayerList().getPlayer(request.receiver());
 
-            if (request.expires() < now) {
+            if (request.expires() <= now) {
                 if (sender != null)
                     Messages.sendMessage(sender, "request_timedout_sender", request.receiverName());
                 if (receiver != null)
@@ -62,22 +62,22 @@ public class Requests {
             }
         }
 
-        pendingRequests.removeIf(request -> request.expires() < now);
+        pendingRequests.removeIf(request -> request.expires() <= now);
     }
 
     public boolean sendRequest(ServerPlayer sender, ServerPlayer receiver, boolean reverse) {
-        long expires = System.currentTimeMillis() + storage.getConfig().requestTimeout();
+        long expires = System.currentTimeMillis() + storage.getConfig().requestTimeout() * 1000;
         String senderName = sender.getName().getString();
+        String receiverName = receiver.getName().getString();
         Request oldRequest = getRequest(sender.getUUID());
-        Request newRequest = new Request(sender.getUUID(), receiver.getUUID(), senderName,
-            receiver.getName().toString(), reverse, expires);
 
         if (oldRequest != null) {
             Messages.sendMessage(sender, "request_old_exist", oldRequest.receiverName());
             return false;
         }
 
-        pendingRequests.add(newRequest);
+        pendingRequests
+            .add(new Request(sender.getUUID(), receiver.getUUID(), senderName, receiverName, reverse, expires));
 
         new Messages.Builder()
             .append(reverse ? "request_received_rev" : "request_received", Messages.Type.REQUEST, senderName)
@@ -87,7 +87,7 @@ public class Requests {
             .button(Messages.getMessage("button_deny"), "/tpdeny " + senderName,
                 Messages.getMessage("request_deny", senderName), Messages.Type.ERROR)
             .send(receiver);
-        Messages.sendMessage(sender, "request_sent", receiver.getName().getString());
+        Messages.sendMessage(sender, "request_sent", receiverName);
 
         return true;
     }

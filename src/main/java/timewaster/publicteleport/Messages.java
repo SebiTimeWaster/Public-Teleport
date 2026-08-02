@@ -116,16 +116,16 @@ public class Messages {
             case "no_homes" -> error("You have no homes.");
             case "no_requests" -> error("You have no pending teleport requests.");
             case "no_warps" -> error("There are no warps.");
-            case "request_accepted_receiver" -> success("The teleport request from %s was accepted.", params);
+            case "request_accepted_receiver" -> success("You accepted the teleport request from %s.", params);
             case "request_accepted_sender" -> success("%s has accepted your teleport request.", params);
             case "request_cancelled_receiver" -> error("%s cancelled their teleport request.", params);
             case "request_cancelled_sender" -> error("Teleport request cancelled.");
-            case "request_denied_receiver" -> error("The teleport request from %s was denied.", params);
+            case "request_denied_receiver" -> error("You denied the teleport request from %s.", params);
             case "request_denied_sender" -> error("%s has denied your teleport request.", params);
             case "request_no_exist" -> error("No teleport request found.");
             case "request_old_exist" ->
                 error("You have an open teleport request to %s, please cancel it with \"/tpcancel\" first.", params);
-            case "request_sender_no_ingame" -> success("%s is no longer in-game, teleport request cancelled.", params);
+            case "request_sender_no_ingame" -> error("%s is no longer in-game, teleport request cancelled.", params);
             case "request_sent" -> success("Teleport request sent to %s.", params);
             case "request_teleport_self" -> error("You cannot teleport to yourself.");
             case "request_timedout_receiver" -> error("The teleport request from %s has timed out.", params);
