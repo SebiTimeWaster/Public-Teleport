@@ -6,7 +6,7 @@
     "description": "An easy to use Fabric Teleport Mod: Homes, Warps, Back, Spawn, TPA; Server-side or client-side; Minimal pre-defined configuration.",
     "authors": ["TimeWaster"],
     "contact": {
-        "homepage": "https://fabricmc.net/",
+        "homepage": "https://modrinth.com/project/public-teleport",
         "sources": "https://github.com/SebiTimeWaster/Public-Teleport"
     },
     "license": "MIT",

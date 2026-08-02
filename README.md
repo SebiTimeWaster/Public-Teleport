@@ -58,8 +58,8 @@ To change these defaults edit the config file and restart your server.
 Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
 - Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into your `mods` folder on your server or client
-- Edit the configuration as described in Configuration if needed
 - Restart your server or client
+- If needed edit the configuration as described in Configuration and restart your server or client
 
 ## Migration from MiniTeleport
 
