@@ -10,6 +10,6 @@
         "java.compile.nullAnalysis.mode": "automatic",
         "java.compile.nullAnalysis.nullable": ["org.jetbrains.annotations.Nullable"],
         "java.compile.nullAnalysis.nonnull": ["org.jetbrains.annotations.NotNull"],
-        "java.configuration.updateBuildConfiguration": "interactive",
+        "java.configuration.updateBuildConfiguration": "automatic",
     },
 }
