@@ -122,7 +122,7 @@ public class Messages {
             case "request_cancelled_sender" -> error("Teleport request cancelled.");
             case "request_denied_receiver" -> error("The teleport request from %s was denied.", params);
             case "request_denied_sender" -> error("%s has denied your teleport request.", params);
-            case "request_no_exist" -> error("This teleport request does not exist.");
+            case "request_no_exist" -> error("No teleport request found.");
             case "request_old_exist" ->
                 error("You have an open teleport request to %s, please cancel it with \"/tpcancel\" first.", params);
             case "request_sender_no_ingame" -> success("%s is no longer in-game, teleport request cancelled.", params);

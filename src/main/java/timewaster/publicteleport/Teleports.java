@@ -5,10 +5,14 @@ import java.util.Objects;
 import java.util.Set;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
 public class Teleports {
@@ -19,8 +23,8 @@ public class Teleports {
     }
 
     @SuppressWarnings("null")
-    private static void doTeleportEffect(ServerLevel level, ServerPlayer player) {
-        level.playSound(
+    private static void doTeleportEffect(ServerPlayer player) {
+        player.level().playSound(
             null,
             player.getBlockX() + 0.5,
             player.getBlockY() + 1.0,
@@ -30,7 +34,7 @@ public class Teleports {
             1.0f,
             1.0f);
 
-        level.sendParticles(
+        player.level().sendParticles(
             ParticleTypes.PORTAL,
             true,
             true,
@@ -45,8 +49,10 @@ public class Teleports {
     }
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        ServerLevel level = player.level();
         boolean isHomeOrBack = List.of("home", "back").contains(target.name());
+        Identifier dimId = Identifier.parse(Objects.requireNonNull(target.dimension()));
+        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
+        ServerLevel level = player.level().getServer().getLevel(dimKey);
 
         boolean result = player.teleportTo(
             level,
@@ -59,7 +65,7 @@ public class Teleports {
             true);
 
         if (result) {
-            doTeleportEffect(level, player);
+            doTeleportEffect(player);
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
         } else {
             Messages.sendMessage(player, "unknown_error");
