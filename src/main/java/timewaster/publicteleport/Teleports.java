@@ -5,14 +5,10 @@ import java.util.Objects;
 import java.util.Set;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
 public class Teleports {
@@ -23,38 +19,37 @@ public class Teleports {
     }
 
     @SuppressWarnings("null")
-    private static void doTeleportEffect(ServerLevel world, ServerPlayer player) {
-        // TODO: fix sound and particles
-        world.playSound(
+    private static void doTeleportEffect(ServerLevel level, ServerPlayer player) {
+        level.playSound(
             null,
             player.getBlockX() + 0.5,
-            player.getBlockY() + 0.5,
+            player.getBlockY() + 1.0,
             player.getBlockZ() + 0.5,
             SoundEvents.ENDERMAN_TELEPORT,
             SoundSource.PLAYERS,
             1.0f,
             1.0f);
 
-        world.sendParticles(
+        level.sendParticles(
             ParticleTypes.PORTAL,
-            player.getBlockX() + 0.5,
-            player.getBlockY() + 0.5,
-            player.getBlockZ() + 0.5,
-            25,
-            0.25,
-            0.25,
-            0.25,
-            0.0);
+            true,
+            true,
+            player.getX(),
+            player.getY() + 0.75,
+            player.getZ(),
+            100,
+            0.5,
+            0.75,
+            0.5,
+            0.25);
     }
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
-            Identifier.parse(Objects.requireNonNull(target.dimension())));
-        ServerLevel world = player.level().getServer().getLevel(dimension);
+        ServerLevel level = player.level();
         boolean isHomeOrBack = List.of("home", "back").contains(target.name());
 
         boolean result = player.teleportTo(
-            world,
+            level,
             target.x() + 0.5,
             target.y() + 0.05,
             target.z() + 0.5,
@@ -64,7 +59,7 @@ public class Teleports {
             true);
 
         if (result) {
-            doTeleportEffect(world, player);
+            doTeleportEffect(level, player);
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
         } else {
             Messages.sendMessage(player, "unknown_error");
