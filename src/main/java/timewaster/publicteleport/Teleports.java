@@ -54,6 +54,8 @@ public class Teleports {
         ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
         ServerLevel level = player.level().getServer().getLevel(dimKey);
 
+        doTeleportEffect(player);
+
         boolean result = player.teleportTo(
             level,
             target.x() + 0.5,
