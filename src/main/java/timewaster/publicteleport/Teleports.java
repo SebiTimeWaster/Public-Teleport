@@ -49,7 +49,6 @@ public class Teleports {
     }
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        boolean isHomeOrBack = List.of("home", "back").contains(target.name());
         Identifier dimId = Identifier.parse(Objects.requireNonNull(target.dimension()));
         ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
         ServerLevel level = player.level().getServer().getLevel(dimKey);
@@ -68,6 +67,26 @@ public class Teleports {
 
         if (result) {
             doTeleportEffect(player);
+        }
+
+        return result;
+    }
+
+    private boolean teleportPlayer(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
+        if (target == null) {
+            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", targetName);
+            return false;
+        }
+
+        boolean isHomeOrBack = List.of("home", "back").contains(target.name());
+        Teleport back = Teleport.create(player, "back");
+        boolean result = teleport(player, target);
+
+        if (result) {
+            if (target.name() != "back") {
+                storage.setTeleport(player.getUUID(), back);
+            }
+
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
         } else {
             Messages.sendMessage(player, "unknown_error");
@@ -76,30 +95,14 @@ public class Teleports {
         return result;
     }
 
-    private boolean teleportPlayerImpl(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
-        if (target == null) {
-            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", targetName);
-            return false;
-        }
-
-        Teleport back = Teleport.create(player, "back");
-        boolean result = teleport(player, target);
-
-        if (result && target.name() != "back") {
-            storage.setTeleport(player.getUUID(), back);
-        }
-
-        return result;
-    }
-
     public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
         Teleport teleportTarget = storage.getTeleport(isWarp ? null : player.getUUID(), target);
 
-        return teleportPlayerImpl(player, teleportTarget, target, isWarp);
+        return teleportPlayer(player, teleportTarget, target, isWarp);
     }
 
     public boolean teleportPlayer(ServerPlayer player, Teleport target) {
-        return teleportPlayerImpl(player, target, target.name(), false);
+        return teleportPlayer(player, target, target.name(), false);
     }
 
     public static boolean listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
