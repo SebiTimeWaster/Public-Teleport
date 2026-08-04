@@ -48,10 +48,16 @@ public class Teleports {
             0.25);
     }
 
+    @SuppressWarnings("unused")
     private static boolean teleport(ServerPlayer player, Teleport target) {
         Identifier dimId = Identifier.parse(Objects.requireNonNull(target.dimension()));
         ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
         ServerLevel level = player.level().getServer().getLevel(dimKey);
+
+        if (level == null) {
+            Messages.sendMessage(player, "level_no_exist");
+            return false;
+        }
 
         doTeleportEffect(player);
 
@@ -67,6 +73,8 @@ public class Teleports {
 
         if (result) {
             doTeleportEffect(player);
+        } else {
+            Messages.sendMessage(player, "unknown_error");
         }
 
         return result;
@@ -88,8 +96,6 @@ public class Teleports {
             }
 
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
-        } else {
-            Messages.sendMessage(player, "unknown_error");
         }
 
         return result;

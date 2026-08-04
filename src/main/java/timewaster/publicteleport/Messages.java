@@ -136,6 +136,7 @@ public class Messages {
             case "unknown_error" -> error("Unknown error!");
             case "warp_deleted" -> success("Warp \"%s\" deleted.", params);
             case "warp_no_exist" -> error("Warp \"%s\" does not exist.", params);
+            case "level_no_exist" -> error("This dimension does not exist.");
             case "warp_set" -> success("Warp \"%s\" set.", params);
             default -> error("Unknown Error!");
         };
