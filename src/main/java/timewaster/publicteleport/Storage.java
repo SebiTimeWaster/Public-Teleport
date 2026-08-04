@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
 import net.fabricmc.loader.api.FabricLoader;
@@ -108,10 +110,29 @@ public class Storage {
     private Config loadConfig() {
         if (!fileConfig.exists()) {
             saveFile(fileConfig, configDefault, true);
+            return configDefault;
         }
 
         try (BufferedReader reader = Files.newBufferedReader(fileConfig.toPath(), StandardCharsets.UTF_8)) {
-            return GSON.fromJson(reader, Config.class);
+            JsonObject defaultObj = GSON.toJsonTree(configDefault).getAsJsonObject();
+            JsonObject fileObj = JsonParser.parseReader(reader).getAsJsonObject();
+            boolean changed = false;
+
+            for (String key : defaultObj.keySet()) {
+                if (!fileObj.has(key)) {
+                    fileObj.add(key, defaultObj.get(key));
+                    changed = true;
+                }
+            }
+
+            @SuppressWarnings("null")
+            Config mergedConfig = GSON.fromJson(fileObj, Config.class);
+
+            if (changed) {
+                saveFile(fileConfig, mergedConfig, true);
+            }
+
+            return mergedConfig;
         } catch (IOException e) {
             logger.error(Messages.getMessage("err_load_config"), fileConfig, e);
             throw new UncheckedIOException(e);
