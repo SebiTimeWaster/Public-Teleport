@@ -318,7 +318,7 @@ public class Storage {
 
             if (!exists) {
                 if (uuid != null && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
-                    && newTeleport.name() != "back") {
+                    && !newTeleport.name().equals("back")) {
                     return false;
                 }
 

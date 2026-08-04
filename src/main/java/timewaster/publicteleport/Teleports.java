@@ -83,7 +83,7 @@ public class Teleports {
         boolean result = teleport(player, target);
 
         if (result) {
-            if (target.name() != "back") {
+            if (!target.name().equals("back")) {
                 storage.setTeleport(player.getUUID(), back);
             }
 
