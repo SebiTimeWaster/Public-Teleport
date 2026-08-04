@@ -33,7 +33,7 @@ public class Tpa {
 
         dispatcher.register(Commands.literal("tpahere")
             .then(registrar.buildArgumentPlayer("target", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
-                if (player.getName().equals(target.getName())) {
+                if (player == target) {
                     Messages.sendMessage(player, "request_teleport_self");
                     return false;
                 }
