@@ -6,12 +6,8 @@ import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.storage.LevelData.RespawnData;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.Teleports;
@@ -33,13 +29,7 @@ public class Spawn {
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setspawn").requires(PERMISSIONS_OWNER)
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                ServerLevel world = player.level();
-                RespawnData spawn = RespawnData.of(player.level().dimension(), player.blockPosition(), 0, 0);
-                MinecraftServer server = world.getServer();
-
                 storage.setTeleport(null, Teleport.create(player, "spawn"));
-                world.setRespawnData(spawn);
-                server.getGameRules().set(GameRules.RESPAWN_RADIUS, 0, server);
                 Messages.sendMessage(player, "spawn_set");
 
                 return true;
