@@ -111,7 +111,6 @@ public class Requests {
         return true;
     }
 
-    @SuppressWarnings("unused")
     public boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
         Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
