@@ -51,12 +51,11 @@ public class Registrar {
 
     private CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
         SuggestionsBuilder builder, SuggestionType type) {
-        UUID playerUuid = getPlayer(context).getUUID();
+        ServerPlayer player = getPlayer(context);
 
         if (type != SuggestionType.NONE) {
             if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
-                List<String> teleportNames = storage
-                    .getTeleportNames(type == SuggestionType.HOMES ? playerUuid : null);
+                List<String> teleportNames = storage.getTeleportNames(player, type == SuggestionType.WARPS);
 
                 if (teleportNames != null) {
                     for (String name : teleportNames) {
@@ -67,7 +66,7 @@ public class Registrar {
 
             if (type == SuggestionType.PLAYERS) {
                 for (ServerPlayer activePlayer : context.getSource().getServer().getPlayerList().getPlayers()) {
-                    if (!playerUuid.equals(activePlayer.getUUID())) {
+                    if (!player.getUUID().equals(activePlayer.getUUID())) {
                         builder.suggest(activePlayer.getName().getString());
                     }
                 }

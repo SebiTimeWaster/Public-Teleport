@@ -25,7 +25,7 @@ public class PublicTeleport implements ModInitializer {
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
             if (entity instanceof ServerPlayer player) {
-                storage.setTeleport(player.getUUID(), Teleport.create(player, "back"));
+                storage.setTeleport(player, Teleport.create(player, "back"), false);
             }
         });
 

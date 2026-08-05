@@ -29,7 +29,12 @@ public class Spawn {
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setspawn").requires(PERMISSIONS_OWNER)
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                storage.setTeleport(null, Teleport.create(player, "spawn"));
+                Boolean isSaved = storage.setTeleport(player, Teleport.create(player, "spawn"), true);
+
+                if (isSaved == null) {
+                    return false;
+                }
+
                 Messages.sendMessage(player, "spawn_set");
 
                 return true;

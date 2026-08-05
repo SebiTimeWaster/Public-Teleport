@@ -1,5 +1,7 @@
 package timewaster.publicteleport.commands;
 
+import java.util.List;
+
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -34,26 +36,34 @@ public class Homes {
                     return false;
                 }
 
-                if (!storage.setTeleport(player.getUUID(), Teleport.create(player, argValue))) {
-                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                Boolean isSaved = storage.setTeleport(player, Teleport.create(player, argValue), false);
 
+                if (isSaved == null) {
                     return false;
-                } else {
-                    Messages.sendMessage(player, "home_set_named", argValue);
-
-                    return true;
                 }
+
+                if (isSaved) {
+                    Messages.sendMessage(player, "home_set_named", argValue);
+                } else {
+                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                }
+
+                return true;
             }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                if (!storage.setTeleport(player.getUUID(), Teleport.create(player, "home"))) {
-                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                Boolean isSaved = storage.setTeleport(player, Teleport.create(player, "home"), false);
 
+                if (isSaved == null) {
                     return false;
-                } else {
-                    Messages.sendMessage(player, "home_set");
-
-                    return true;
                 }
+
+                if (isSaved) {
+                    Messages.sendMessage(player, "home_set");
+                } else {
+                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                }
+
+                return true;
             })));
 
         dispatcher.register(Commands.literal("delhome")
@@ -63,10 +73,15 @@ public class Homes {
                     return false;
                 }
 
-                boolean success = storage.deleteTeleport(player.getUUID(), argValue);
+                Boolean success = storage.deleteTeleport(player, argValue, false);
+
+                if (success == null) {
+                    return false;
+                }
+
                 Messages.sendMessage(player, success ? "home_deleted" : "home_no_exist", argValue);
 
-                return success;
+                return true;
             })));
 
         dispatcher.register(Commands.literal("home")
@@ -88,7 +103,13 @@ public class Homes {
 
         dispatcher.register(Commands.literal("homes")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return Teleports.listTeleportNames(player, storage.getTeleportNames(player.getUUID()), false);
+                List<String> names = storage.getTeleportNames(player, false);
+
+                if (names == null) {
+                    return false;
+                }
+
+                return Teleports.listTeleportNames(player, names, false);
             })));
     }
 }

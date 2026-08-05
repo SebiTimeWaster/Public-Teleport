@@ -28,6 +28,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.records.Config;
 import timewaster.publicteleport.records.Teleport;
 
@@ -281,24 +282,29 @@ public class Storage {
     /**
      * Returns a single teleport by name.
      *
-     * @param uuid the player's unique id, or {@code null} to search warps
-     * @param name the exact name of the teleport to find
-     * @return the matching {@link Teleport}, or {@code null} if none exists with
-     *         that name in the requested scope
+     * @param player the player trying to load the data
+     * @param name   the exact name of the teleport to find
+     * @param isWarp if it is a warp, not a home
+     * @return the matching {@link Teleport}, a new {@code Teleport} with name
+     *         "public_teleport_not_found" if not found or {@code null} if a file
+     *         error occured
      */
     @Nullable
-    public Teleport getTeleport(@Nullable UUID uuid, String name) {
-        List<Teleport> teleports = loadTeleports(uuid);
+    public Teleport getTeleport(ServerPlayer player, String name, boolean isWarp) {
+        List<Teleport> teleports = loadTeleports(isWarp ? null : player.getUUID());
 
-        if (teleports != null) {
-            for (Teleport teleport : teleports) {
-                if (teleport.name().equals(name)) {
-                    return teleport;
-                }
+        if (teleports == null) {
+            Messages.sendMessage(player, "data_not_loaded");
+            return null;
+        }
+
+        for (Teleport teleport : teleports) {
+            if (teleport.name().equals(name)) {
+                return teleport;
             }
         }
 
-        return null;
+        return Teleport.create(player, "public_teleport_not_found");
     }
 
     /**
@@ -306,23 +312,30 @@ public class Storage {
      * alphabetically, special keywords "back" and "spawn" are filtered out of homes
      * and warps respectively.
      *
-     * @param uuid the player's unique id, or {@code null} to list warp names
-     * @return an alphabetically sorted list of teleport names
+     * @param player the player trying to load the data
+     * @param isWarp if it is a warp, not a home
+     * @return an alphabetically sorted list of teleport names or {@code null} if a
+     *         file error occured
      */
-    public List<String> getTeleportNames(@Nullable UUID uuid) {
+    @Nullable
+    public List<String> getTeleportNames(ServerPlayer player, boolean isWarp) {
         List<String> names = new ArrayList<String>();
-        List<Teleport> teleports = loadTeleports(uuid);
+        UUID uuid = player.getUUID();
+        List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
 
-        if (teleports != null) {
-            for (Teleport teleport : teleports) {
-                if ((uuid != null && !teleport.name().equals("back")) ||
-                    (uuid == null && !teleport.name().equals("spawn"))) {
-                    names.add(teleport.name());
-                }
-            }
-
-            Collections.sort(names);
+        if (teleports == null) {
+            Messages.sendMessage(player, "data_not_loaded");
+            return null;
         }
+
+        for (Teleport teleport : teleports) {
+            if ((!isWarp && !teleport.name().equals("back")) ||
+                (isWarp && !teleport.name().equals("spawn"))) {
+                names.add(teleport.name());
+            }
+        }
+
+        Collections.sort(names);
 
         return names;
     }
@@ -337,39 +350,47 @@ public class Storage {
      * Checks if the Homes limit is reached, but the special Home "back" is exempt
      * from the limit.
      *
-     * @param uuid        the player's unique id, or {@code null} to modify warps
+     * @param player      the player trying to load the data
      * @param newTeleport the teleport to add or update, identified by its name
+     * @param isWarp      if it is a warp, not a home
      * @return {@code false} if a new teleport would go over the {@code maxHomes}
-     *         limit and is not saved
+     *         limit and is not saved or {@code null} if a file error occured
      */
-    public boolean setTeleport(@Nullable UUID uuid, Teleport newTeleport) {
-        List<Teleport> teleports = loadTeleports(uuid);
+    @Nullable
+    public Boolean setTeleport(ServerPlayer player, Teleport newTeleport, boolean isWarp) {
+        UUID uuid = player.getUUID();
+        List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
+        boolean exists = false;
+        int numTeleports = 0;
 
-        if (teleports != null) {
-            boolean exists = false;
-            int numTeleports = 0;
+        if (teleports == null) {
+            Messages.sendMessage(player, "data_not_loaded");
+            return null;
+        }
 
-            for (int i = 0; i < teleports.size(); i++) {
-                if (teleports.get(i).name().equals(newTeleport.name())) {
-                    teleports.set(i, newTeleport);
-                    exists = true;
-                }
-
-                if (!teleports.get(i).name().equals("back")) {
-                    numTeleports++;
-                }
+        for (int i = 0; i < teleports.size(); i++) {
+            if (teleports.get(i).name().equals(newTeleport.name())) {
+                teleports.set(i, newTeleport);
+                exists = true;
             }
 
-            if (!exists) {
-                if (uuid != null && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
-                    && !newTeleport.name().equals("back")) {
-                    return false;
-                }
+            if (!teleports.get(i).name().equals("back")) {
+                numTeleports++;
+            }
+        }
 
-                teleports.add(newTeleport);
+        if (!exists) {
+            if (!isWarp && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
+                && !newTeleport.name().equals("back")) {
+                return false;
             }
 
-            saveTeleports(uuid, teleports);
+            teleports.add(newTeleport);
+        }
+
+        if (!saveTeleports(isWarp ? null : uuid, teleports)) {
+            Messages.sendMessage(player, "data_not_saved");
+            return null;
         }
 
         return true;
@@ -379,28 +400,36 @@ public class Storage {
      * Deletes the teleport with the given name if it exists and persists the change
      * to disk.
      *
-     * @param uuid the player's unique id, or {@code null} to modify warps
-     * @param name the teleport to delete, identified by its name
-     * @return {@code true} if a teleport was found and removed
+     * @param player the player trying to load the data
+     * @param name   the teleport to delete, identified by its name
+     * @param isWarp if it is a warp, not a home
+     * @return {@code true} if a teleport was found and removed or {@code null} if a
+     *         file error occured
      */
-    public boolean deleteTeleport(@Nullable UUID uuid, String name) {
-        List<Teleport> teleports = loadTeleports(uuid);
+    public Boolean deleteTeleport(ServerPlayer player, String name, boolean isWarp) {
+        UUID uuid = player.getUUID();
+        List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
+        boolean exists = false;
 
-        if (teleports != null) {
-            boolean exists = false;
+        if (teleports == null) {
+            Messages.sendMessage(player, "data_not_loaded");
+            return null;
+        }
 
-            for (int i = 0; i < teleports.size(); i++) {
-                if (teleports.get(i).name().equals(name)) {
-                    teleports.remove(i);
-                    exists = true;
-                }
+        for (int i = 0; i < teleports.size(); i++) {
+            if (teleports.get(i).name().equals(name)) {
+                teleports.remove(i);
+                exists = true;
+            }
+        }
+
+        if (exists) {
+            if (!saveTeleports(isWarp ? null : uuid, teleports)) {
+                Messages.sendMessage(player, "data_not_saved");
+                return null;
             }
 
-            if (exists) {
-                saveTeleports(uuid, teleports);
-
-                return true;
-            }
+            return true;
         }
 
         return false;

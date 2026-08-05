@@ -1,5 +1,6 @@
 package timewaster.publicteleport.commands;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -43,10 +44,15 @@ public class Warps {
                     return false;
                 }
 
-                boolean success = storage.setTeleport(null, Teleport.create(player, argValue));
+                Boolean isSaved = storage.setTeleport(player, Teleport.create(player, argValue), true);
+
+                if (isSaved == null) {
+                    return false;
+                }
+
                 Messages.sendMessage(player, "warp_set", argValue);
 
-                return success;
+                return true;
             })));
 
         dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
@@ -56,10 +62,15 @@ public class Warps {
                     return false;
                 }
 
-                boolean success = storage.deleteTeleport(null, argValue);
+                Boolean success = storage.deleteTeleport(player, argValue, true);
+
+                if (success == null) {
+                    return false;
+                }
+
                 Messages.sendMessage(player, success ? "warp_deleted" : "warp_no_exist", argValue);
 
-                return success;
+                return true;
             })));
 
         dispatcher.register(Commands.literal("warp")
@@ -78,7 +89,13 @@ public class Warps {
 
         dispatcher.register(Commands.literal("warps")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return Teleports.listTeleportNames(player, storage.getTeleportNames(null), true);
+                List<String> names = storage.getTeleportNames(player, true);
+
+                if (names == null) {
+                    return false;
+                }
+
+                return Teleports.listTeleportNames(player, names, true);
             })));
     }
 }

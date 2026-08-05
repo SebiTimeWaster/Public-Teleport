@@ -80,16 +80,20 @@ public class Teleports {
         return result;
     }
 
-    private boolean teleportPlayer(ServerPlayer player, Teleport target, String targetName, boolean isWarp) {
+    private boolean teleportPlayer(ServerPlayer player, Teleport target, String originalTargetName, boolean isWarp) {
         if (target == null) {
-            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", targetName);
+            return false;
+        }
+
+        if (target.name().equals("public_teleport_not_found")) {
+            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", originalTargetName);
             return false;
         }
 
         if (Math.abs(target.x() - Math.floor(player.getX())) <= 1 &&
             Math.abs(target.y() - Math.ceil(player.getY())) <= 1 &&
             Math.abs(target.z() - Math.floor(player.getZ())) <= 1) {
-            Messages.sendMessage(player, "teleport_unnecessary", targetName);
+            Messages.sendMessage(player, "teleport_unnecessary", originalTargetName);
             return false;
         }
 
@@ -98,7 +102,7 @@ public class Teleports {
 
         if (result) {
             if (!target.name().equals("back")) {
-                storage.setTeleport(player.getUUID(), Teleport.create(player, "back"));
+                storage.setTeleport(player, Teleport.create(player, "back"), false);
             }
 
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
@@ -107,10 +111,14 @@ public class Teleports {
         return result;
     }
 
-    public boolean teleportPlayer(ServerPlayer player, String target, boolean isWarp) {
-        Teleport teleportTarget = storage.getTeleport(isWarp ? null : player.getUUID(), target);
+    public boolean teleportPlayer(ServerPlayer player, String originalTargetName, boolean isWarp) {
+        Teleport teleportTarget = storage.getTeleport(player, originalTargetName, isWarp);
 
-        return teleportPlayer(player, teleportTarget, target, isWarp);
+        if (teleportTarget == null) {
+            return false;
+        }
+
+        return teleportPlayer(player, teleportTarget, originalTargetName, isWarp);
     }
 
     public boolean teleportPlayer(ServerPlayer player, Teleport target) {

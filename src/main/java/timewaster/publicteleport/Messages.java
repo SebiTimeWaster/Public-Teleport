@@ -106,6 +106,8 @@ public class Messages {
 
     public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
         Component message = switch (identifier) {
+            case "data_not_loaded" -> error("The data could not be loaded, please contact a server admin.");
+            case "data_not_saved" -> error("The data could not be saved, please contact a server admin.");
             case "home_deleted" -> success("The home \"%s\" was deleted.", params);
             case "home_no_exist" -> error("The home \"%s\" does not exist.", params);
             case "home_reserved_name_get" ->
