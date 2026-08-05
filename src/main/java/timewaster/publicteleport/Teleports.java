@@ -97,12 +97,13 @@ public class Teleports {
             return false;
         }
 
+        Teleport back = Teleport.create(player, "back");
         boolean isHomeOrBack = List.of("home", "back").contains(target.name());
         boolean result = teleport(player, target);
 
         if (result) {
             if (!target.name().equals("back")) {
-                storage.setTeleport(player, Teleport.create(player, "back"), false);
+                storage.setTeleport(player, back, false);
             }
 
             Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
