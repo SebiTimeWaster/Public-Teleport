@@ -135,6 +135,7 @@ public class Messages {
             case "spawn_set" -> success("Spawn set.");
             case "teleported_to" -> success("Teleported to %s.", params);
             case "teleported" -> success("Teleported %s.", params);
+            case "teleport_unnecessary" -> error("You already are at %s.", params);
             case "unknown_error" -> error("Unknown error!");
             case "warp_deleted" -> success("The warp \"%s\" was deleted.", params);
             case "warp_no_exist" -> error("The warp \"%s\" does not exist.", params);

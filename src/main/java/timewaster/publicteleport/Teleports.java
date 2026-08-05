@@ -86,6 +86,13 @@ public class Teleports {
             return false;
         }
 
+        if (Math.abs(target.x() - Math.floor(player.getX())) <= 1 &&
+            Math.abs(target.y() - Math.ceil(player.getY())) <= 1 &&
+            Math.abs(target.z() - Math.floor(player.getZ())) <= 1) {
+            Messages.sendMessage(player, "teleport_unnecessary", targetName);
+            return false;
+        }
+
         boolean isHomeOrBack = List.of("home", "back").contains(target.name());
         boolean result = teleport(player, target);
 
