@@ -13,7 +13,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
@@ -62,6 +64,8 @@ public class Storage {
     private final Config config;
     /** Cache of the shared warp list, kept in sync with {@link #fileWarps}. */
     private List<Teleport> warps;
+    /** Cache of loaded user homes, kept in sync with the corresponding files. */
+    private Map<UUID, List<Teleport>> homes = new HashMap<UUID, List<Teleport>>();
 
     /**
      * Creates a new file handler, ensuring the config directories exist and loading
@@ -155,8 +159,6 @@ public class Storage {
      *                                  {@code failOnError} is true
      */
     private @Nullable List<Teleport> loadFile(File file, boolean failOnError) {
-        Type listType = new TypeToken<List<Teleport>>() {
-        }.getType();
         List<Teleport> defaultValue = new ArrayList<Teleport>();
 
         if (!file.exists()) {
@@ -165,6 +167,9 @@ public class Storage {
         }
 
         try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            Type listType = new TypeToken<List<Teleport>>() {
+            }.getType();
+
             return GSON.fromJson(reader, listType);
         } catch (IOException e) {
             logger.error(Messages.getMessage("err_load_file"), file, e);
@@ -186,7 +191,7 @@ public class Storage {
      *
      * @param file the destination file to write to
      * @param data the object to serialize as JSON
-     * @return true if save was successful, false if file could not be saved
+     * @return true if save was successful
      * @throws UncheckedIOException if the file could not be saved and
      *                                  {@code failOnError} is true
      */
@@ -224,18 +229,28 @@ public class Storage {
     }
 
     /**
-     * Returns the current list of teleports for the given player, or the shared
-     * warps list if {@code uuid} is {@code null}.
+     * Returns the current list of teleports for the given player from cache or
+     * file, or the shared warps list if {@code uuid} is {@code null}.
      *
      * @param uuid the player's unique id, or {@code null} to access warps
-     * @return the mutable list of teleports for the requested scope
+     * @return the mutable list of teleports for the requested scope or {@code null}
+     *         if an error occured
      */
     @Nullable
     private List<Teleport> loadTeleports(@Nullable UUID uuid) {
+        @Nullable
         List<Teleport> teleports;
 
         if (uuid != null) {
-            teleports = loadFile(getHomeFileByUuid(uuid), false);
+            teleports = homes.get(uuid);
+
+            if (teleports == null) {
+                teleports = loadFile(getHomeFileByUuid(uuid), false);
+
+                if (teleports != null) {
+                    homes.put(uuid, teleports);
+                }
+            }
         } else {
             teleports = warps;
         }
@@ -244,8 +259,8 @@ public class Storage {
     }
 
     /**
-     * Persists the given list of teleports for the given player or shared warps
-     * list if {@code uuid} is {@code null}.
+     * Caches and persists the given list of teleports for the given player or
+     * shared warps list if {@code uuid} is {@code null}.
      *
      * @param uuid      the player's unique id, or {@code null} to update warps
      * @param teleports the full list of teleports to save
@@ -253,9 +268,12 @@ public class Storage {
      */
     private boolean saveTeleports(@Nullable UUID uuid, List<Teleport> teleports) {
         if (uuid != null) {
+            homes.put(uuid, teleports);
+
             return saveFile(getHomeFileByUuid(uuid), teleports, false);
         } else {
             warps = teleports;
+
             return saveFile(fileWarps, teleports, false);
         }
     }
