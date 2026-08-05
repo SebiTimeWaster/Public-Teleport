@@ -106,15 +106,17 @@ public class Messages {
 
     public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
         Component message = switch (identifier) {
-            case "home_deleted" -> success("Home \"%s\" deleted.", params);
-            case "home_no_exist" -> error("Home \"%s\" does not exist.", params);
+            case "home_deleted" -> success("The home \"%s\" was deleted.", params);
+            case "home_no_exist" -> error("The home \"%s\" does not exist.", params);
+            case "home_reserved_name_get" ->
+                error("The home \"back\" does not exist, please use the command \"%s\" instead.", params);
             case "home_reserved_name" -> error("The name \"back\" cannot be used.");
-            case "home_set_named" -> success("Home \"%s\" set.", params);
             case "home_set_max_reached" ->
                 error("Could not set home, your have reached the limit of %s homes.", params);
+            case "home_set_named" -> success("Home \"%s\" set.", params);
             case "home_set" -> success("Home set.");
+            case "level_no_exist" -> error("This dimension does not exist.");
             case "no_homes" -> error("You have no homes.");
-            case "no_requests" -> error("You have no pending teleport requests.");
             case "no_warps" -> error("There are no warps.");
             case "request_accepted_receiver" -> success("You accepted the teleport request from %s.", params);
             case "request_accepted_sender" -> success("%s has accepted your teleport request.", params);
@@ -134,9 +136,13 @@ public class Messages {
             case "teleported_to" -> success("Teleported to %s.", params);
             case "teleported" -> success("Teleported %s.", params);
             case "unknown_error" -> error("Unknown error!");
-            case "warp_deleted" -> success("Warp \"%s\" deleted.", params);
-            case "warp_no_exist" -> error("Warp \"%s\" does not exist.", params);
-            case "level_no_exist" -> error("This dimension does not exist.");
+            case "warp_deleted" -> success("The warp \"%s\" was deleted.", params);
+            case "warp_no_exist" -> error("The warp \"%s\" does not exist.", params);
+            case "warp_reserved_name" -> error("The name \"spawn\" cannot be used.");
+            case "warp_reserved_spawn_set" ->
+                error("The name \"spawn\" cannot be used, please use the command \"%s\" instead.", params);
+            case "warp_reserved_spawn_get" ->
+                error("The warp \"spawn\" does not exist, please use the command \"%s\" instead.", params);
             case "warp_set" -> success("Warp \"%s\" set.", params);
             default -> error("Unknown Error!");
         };
@@ -148,9 +154,9 @@ public class Messages {
     public static String getMessage(String identifier, Object... params) {
         String message = switch (identifier) {
             case " " -> "  ";
-            case "button_accept" -> "[Accept]";
-            case "button_deny" -> "[Deny]";
-            case "button_named" -> String.format("[%s]", params);
+            case "button_accept" -> "[ Accept ]";
+            case "button_deny" -> "[ Deny ]";
+            case "button_named" -> String.format("[ %s ]", params);
             case "err_create_dir" -> "Failed to create config directories!";
             case "err_load_config" -> "Failed to load config from {}:";
             case "err_load_file" -> "Failed to load from {}:";

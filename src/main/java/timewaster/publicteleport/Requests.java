@@ -96,7 +96,7 @@ public class Requests {
         Request request = getRequest(sender.getUUID());
 
         if (request == null) {
-            Messages.sendMessage(sender, "no_requests");
+            Messages.sendMessage(sender, "request_no_exist");
             return false;
         }
 

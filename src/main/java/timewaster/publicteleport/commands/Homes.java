@@ -59,7 +59,7 @@ public class Homes {
         dispatcher.register(Commands.literal("delhome")
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name");
+                    Messages.sendMessage(player, "home_no_exist", argValue);
                     return false;
                 }
 
@@ -72,7 +72,11 @@ public class Homes {
         dispatcher.register(Commands.literal("home")
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name");
+                    if (storage.getConfig().enableBack()) {
+                        Messages.sendMessage(player, "home_reserved_name_get", "/back");
+                    } else {
+                        Messages.sendMessage(player, "home_no_exist", argValue);
+                    }
                     return false;
                 }
 

@@ -285,7 +285,8 @@ public class Storage {
 
     /**
      * Returns the names of all teleports in the requested scope, sorted
-     * alphabetically, special keyword "back" is filtered out.
+     * alphabetically, special keywords "back" and "spawn" are filtered out of homes
+     * and warps respectively.
      *
      * @param uuid the player's unique id, or {@code null} to list warp names
      * @return an alphabetically sorted list of teleport names
@@ -296,7 +297,8 @@ public class Storage {
 
         if (teleports != null) {
             for (Teleport teleport : teleports) {
-                if (!teleport.name().equals("back")) {
+                if ((uuid != null && !teleport.name().equals("back")) ||
+                    (uuid == null && !teleport.name().equals("spawn"))) {
                     names.add(teleport.name());
                 }
             }
@@ -313,6 +315,9 @@ public class Storage {
      * <p>
      * If a teleport with the same name already exists, it is replaced in-place;
      * otherwise the new teleport is added.
+     * <p>
+     * Checks if the Homes limit is reached, but the special Home "back" is exempt
+     * from the limit.
      *
      * @param uuid        the player's unique id, or {@code null} to modify warps
      * @param newTeleport the teleport to add or update, identified by its name

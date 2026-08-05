@@ -34,14 +34,28 @@ public class Warps {
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setwarp").requires(PERMISSIONS_OWNER)
             .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
-                storage.setTeleport(null, Teleport.create(player, argValue));
+                if (argValue.equals("spawn")) {
+                    if (storage.getConfig().enableSpawn()) {
+                        Messages.sendMessage(player, "warp_reserved_spawn_set", "/setspawn");
+                    } else {
+                        Messages.sendMessage(player, "warp_reserved_name");
+                    }
+                    return false;
+                }
+
+                boolean success = storage.setTeleport(null, Teleport.create(player, argValue));
                 Messages.sendMessage(player, "warp_set", argValue);
 
-                return true;
+                return success;
             })));
 
         dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
             .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
+                if (argValue.equals("spawn")) {
+                    Messages.sendMessage(player, "warp_no_exist", "spawn");
+                    return false;
+                }
+
                 boolean success = storage.deleteTeleport(null, argValue);
                 Messages.sendMessage(player, success ? "warp_deleted" : "warp_no_exist", argValue);
 
@@ -50,6 +64,15 @@ public class Warps {
 
         dispatcher.register(Commands.literal("warp")
             .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
+                if (argValue.equals("spawn")) {
+                    if (storage.getConfig().enableSpawn()) {
+                        Messages.sendMessage(player, "warp_reserved_spawn_get", "/spawn");
+                    } else {
+                        Messages.sendMessage(player, "warp_no_exist", "spawn");
+                    }
+                    return false;
+                }
+
                 return teleports.teleportPlayer(player, argValue, true);
             })));
 
