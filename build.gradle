@@ -28,6 +28,7 @@ processResources {
         "version": project.version,
         "java_version": project.java_version,
         "minecraft_version": project.minecraft_version,
+        "minecraft_version_range": project.minecraft_version_range,
         "loader_version": project.loader_version
     ]
 
