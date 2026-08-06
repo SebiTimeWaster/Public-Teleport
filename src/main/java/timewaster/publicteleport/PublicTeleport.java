@@ -40,6 +40,6 @@ public class PublicTeleport implements ModInitializer {
             }
         });
 
-        LOGGER.info("Public Teleport initialized!");
+        LOGGER.info("(" + MOD_ID + ") initialized!");
     }
 }

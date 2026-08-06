@@ -106,7 +106,7 @@ public class Storage {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error("Failed to create config directories!");
+            logger.error("(" + modId + ") Failed to create config directories!");
             throw new UncheckedIOException(e);
         }
     }
@@ -146,7 +146,7 @@ public class Storage {
 
             return mergedConfig;
         } catch (IOException e) {
-            logger.error("Failed to load config from: ", fileConfig.toPath().toString());
+            logger.error("(" + modId + ") Failed to load config from: ", fileConfig.toPath().toString());
             throw new UncheckedIOException(e);
         }
     }
@@ -160,14 +160,14 @@ public class Storage {
         try {
             modContainer = fabricLoader.getModContainer(modId).get();
         } catch (NoSuchElementException e) {
-            logger.error("Could not find mod container!");
+            logger.error("(" + modId + ") Could not find mod container!");
             throw new NoSuchElementException(e);
         }
 
         try {
             languagePath = modContainer.findPath(languageFile).get();
         } catch (NoSuchElementException e) {
-            logger.error("Could not find language file!");
+            logger.error("(" + modId + ") Could not find language file!");
             throw new NoSuchElementException(e);
         }
 
@@ -177,7 +177,7 @@ public class Storage {
 
             return GSON.fromJson(reader, mapType);
         } catch (IOException e) {
-            logger.error("Failed to load language file from: ", languagePath.toString());
+            logger.error("(" + modId + ") Failed to load language file from: ", languagePath.toString());
             throw new UncheckedIOException(e);
         }
     }
@@ -211,7 +211,7 @@ public class Storage {
 
             return GSON.fromJson(reader, listType);
         } catch (IOException e) {
-            logger.error("Failed to load data from: ", file.toPath().toString());
+            logger.error("(" + modId + ") Failed to load data from: ", file.toPath().toString());
 
             if (failOnError) {
                 throw new UncheckedIOException(e);
@@ -247,7 +247,7 @@ public class Storage {
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            logger.error("Failed to save data to: ", file.toPath().toString());
+            logger.error("(" + modId + ") Failed to save data to: ", file.toPath().toString());
 
             if (failOnError) {
                 throw new UncheckedIOException(e);
