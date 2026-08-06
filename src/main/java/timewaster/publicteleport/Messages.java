@@ -66,7 +66,7 @@ public class Messages {
 
     public static class Builder {
         @NotNull
-        private MutableComponent message = Component.literal("");
+        private static MutableComponent message = Component.literal("");
 
         public Builder append(String identifier, Type messageType, Object... params) {
             if (messageType == null) {
@@ -78,19 +78,17 @@ public class Messages {
             return this;
         }
 
-        public Builder append(String text) {
-            if (text != null) {
-                message.append(text);
-            }
+        public Builder append(@NotNull String text) {
+            message.append(text);
 
             return this;
         }
 
         public Builder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
             @NotNull String command) {
-            message.append(buttonText).withStyle(style -> style
+            message.append(buttonText.withStyle(style -> style
                 .withClickEvent(new ClickEvent.RunCommand(command))
-                .withHoverEvent(new HoverEvent.ShowText(hoverText)));
+                .withHoverEvent(new HoverEvent.ShowText(hoverText))));
 
             return this;
         }

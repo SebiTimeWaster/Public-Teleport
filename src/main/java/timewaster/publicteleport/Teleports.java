@@ -137,15 +137,17 @@ public class Teleports {
         if (teleportNames.size() == 0) {
             Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.TEXT);
         } else {
-            Messages.sendMessage(player, isWarps ? "headline_warps" : "headline_homes", null);
+            Messages.Builder builder = new Messages.Builder().append(isWarps ? "headline_warps" : "headline_homes");
 
             for (String name : teleportNames) {
                 MutableComponent buttonText = Messages.getMessage("button_named", Messages.Type.BUTTON, name);
                 MutableComponent hoverText = Messages.getMessage("teleport_to", null, name);
                 String command = isWarps ? "/warp " + name : "/home " + name;
 
-                new Messages.Builder().append("  ").button(buttonText, hoverText, command).send(player);
+                builder.append("\n  ").button(buttonText, hoverText, command);
             }
+
+            builder.send(player);
         }
 
         return true;
