@@ -17,7 +17,7 @@ public class Messages {
     private static Map<String, String> defaultTranslations = new HashMap<String, String>();
 
     public static enum Type {
-        TEXT, SUCCESS, ERROR, BUTTON, REQUEST
+        SUCCESS, WARNING, ERROR, REQUEST, BUTTON
     }
 
     public static void setModId(String modIdToSet) {
@@ -35,11 +35,11 @@ public class Messages {
         String defaultString = defaultTranslations.get(key);
         ChatFormatting color = switch (messageType) {
             case null -> null;
-            case TEXT -> null;
             case SUCCESS -> ChatFormatting.GREEN;
+            case WARNING -> ChatFormatting.YELLOW;
             case ERROR -> ChatFormatting.RED;
+            case REQUEST -> ChatFormatting.AQUA;
             case BUTTON -> ChatFormatting.GOLD;
-            case REQUEST -> ChatFormatting.YELLOW;
             default -> null;
         };
 
@@ -69,10 +69,6 @@ public class Messages {
         private MutableComponent message = Component.literal("");
 
         public MessageBuilder append(String identifier, Type messageType, Object... params) {
-            if (messageType == null) {
-                messageType = Type.TEXT;
-            }
-
             message.append(getMessage(identifier, messageType, params));
 
             return this;

@@ -95,7 +95,7 @@ public class Teleports {
         if (Math.abs(target.x() - Math.floor(player.getX())) <= 1 &&
             Math.abs(target.y() - Math.ceil(player.getY())) <= 1 &&
             Math.abs(target.z() - Math.floor(player.getZ())) <= 1) {
-            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.TEXT, originalTargetName);
+            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.WARNING, originalTargetName);
             return false;
         }
 
@@ -135,11 +135,10 @@ public class Teleports {
         }
 
         if (teleportNames.size() == 0) {
-            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.TEXT);
+            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.WARNING);
         } else {
-            String headlineIdentifier = isWarps ? "headline_warps" : "headline_homes";
-
-            Messages.MessageBuilder builder = new Messages.MessageBuilder().append(headlineIdentifier);
+            Messages.MessageBuilder builder = new Messages.MessageBuilder().append(
+                isWarps ? "headline_warps" : "headline_homes", Messages.Type.REQUEST);
 
             for (String name : teleportNames) {
                 MutableComponent buttonText = Messages.getMessage("button_named", Messages.Type.BUTTON, name);

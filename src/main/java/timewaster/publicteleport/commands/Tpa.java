@@ -24,7 +24,7 @@ public class Tpa {
         dispatcher.register(Commands.literal("tpa")
             .then(registrar.buildArgumentPlayer("target", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
                 if (player.getName().equals(target.getName())) {
-                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.ERROR);
+                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.WARNING);
                     return false;
                 }
 
@@ -34,7 +34,7 @@ public class Tpa {
         dispatcher.register(Commands.literal("tpahere")
             .then(registrar.buildArgumentPlayer("target", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
                 if (player == target) {
-                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.ERROR);
+                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.WARNING);
                     return false;
                 }
 

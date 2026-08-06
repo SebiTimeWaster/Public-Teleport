@@ -32,7 +32,7 @@ public class Homes {
         dispatcher.register(Commands.literal("sethome")
             .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name", Messages.Type.ERROR);
+                    Messages.sendMessage(player, "home_reserved_name", Messages.Type.WARNING);
                     return false;
                 }
 
@@ -45,7 +45,7 @@ public class Homes {
                 if (isSaved) {
                     Messages.sendMessage(player, "home_set_named", Messages.Type.SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.ERROR,
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.WARNING,
                         storage.getConfig().maxHomes());
                 }
 
@@ -61,7 +61,7 @@ public class Homes {
                 if (isSaved) {
                     Messages.sendMessage(player, "home_set", Messages.Type.SUCCESS);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.ERROR,
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.WARNING,
                         storage.getConfig().maxHomes());
                 }
 
@@ -94,7 +94,7 @@ public class Homes {
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
                     if (storage.getConfig().enableBack()) {
-                        Messages.sendMessage(player, "home_reserved_name_get", Messages.Type.ERROR, "/back");
+                        Messages.sendMessage(player, "home_reserved_name_get", Messages.Type.WARNING, "/back");
                     } else {
                         Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
                     }

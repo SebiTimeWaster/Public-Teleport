@@ -57,10 +57,11 @@ public class Requests {
 
             if (request.expires() <= now) {
                 if (sender != null) {
-                    Messages.sendMessage(sender, "request_timedout_sender", Messages.Type.TEXT, request.receiverName());
+                    Messages.sendMessage(sender, "request_timedout_sender", Messages.Type.WARNING,
+                        request.receiverName());
                 }
                 if (receiver != null) {
-                    Messages.sendMessage(receiver, "request_timedout_receiver", Messages.Type.TEXT,
+                    Messages.sendMessage(receiver, "request_timedout_receiver", Messages.Type.WARNING,
                         request.senderName());
                 }
             }
@@ -109,10 +110,10 @@ public class Requests {
 
         ServerPlayer receiver = getPlayerByOtherPlayer(request.receiver(), sender);
         if (receiver != null) {
-            Messages.sendMessage(receiver, "request_cancelled_receiver", Messages.Type.ERROR,
+            Messages.sendMessage(receiver, "request_cancelled_receiver", Messages.Type.WARNING,
                 sender.getName().getString());
         }
-        Messages.sendMessage(sender, "request_cancelled_sender", Messages.Type.ERROR);
+        Messages.sendMessage(sender, "request_cancelled_sender", Messages.Type.SUCCESS);
 
         pendingRequests.remove(request);
 
@@ -164,9 +165,9 @@ public class Requests {
         }
 
         if (sender != null) {
-            Messages.sendMessage(sender, "request_denied_sender", Messages.Type.ERROR, request.receiverName());
+            Messages.sendMessage(sender, "request_denied_sender", Messages.Type.WARNING, request.receiverName());
         }
-        Messages.sendMessage(receiver, "request_denied_receiver", Messages.Type.ERROR, request.senderName());
+        Messages.sendMessage(receiver, "request_denied_receiver", Messages.Type.SUCCESS, request.senderName());
 
         pendingRequests.remove(request);
 
