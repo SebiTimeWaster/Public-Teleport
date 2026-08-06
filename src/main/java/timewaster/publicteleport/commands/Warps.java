@@ -37,9 +37,9 @@ public class Warps {
             .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
                     if (storage.getConfig().enableSpawn()) {
-                        Messages.sendMessage(player, "warp_reserved_spawn_set", Messages.Type.ERROR, "/setspawn");
+                        Messages.sendMessage(player, "warp_reserved_spawn_set", Messages.Type.WARNING, "/setspawn");
                     } else {
-                        Messages.sendMessage(player, "warp_reserved_name", Messages.Type.ERROR);
+                        Messages.sendMessage(player, "warp_reserved_name", Messages.Type.WARNING);
                     }
                     return false;
                 }
@@ -81,7 +81,7 @@ public class Warps {
             .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
                     if (storage.getConfig().enableSpawn()) {
-                        Messages.sendMessage(player, "warp_reserved_spawn_get", Messages.Type.ERROR, "/spawn");
+                        Messages.sendMessage(player, "warp_reserved_spawn_get", Messages.Type.WARNING, "/spawn");
                     } else {
                         Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, "spawn");
                     }
