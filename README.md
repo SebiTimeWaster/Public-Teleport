@@ -7,7 +7,7 @@
 An easy-to-use Fabric Teleport Mod
 
 - Homes, Warps, Back, Spawn, TPA
-- Server or client-side (Multi/Singleplayer, client-side installation is NOT needed for server-side installation!)
+- Server- and/or client-side (Multi/Singleplayer, client-side installation is NOT needed for server-side installation!)
 - Minimal configuration with predefined values
 
 ## Commands
@@ -42,7 +42,7 @@ On first run a config file is created in `config/public-teleport/config.json` wi
 
 | Field             | Default | Description                                                                 |
 | ----------------- | ------- | --------------------------------------------------------------------------- |
-| `defaultLanguage` | `en_us` | The default language used, see section Languages below.                     |
+| `defaultLanguage` | `en_us` | The default language used, see section "Languages" below.                   |
 | `maxHomes`        | 10      | The maximum amount of homes a player can have (Set to `0` to disable limit) |
 | `requestTimeout`  | 60      | How long a teleport request is active before it is removed in seconds       |
 | `enableSpawn`     | true    | If the `/setspawn, /spawn` commands are enabled                             |
@@ -73,7 +73,7 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
 - Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into your `mods` folder on your server or client
 - Restart your server or client
-- If needed edit the configuration as described in the section Configuration above
+- If needed edit the configuration as described in the section "Configuration" above
 
 ## Migration from MiniTeleport
 
