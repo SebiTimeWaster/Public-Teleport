@@ -88,7 +88,7 @@ public class Requests {
         pendingRequests
             .add(new Request(sender.getUUID(), receiver.getUUID(), senderName, receiverName, reverse, expires));
 
-        new Messages.Builder()
+        new Messages.MessageBuilder()
             .append(headlineIdentifier, Messages.Type.REQUEST, senderName)
             .button(acceptButtonText, acceptHoverText, "/tpaccept " + senderName)
             .append("  ")

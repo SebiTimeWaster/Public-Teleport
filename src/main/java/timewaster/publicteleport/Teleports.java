@@ -137,7 +137,9 @@ public class Teleports {
         if (teleportNames.size() == 0) {
             Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.TEXT);
         } else {
-            Messages.Builder builder = new Messages.Builder().append(isWarps ? "headline_warps" : "headline_homes");
+            String headlineIdentifier = isWarps ? "headline_warps" : "headline_homes";
+
+            Messages.MessageBuilder builder = new Messages.MessageBuilder().append(headlineIdentifier);
 
             for (String name : teleportNames) {
                 MutableComponent buttonText = Messages.getMessage("button_named", Messages.Type.BUTTON, name);

@@ -64,11 +64,11 @@ public class Messages {
         player.sendSystemMessage(getMessage(identifier, messageType, params));
     }
 
-    public static class Builder {
+    public static class MessageBuilder {
         @NotNull
-        private static MutableComponent message = Component.literal("");
+        private MutableComponent message = Component.literal("");
 
-        public Builder append(String identifier, Type messageType, Object... params) {
+        public MessageBuilder append(String identifier, Type messageType, Object... params) {
             if (messageType == null) {
                 messageType = Type.TEXT;
             }
@@ -78,13 +78,13 @@ public class Messages {
             return this;
         }
 
-        public Builder append(@NotNull String text) {
+        public MessageBuilder append(@NotNull String text) {
             message.append(text);
 
             return this;
         }
 
-        public Builder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
+        public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
             @NotNull String command) {
             message.append(buttonText.withStyle(style -> style
                 .withClickEvent(new ClickEvent.RunCommand(command))
