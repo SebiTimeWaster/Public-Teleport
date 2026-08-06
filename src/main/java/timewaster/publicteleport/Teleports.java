@@ -6,6 +6,7 @@ import java.util.Set;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -55,7 +56,7 @@ public class Teleports {
         ServerLevel level = player.level().getServer().getLevel(dimKey);
 
         if (level == null) {
-            Messages.sendMessage(player, "level_no_exist");
+            Messages.sendMessage(player, "level_no_exist", Messages.Type.ERROR);
             return false;
         }
 
@@ -74,7 +75,7 @@ public class Teleports {
         if (result) {
             doTeleportEffect(player);
         } else {
-            Messages.sendMessage(player, "unknown_error");
+            Messages.sendMessage(player, "unknown_error", Messages.Type.ERROR);
         }
 
         return result;
@@ -86,19 +87,19 @@ public class Teleports {
         }
 
         if (target.name().equals("public_teleport_not_found")) {
-            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", originalTargetName);
+            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.Type.ERROR,
+                originalTargetName);
             return false;
         }
 
         if (Math.abs(target.x() - Math.floor(player.getX())) <= 1 &&
             Math.abs(target.y() - Math.ceil(player.getY())) <= 1 &&
             Math.abs(target.z() - Math.floor(player.getZ())) <= 1) {
-            Messages.sendMessage(player, "teleport_unnecessary", originalTargetName);
+            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.TEXT, originalTargetName);
             return false;
         }
 
         Teleport back = Teleport.create(player, "back");
-        boolean isHomeOrBack = List.of("home", "back").contains(target.name());
         boolean result = teleport(player, target);
 
         if (result) {
@@ -106,7 +107,8 @@ public class Teleports {
                 storage.setTeleport(player, back, false);
             }
 
-            Messages.sendMessage(player, isHomeOrBack ? "teleported" : "teleported_to", target.name());
+            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS,
+                target.name());
         }
 
         return result;
@@ -128,22 +130,22 @@ public class Teleports {
 
     public static boolean listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
         if (teleportNames == null) {
-            Messages.sendMessage(player, "unknown_error");
+            Messages.sendMessage(player, "unknown_error", Messages.Type.ERROR);
             return false;
         }
 
         if (teleportNames.size() == 0) {
-            Messages.sendMessage(player, isWarps ? "no_warps" : "no_homes");
+            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.TEXT);
         } else {
-            Messages.Builder builder = new Messages.Builder().append(isWarps ? "headline_warps" : "headline_homes");
+            Messages.sendMessage(player, isWarps ? "headline_warps" : "headline_homes", null);
 
             for (String name : teleportNames) {
-                builder.append("line");
-                builder.button(Messages.getMessage("button_named", name), isWarps ? "/warp " + name : "/home " + name,
-                    Messages.getMessage("teleport_to", name));
-            }
+                MutableComponent buttonText = Messages.getMessage("button_named", Messages.Type.BUTTON, name);
+                MutableComponent hoverText = Messages.getMessage("teleport_to", null, name);
+                String command = isWarps ? "/warp " + name : "/home " + name;
 
-            builder.send(player);
+                new Messages.Builder().append("  ").button(buttonText, hoverText, command).send(player);
+            }
         }
 
         return true;

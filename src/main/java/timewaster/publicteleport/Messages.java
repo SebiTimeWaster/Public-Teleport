@@ -1,6 +1,7 @@
 package timewaster.publicteleport;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,17 +13,28 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 public class Messages {
+    private static String modId;
+    private static Map<String, String> defaultTranslations = new HashMap<String, String>();
+
     public static enum Type {
         TEXT, SUCCESS, ERROR, BUTTON, REQUEST
     }
 
-    @NotNull
-    private static MutableComponent createText(String text, Type type) {
-        if (text == null) {
-            return Component.literal("Unknown Error").withStyle(ChatFormatting.RED);
-        }
+    public static void setModId(String modIdToSet) {
+        modId = modIdToSet;
+    }
 
-        ChatFormatting color = switch (type) {
+    public static void setTranslations(Map<String, String> translations) {
+        defaultTranslations = translations;
+    }
+
+    @NotNull
+    public static MutableComponent getMessage(String identifier, Type messageType, Object... params) {
+        MutableComponent component;
+        String key = modId + "." + identifier;
+        String defaultString = defaultTranslations.get(key);
+        ChatFormatting color = switch (messageType) {
+            case null -> null;
             case TEXT -> null;
             case SUCCESS -> ChatFormatting.GREEN;
             case ERROR -> ChatFormatting.RED;
@@ -31,151 +43,60 @@ public class Messages {
             default -> null;
         };
 
-        if (color != null) {
-            return Component.literal(text).withStyle(color);
-        } else {
-            return Component.literal(text);
+        if (defaultString == null) {
+            defaultString = key;
         }
+
+        if (params != null) {
+            component = Component.translatableWithFallback(key, defaultString, params);
+        } else {
+            component = Component.translatableWithFallback(key, defaultString);
+        }
+
+        if (color != null) {
+            component = component.withStyle(color);
+        }
+
+        return component;
     }
 
-    @NotNull
-    private static Component colorFormat(String text, Type color, Object... params) {
-        if (params != null)
-            text = String.format(text, params);
-
-        return createText(text, color);
-    }
-
-    @NotNull
-    private static Component error(String text, Object... params) {
-        return colorFormat(text, Type.ERROR, params);
-    }
-
-    @NotNull
-    private static Component success(String text, Object... params) {
-        return colorFormat(text, Type.SUCCESS, params);
-    }
-
-    private static void sendMessage(ServerPlayer player, @NotNull Component message) {
-        player.sendSystemMessage(message);
+    public static void sendMessage(ServerPlayer player, String identifier, Type messageType, Object... params) {
+        player.sendSystemMessage(getMessage(identifier, messageType, params));
     }
 
     public static class Builder {
         @NotNull
         private MutableComponent message = Component.literal("");
 
-        public Builder append(String identifier, Type type, Object... params) {
-            message.append(createText(getMessage(identifier, params), type));
+        public Builder append(String identifier, Type messageType, Object... params) {
+            if (messageType == null) {
+                messageType = Type.TEXT;
+            }
+
+            message.append(getMessage(identifier, messageType, params));
 
             return this;
         }
 
-        public Builder append(String identifier) {
-            append(identifier, Type.TEXT);
+        public Builder append(String text) {
+            if (text != null) {
+                message.append(text);
+            }
 
             return this;
         }
 
-        public Builder append(String identifier, Object... params) {
-            append(identifier, Type.TEXT, params);
-
-            return this;
-        }
-
-        public Builder button(String text, @NotNull String command, @NotNull String hoverText, Type type) {
-            if (type == null)
-                type = Type.BUTTON;
-
-            message.append(createText(text, type).withStyle(style -> style
+        public Builder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
+            @NotNull String command) {
+            message.append(buttonText).withStyle(style -> style
                 .withClickEvent(new ClickEvent.RunCommand(command))
-                .withHoverEvent(new HoverEvent.ShowText(Component.literal(hoverText)))));
-
-            return this;
-        }
-
-        public Builder button(String text, @NotNull String command, @NotNull String hoverText) {
-            button(text, command, hoverText, Type.BUTTON);
+                .withHoverEvent(new HoverEvent.ShowText(hoverText)));
 
             return this;
         }
 
         public void send(ServerPlayer player) {
-            sendMessage(player, message);
+            player.sendSystemMessage(message);
         }
-    }
-
-    public static void sendMessage(ServerPlayer player, String identifier, Object... params) {
-        Component message = switch (identifier) {
-            case "data_not_loaded" -> error("The data could not be loaded, please contact a server admin.");
-            case "data_not_saved" -> error("The data could not be saved, please contact a server admin.");
-            case "home_deleted" -> success("The home \"%s\" was deleted.", params);
-            case "home_no_exist" -> error("The home \"%s\" does not exist.", params);
-            case "home_reserved_name_get" ->
-                error("The home \"back\" does not exist, please use the command \"%s\" instead.", params);
-            case "home_reserved_name" -> error("The name \"back\" cannot be used.");
-            case "home_set_max_reached" ->
-                error("Could not set home, your have reached the limit of %s homes.", params);
-            case "home_set_named" -> success("Home \"%s\" set.", params);
-            case "home_set" -> success("Home set.");
-            case "level_no_exist" -> error("This dimension does not exist.");
-            case "no_homes" -> error("You have no homes.");
-            case "no_warps" -> error("There are no warps.");
-            case "request_accepted_receiver" -> success("You accepted the teleport request from %s.", params);
-            case "request_accepted_sender" -> success("%s has accepted your teleport request.", params);
-            case "request_cancelled_receiver" -> error("%s cancelled their teleport request.", params);
-            case "request_cancelled_sender" -> error("Teleport request cancelled.");
-            case "request_denied_receiver" -> error("You denied the teleport request from %s.", params);
-            case "request_denied_sender" -> error("%s has denied your teleport request.", params);
-            case "request_no_exist" -> error("No teleport request found.");
-            case "request_old_exist" ->
-                error("You have an open teleport request to %s, please cancel it with \"/tpcancel\" first.", params);
-            case "request_sender_no_ingame" -> error("%s is no longer in-game, teleport request cancelled.", params);
-            case "request_sent" -> success("Teleport request sent to %s.", params);
-            case "request_teleport_self" -> error("You cannot teleport to yourself.");
-            case "request_timedout_receiver" -> error("The teleport request from %s has timed out.", params);
-            case "request_timedout_sender" -> error("The teleport request to %s has timed out.", params);
-            case "spawn_set" -> success("Spawn set.");
-            case "teleported_to" -> success("Teleported to %s.", params);
-            case "teleported" -> success("Teleported %s.", params);
-            case "teleport_unnecessary" -> error("You already are at %s.", params);
-            case "unknown_error" -> error("Unknown error!");
-            case "warp_deleted" -> success("The warp \"%s\" was deleted.", params);
-            case "warp_no_exist" -> error("The warp \"%s\" does not exist.", params);
-            case "warp_reserved_name" -> error("The name \"spawn\" cannot be used.");
-            case "warp_reserved_spawn_set" ->
-                error("The name \"spawn\" cannot be used, please use the command \"%s\" instead.", params);
-            case "warp_reserved_spawn_get" ->
-                error("The warp \"spawn\" does not exist, please use the command \"%s\" instead.", params);
-            case "warp_set" -> success("Warp \"%s\" set.", params);
-            default -> error("Unknown Error!");
-        };
-
-        sendMessage(player, message);
-    }
-
-    @NotNull
-    public static String getMessage(String identifier, Object... params) {
-        String message = switch (identifier) {
-            case " " -> "  ";
-            case "button_accept" -> "[ Accept ]";
-            case "button_deny" -> "[ Deny ]";
-            case "button_named" -> String.format("[ %s ]", params);
-            case "err_create_dir" -> "Failed to create config directories!";
-            case "err_load_config" -> "Failed to load config from {}:";
-            case "err_load_file" -> "Failed to load from {}:";
-            case "err_save_file" -> "Failed to save to {}:";
-            case "headline_homes" -> "Your homes:";
-            case "headline_warps" -> "Public warps:";
-            case "init" -> "Public Teleport initialized!";
-            case "line" -> "\n  ";
-            case "request_accept" -> String.format("Accept teleport request from %s", params);
-            case "request_deny" -> String.format("Deny teleport request from %s", params);
-            case "request_received_rev" -> String.format("%s wants you to teleport to them:\n", params);
-            case "request_received" -> String.format("%s wants to teleport to you:\n", params);
-            case "teleport_to" -> String.format("Teleport to %s", params);
-            default -> "Unknown Error!";
-        };
-
-        return Objects.requireNonNull(message);
     }
 }

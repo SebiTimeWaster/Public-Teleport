@@ -44,6 +44,32 @@ public class Registrar {
         register();
     }
 
+    private void register() {
+        Config config = storage.getConfig();
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            if (config.enableSpawn()) {
+                new Spawn(dispatcher, storage, teleports);
+            }
+
+            if (config.enableWarps()) {
+                new Warps(dispatcher, this, storage, teleports);
+            }
+
+            if (config.enableHomes()) {
+                new Homes(dispatcher, this, storage, teleports);
+            }
+
+            if (config.enableBack()) {
+                new Back(dispatcher, teleports);
+            }
+
+            if (config.enableTpa() && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
+                new Tpa(dispatcher, this, requests);
+            }
+        });
+    }
+
     private static ServerPlayer getPlayer(CommandContext<CommandSourceStack> context) {
         return context.getSource().getPlayer();
     }
@@ -73,27 +99,6 @@ public class Registrar {
         }
 
         return builder.buildFuture();
-    }
-
-    private void register() {
-        Config config = storage.getConfig();
-
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            if (config.enableSpawn())
-                new Spawn(dispatcher, storage, teleports);
-
-            if (config.enableWarps())
-                new Warps(dispatcher, this, storage, teleports);
-
-            if (config.enableHomes())
-                new Homes(dispatcher, this, storage, teleports);
-
-            if (config.enableBack())
-                new Back(dispatcher, teleports);
-
-            if (config.enableTpa() && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER)
-                new Tpa(dispatcher, this, requests);
-        });
     }
 
     public static int contextWrapper(CommandContext<CommandSourceStack> context,

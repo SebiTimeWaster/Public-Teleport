@@ -32,13 +32,14 @@ public class PublicTeleport implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
 
-            if (tickCounter >= 20) { // 20 ticks = 1 second
+            // 20 ticks = 1 second
+            if (tickCounter >= 20) {
                 tickCounter = 0;
 
                 requests.cleanup(server);
             }
         });
 
-        LOGGER.info(Messages.getMessage("init"));
+        LOGGER.info("Public Teleport initialized!");
     }
 }

@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.records.Config;
 import timewaster.publicteleport.records.Teleport;
@@ -48,15 +50,17 @@ import timewaster.publicteleport.records.Teleport;
 public class Storage {
 
     /** Fallback configuration used when no config file exists yet. */
-    private static final Config configDefault = new Config(10, 60, true, true, true, true, true);
+    private static final Config configDefault = new Config("en_us", 10, 60, true, true, true, true, true);
     /** Shared Gson instance used for all JSON (de)serialization. */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    /** The ID of this mod */
+    private final String modId;
+    /** Logger used to report I/O failures. */
+    private final Logger logger;
     /** Directory containing this mod's config, e.g. {@code config/<modId>/}. */
     private final Path pathConfig;
     /** Path for per-player home files, e.g. {@code config/<modId>/homes/}. */
     private final Path pathConfigHomes;
-    /** Logger used to report I/O failures. */
-    private final Logger logger;
     /** The {@code config.json} file on disk. */
     private final File fileConfig;
     /** The {@code warps.json} file on disk. */
@@ -79,13 +83,16 @@ public class Storage {
      *                                  cannot be created
      */
     public Storage(String modId, Logger logger) {
+        this.modId = modId;
+        this.logger = logger;
         this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(modId);
         this.pathConfigHomes = pathConfig.resolve("homes");
-        this.logger = logger;
         this.fileConfig = pathConfig.resolve("config.json").toFile();
         this.fileWarps = pathConfig.resolve("warps.json").toFile();
         createDirectories();
         this.config = loadConfig();
+        Messages.setModId(modId);
+        Messages.setTranslations(loadTranslations());
         this.warps = loadFile(fileWarps, true);
     }
 
@@ -99,7 +106,7 @@ public class Storage {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error(Messages.getMessage("err_create_dir"));
+            logger.error("Failed to create config directories!");
             throw new UncheckedIOException(e);
         }
     }
@@ -139,7 +146,38 @@ public class Storage {
 
             return mergedConfig;
         } catch (IOException e) {
-            logger.error(Messages.getMessage("err_load_config"), fileConfig, e);
+            logger.error("Failed to load config from: ", fileConfig.toPath().toString());
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private Map<String, String> loadTranslations() {
+        String languageFile = "assets/" + modId + "/lang/" + config.defaultLanguage() + ".json";
+        FabricLoader fabricLoader = FabricLoader.getInstance();
+        ModContainer modContainer;
+        Path languagePath;
+
+        try {
+            modContainer = fabricLoader.getModContainer(modId).get();
+        } catch (NoSuchElementException e) {
+            logger.error("Could not find mod container!");
+            throw new NoSuchElementException(e);
+        }
+
+        try {
+            languagePath = modContainer.findPath(languageFile).get();
+        } catch (NoSuchElementException e) {
+            logger.error("Could not find language file!");
+            throw new NoSuchElementException(e);
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(languagePath, StandardCharsets.UTF_8)) {
+            TypeToken<Map<String, String>> mapType = new TypeToken<Map<String, String>>() {
+            };
+
+            return GSON.fromJson(reader, mapType);
+        } catch (IOException e) {
+            logger.error("Failed to load language file from: ", languagePath.toString());
             throw new UncheckedIOException(e);
         }
     }
@@ -173,7 +211,8 @@ public class Storage {
 
             return GSON.fromJson(reader, listType);
         } catch (IOException e) {
-            logger.error(Messages.getMessage("err_load_file"), file, e);
+            logger.error("Failed to load data from: ", file.toPath().toString());
+
             if (failOnError) {
                 throw new UncheckedIOException(e);
             } else {
@@ -208,7 +247,8 @@ public class Storage {
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            logger.error(Messages.getMessage("err_save_file"), file, e);
+            logger.error("Failed to save data to: ", file.toPath().toString());
+
             if (failOnError) {
                 throw new UncheckedIOException(e);
             } else {
@@ -294,7 +334,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : player.getUUID());
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded");
+            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
             return null;
         }
 
@@ -324,7 +364,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded");
+            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
             return null;
         }
 
@@ -364,7 +404,7 @@ public class Storage {
         int numTeleports = 0;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded");
+            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
             return null;
         }
 
@@ -389,7 +429,7 @@ public class Storage {
         }
 
         if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-            Messages.sendMessage(player, "data_not_saved");
+            Messages.sendMessage(player, "data_not_saved", Messages.Type.ERROR);
             return null;
         }
 
@@ -412,7 +452,7 @@ public class Storage {
         boolean exists = false;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded");
+            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
             return null;
         }
 
@@ -425,7 +465,7 @@ public class Storage {
 
         if (exists) {
             if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-                Messages.sendMessage(player, "data_not_saved");
+                Messages.sendMessage(player, "data_not_saved", Messages.Type.ERROR);
                 return null;
             }
 

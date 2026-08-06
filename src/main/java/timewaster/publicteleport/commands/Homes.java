@@ -32,7 +32,7 @@ public class Homes {
         dispatcher.register(Commands.literal("sethome")
             .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name");
+                    Messages.sendMessage(player, "home_reserved_name", Messages.Type.ERROR);
                     return false;
                 }
 
@@ -43,9 +43,10 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set_named", argValue);
+                    Messages.sendMessage(player, "home_set_named", Messages.Type.SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.ERROR,
+                        storage.getConfig().maxHomes());
                 }
 
                 return true;
@@ -58,9 +59,10 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set");
+                    Messages.sendMessage(player, "home_set", Messages.Type.SUCCESS);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", storage.getConfig().maxHomes());
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.ERROR,
+                        storage.getConfig().maxHomes());
                 }
 
                 return true;
@@ -69,7 +71,7 @@ public class Homes {
         dispatcher.register(Commands.literal("delhome")
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_no_exist", argValue);
+                    Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
                     return false;
                 }
 
@@ -79,7 +81,11 @@ public class Homes {
                     return false;
                 }
 
-                Messages.sendMessage(player, success ? "home_deleted" : "home_no_exist", argValue);
+                if (success) {
+                    Messages.sendMessage(player, "home_deleted", Messages.Type.SUCCESS, argValue);
+                } else {
+                    Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
+                }
 
                 return true;
             })));
@@ -88,9 +94,9 @@ public class Homes {
             .then(registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
                     if (storage.getConfig().enableBack()) {
-                        Messages.sendMessage(player, "home_reserved_name_get", "/back");
+                        Messages.sendMessage(player, "home_reserved_name_get", Messages.Type.ERROR, "/back");
                     } else {
-                        Messages.sendMessage(player, "home_no_exist", argValue);
+                        Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
                     }
                     return false;
                 }

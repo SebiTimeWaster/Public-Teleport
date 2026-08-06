@@ -35,7 +35,7 @@ public class Spawn {
                     return false;
                 }
 
-                Messages.sendMessage(player, "spawn_set");
+                Messages.sendMessage(player, "spawn_set", Messages.Type.SUCCESS);
 
                 return true;
             })));
