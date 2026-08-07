@@ -14,6 +14,9 @@ import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
+/**
+ * Defines all Warp commands, registered by {@link Registrar}.
+ */
 public class Warps {
     private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
         .hasPermission(Permissions.COMMANDS_OWNER);
@@ -87,7 +90,9 @@ public class Warps {
                     return false;
                 }
 
-                return Teleports.listTeleportNames(player, names, true);
+                Teleports.listTeleportNames(player, names, true);
+
+                return true;
             })));
     }
 }

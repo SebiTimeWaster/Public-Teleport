@@ -17,6 +17,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
+/**
+ * Performs the mod's actual teleportation logic, and holds adjacent helpers.
+ */
 public class Teleports {
     @SuppressWarnings("null")
     private static void doTeleportEffect(ServerPlayer player) {
@@ -110,6 +113,10 @@ public class Teleports {
         return result;
     }
 
+    /**
+     * Registers a listener that records a player's {@code back} location
+     * whenever they die.
+     */
     public static void registerDeathEvent() {
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
             if (entity instanceof ServerPlayer player) {
@@ -118,6 +125,15 @@ public class Teleports {
         });
     }
 
+    /**
+     * Looks up a named teleport destination (a home or a warp) and teleports
+     * the player to it if found.
+     *
+     * @param player             the player to teleport
+     * @param originalTargetName the name of the home or warp to teleport to
+     * @param isWarp             {@code true} if the teleport is a Warp, not a Home
+     * @return {@code true} if the destination was found and the teleport succeeded
+     */
     public static boolean teleportPlayer(ServerPlayer player, String originalTargetName, boolean isWarp) {
         Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, originalTargetName, isWarp);
 
@@ -128,16 +144,26 @@ public class Teleports {
         return teleportPlayer(player, teleportTarget, originalTargetName, isWarp);
     }
 
+    /**
+     * Teleports the player to an already-resolved destination.
+     *
+     * @param player the player to teleport
+     * @param target the destination to teleport the player to
+     * @return {@code true} if the teleport succeeded
+     */
     public static boolean teleportPlayer(ServerPlayer player, Teleport target) {
         return teleportPlayer(player, target, target.name(), false);
     }
 
-    public static boolean listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
-        if (teleportNames == null) {
-            Messages.sendMessage(player, "unknown_error", Messages.Type.ERROR);
-            return false;
-        }
-
+    /**
+     * Sends a player a chat message listing a set of teleport names as
+     * clickable buttons.
+     *
+     * @param player        the player to send the listing to
+     * @param teleportNames a list of teleport names
+     * @param isWarps       {@code true} if the list has Warps, not Homes
+     */
+    public static void listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
         if (teleportNames.size() == 0) {
             Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.WARNING);
         } else {
@@ -154,7 +180,5 @@ public class Teleports {
 
             builder.send(player);
         }
-
-        return true;
     }
 }

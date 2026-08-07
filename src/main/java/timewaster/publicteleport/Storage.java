@@ -34,49 +34,20 @@ import timewaster.publicteleport.records.Config;
 import timewaster.publicteleport.records.Teleport;
 
 /**
- * Handles all persistence for the mod: reading and writing the mod's
- * configuration file, the shared "warps" list, and per-player "homes"
- * lists.
- * <p>
- * Data is stored as JSON on disk under the Fabric config directory (e.g.
- * {@code config/<MOD_ID>/}), with one file for the global config, one
- * file for warps, and one file per player (named by UUID) under the
- * {@code homes} subdirectory.
- * <p>
- * This class is not thread-safe; callers are expected to only access it from a
- * single thread (e.g. the server thread) at a time.
+ * Loads and saves data in multiple files in the config directory
  */
 public class Storage {
-
-    /** Fallback configuration used when no config file exists yet. */
     private static final Config configDefault = new Config("en_us", 10, 60, true, true, true, true, true);
-    /** Shared Gson instance used for all JSON (de)serialization. */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    /** Directory containing this mod's config, e.g. {@code config/<MOD_ID>/}. */
     private final Path pathConfig;
-    /** Path for per-player home files, e.g. {@code config/<MOD_ID>/homes/}. */
     private final Path pathConfigHomes;
-    /** The {@code config.json} file on disk. */
     private final File fileConfig;
-    /** The {@code warps.json} file on disk. */
     private final File fileWarps;
-    /** The currently loaded mod configuration. */
     private final Config config;
-    /** The translations matching the language set in config */
     private final Map<String, String> translations;
-    /** Cache of the shared warp list, kept in sync with {@link #fileWarps}. */
     private List<Teleport> warps;
-    /** Cache of loaded user homes, kept in sync with the corresponding files. */
     private Map<UUID, List<Teleport>> homes = new HashMap<UUID, List<Teleport>>();
 
-    /**
-     * Creates the necessary file handlers, ensuring the config directories exist
-     * and loading the config and warps from disk (creating them with default values
-     * if they don't already exist).
-     *
-     * @throws UncheckedIOException if the config directories and config/data files
-     *                                  cannot be created
-     */
     public Storage() {
         this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(PublicTeleport.MOD_ID);
         this.pathConfigHomes = pathConfig.resolve("homes");
@@ -88,12 +59,6 @@ public class Storage {
         this.warps = loadFile(fileWarps, true);
     }
 
-    /**
-     * Ensures the mod's config directory and the homes subdirectory exist, creating
-     * any missing parent directories as needed.
-     *
-     * @throws UncheckedIOException if directory creation fails
-     */
     private void createDirectories() {
         try {
             Files.createDirectories(pathConfigHomes);
@@ -103,14 +68,6 @@ public class Storage {
         }
     }
 
-    /**
-     * Loads and deserializes JSON data from the config file.
-     * <p>
-     * If the file {@code fileConfig} does not exist yet it is created,
-     * {@code configDefault} is written to it and then used.
-     *
-     * @throws UncheckedIOException if the config could not be loaded
-     */
     private Config loadConfig() {
         if (!fileConfig.exists()) {
             saveFile(fileConfig, configDefault, true);
@@ -160,7 +117,7 @@ public class Storage {
         try {
             languagePath = modContainer.findPath(languageFile).get();
         } catch (NoSuchElementException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find language file!"));
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find language file: {}"), languageFile);
             throw new NoSuchElementException(e);
         }
 
@@ -176,21 +133,6 @@ public class Storage {
         }
     }
 
-    /**
-     * Loads and deserializes JSON data from the given file as a {@code List} of
-     * {@code Teleport}.
-     * <p>
-     * If the file does not exist yet it is created, {@code defaultValue} is written
-     * to it and then returned.
-     *
-     * @param file        the file to read from
-     * @param failOnError if an UncheckedIOException should be thrown on error
-     * @return the deserialized value, or {@code defaultValue} if the file does not
-     *         exist, or null if the file could not be read and
-     *         {@code failOnError} is false
-     * @throws UncheckedIOException if the file could not be loaded and
-     *                                  {@code failOnError} is true
-     */
     private @Nullable List<Teleport> loadFile(File file, boolean failOnError) {
         List<Teleport> defaultValue = new ArrayList<Teleport>();
 
@@ -216,20 +158,6 @@ public class Storage {
         }
     }
 
-    /**
-     * Serializes {@code data} to JSON and writes it to {@code file} atomically.
-     * <p>
-     * Writes are performed atomically: data is first written to a temporary file in
-     * the same directory, then moved into place with
-     * {@link StandardCopyOption#ATOMIC_MOVE}, so a crash or power loss during a
-     * save cannot leave a half-written or corrupted file behind.
-     *
-     * @param file the destination file to write to
-     * @param data the object to serialize as JSON
-     * @return true if save was successful
-     * @throws UncheckedIOException if the file could not be saved and
-     *                                  {@code failOnError} is true
-     */
     private boolean saveFile(File file, Object data, boolean failOnError) {
         try {
             Path tempPath = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
@@ -254,24 +182,10 @@ public class Storage {
         return true;
     }
 
-    /**
-     * Resolves the on-disk JSON file used to store a given player's homes.
-     *
-     * @param uuid the player's unique id
-     * @return the {@code <uuid>.json} file under the homes directory
-     */
     private File getHomeFileByUuid(UUID uuid) {
         return pathConfigHomes.resolve(uuid + ".json").toFile();
     }
 
-    /**
-     * Returns the current list of teleports for the given player from cache or
-     * file, or the shared warps list if {@code uuid} is {@code null}.
-     *
-     * @param uuid the player's unique id, or {@code null} to access warps
-     * @return the mutable list of teleports for the requested scope or {@code null}
-     *         if an error occured
-     */
     @Nullable
     private List<Teleport> loadTeleports(@Nullable UUID uuid) {
         @Nullable
@@ -294,14 +208,6 @@ public class Storage {
         return teleports;
     }
 
-    /**
-     * Caches and persists the given list of teleports for the given player or
-     * shared warps list if {@code uuid} is {@code null}.
-     *
-     * @param uuid      the player's unique id, or {@code null} to update warps
-     * @param teleports the full list of teleports to save
-     * @return true if save was successful
-     */
     private boolean saveTeleports(@Nullable UUID uuid, List<Teleport> teleports) {
         if (uuid != null) {
             homes.put(uuid, teleports);
@@ -315,14 +221,14 @@ public class Storage {
     }
 
     /**
-     * Returns a single teleport by name.
+     * Fetches and returns a teleport by name.
      *
      * @param player the player trying to load the data
      * @param name   the exact name of the teleport to find
-     * @param isWarp if it is a warp, not a home
-     * @return the matching {@link Teleport}, a new {@code Teleport} with name
-     *         "public_teleport_not_found" if not found or {@code null} if a file
-     *         error occured
+     * @param isWarp if it is a Warp, not a Home
+     * @return if found: the {@link Teleport}; if not found: a new {@link Teleport}
+     *         with the name "public_teleport_not_found"; if a file error occured:
+     *         {@code null}
      */
     @Nullable
     public Teleport getTeleport(ServerPlayer player, String name, boolean isWarp) {
@@ -343,12 +249,10 @@ public class Storage {
     }
 
     /**
-     * Returns the names of all teleports in the requested scope, sorted
-     * alphabetically, special keywords "back" and "spawn" are filtered out of homes
-     * and warps respectively.
+     * Fetches and returns the names of all teleports belonging to Warps or Homes.
      *
      * @param player the player trying to load the data
-     * @param isWarp if it is a warp, not a home
+     * @param isWarp if they are Warps, not Homes
      * @return an alphabetically sorted list of teleport names or {@code null} if a
      *         file error occured
      */
@@ -376,20 +280,13 @@ public class Storage {
     }
 
     /**
-     * Creates or updates a teleport with the given name and persists the change to
-     * disk.
-     * <p>
-     * If a teleport with the same name already exists, it is replaced in-place;
-     * otherwise the new teleport is added.
-     * <p>
-     * Checks if the Homes limit is reached, but the special Home "back" is exempt
-     * from the limit.
+     * Creates or updates a teleport with the given name and persists the change.
      *
-     * @param player      the player trying to load the data
-     * @param newTeleport the teleport to add or update, identified by its name
-     * @param isWarp      if it is a warp, not a home
-     * @return {@code false} if a new teleport would go over the {@code maxHomes}
-     *         limit and is not saved or {@code null} if a file error occured
+     * @param player      the player trying to save the data
+     * @param newTeleport the {@link Teleport} to add or update
+     * @param isWarp      if it is a Warp, not a Home
+     * @return if successful: true; if a new teleport would go over the
+     *         {@link maxHomes} limit: false; if a file error occured: {@code null}
      */
     @Nullable
     public Boolean setTeleport(ServerPlayer player, Teleport newTeleport, boolean isWarp) {
@@ -432,14 +329,13 @@ public class Storage {
     }
 
     /**
-     * Deletes the teleport with the given name if it exists and persists the change
-     * to disk.
+     * Deletes a teleport with the given name if it exists and persists the change.
      *
-     * @param player the player trying to load the data
-     * @param name   the teleport to delete, identified by its name
-     * @param isWarp if it is a warp, not a home
-     * @return {@code true} if a teleport was found and removed or {@code null} if a
-     *         file error occured
+     * @param player the player trying to delete the data
+     * @param name   the exact name of the teleport to delete
+     * @param isWarp if it is a Warp, not a Home
+     * @return if the teleport was found and deleted: {@code true}; if the teleport
+     *         was not found: {@code false}; if a file error occured: {@code null}
      */
     public Boolean deleteTeleport(ServerPlayer player, String name, boolean isWarp) {
         UUID uuid = player.getUUID();
@@ -470,11 +366,6 @@ public class Storage {
         return false;
     }
 
-    /**
-     * Returns the mod configuration.
-     *
-     * @return the active {@link Config}
-     */
     public Config getConfig() {
         return config;
     }

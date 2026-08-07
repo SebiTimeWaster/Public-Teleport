@@ -3,17 +3,13 @@ package timewaster.publicteleport.records;
 /**
  * Mod-wide configuration options.
  *
- * @param defaultlanguage The default language to use, can be overridden by the
- *                            client if the mod is installed on the client
+ * @param defaultlanguage The default language to use
  * @param maxHomes        maximum number of homes a single player may set
  * @param enableSpawn     whether the spawn features are enabled
- * @param enableWarps     whether warps are enabled
- * @param enableHomes     whether homes are enabled
- * @param enableBack      whether the "back" (return to previous location)
- *                            feature
- *                            is enabled
- * @param enableTpa       whether player-to-player teleport requests (tpa) are
- *                            enabled
+ * @param enableWarps     whether the warps features are enabled
+ * @param enableHomes     whether the homes features are enabled
+ * @param enableBack      whether the back features are enabled
+ * @param enableTpa       whether the TPA features are enabled
  */
 public final record Config(
     String defaultLanguage,

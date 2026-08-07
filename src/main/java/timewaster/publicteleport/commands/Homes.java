@@ -12,6 +12,9 @@ import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
+/**
+ * Defines all Home commands, registered by {@link Registrar}.
+ */
 public class Homes {
     private static final Registrar.SuggestionType typeNone = Registrar.SuggestionType.NONE;
     private static final Registrar.SuggestionType typeHomes = Registrar.SuggestionType.HOMES;
@@ -103,7 +106,9 @@ public class Homes {
                     return false;
                 }
 
-                return Teleports.listTeleportNames(player, names, false);
+                Teleports.listTeleportNames(player, names, false);
+
+                return true;
             })));
     }
 }

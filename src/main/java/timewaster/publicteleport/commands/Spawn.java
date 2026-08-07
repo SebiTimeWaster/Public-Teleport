@@ -13,6 +13,9 @@ import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
+/**
+ * Defines all Spawn commands, registered by {@link Registrar}.
+ */
 public class Spawn {
     private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
         .hasPermission(Permissions.COMMANDS_OWNER);

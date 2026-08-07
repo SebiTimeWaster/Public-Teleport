@@ -8,6 +8,9 @@ import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Requests;
 
+/**
+ * Defines all TPA commands, registered by {@link Registrar}.
+ */
 public class Tpa {
     private static final Registrar.SuggestionType typePlayers = Registrar.SuggestionType.PLAYERS;
 

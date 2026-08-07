@@ -3,9 +3,9 @@ package timewaster.publicteleport.records;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * A single named teleport destination (used for both warps and homes).
+ * A single named teleport destination, used for both Warps and Homes.
  *
- * @param name      the unique (per-list) name identifying this teleport
+ * @param name      the name of the teleport
  * @param x         block x-coordinate
  * @param y         block y-coordinate
  * @param z         block z-coordinate
@@ -21,6 +21,7 @@ public final record Teleport(
     Float yaw,
     Float pitch,
     String dimension) {
+
     /**
      * Creates a teleport destination from the players current position.
      *

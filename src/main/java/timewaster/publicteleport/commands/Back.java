@@ -7,6 +7,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Teleports;
 
+/**
+ * Defines the Back command, registered by {@link Registrar}.
+ */
 public class Back {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("back")
