@@ -20,7 +20,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,7 +39,7 @@ import timewaster.publicteleport.records.Teleport;
  * lists.
  * <p>
  * Data is stored as JSON on disk under the Fabric config directory (e.g.
- * {@code config/<modId>/}), with one file for the global config, one
+ * {@code config/<MOD_ID>/}), with one file for the global config, one
  * file for warps, and one file per player (named by UUID) under the
  * {@code homes} subdirectory.
  * <p>
@@ -53,13 +52,9 @@ public class Storage {
     private static final Config configDefault = new Config("en_us", 10, 60, true, true, true, true, true);
     /** Shared Gson instance used for all JSON (de)serialization. */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    /** The ID of this mod */
-    private final String modId;
-    /** Logger used to report I/O failures. */
-    private final Logger logger;
-    /** Directory containing this mod's config, e.g. {@code config/<modId>/}. */
+    /** Directory containing this mod's config, e.g. {@code config/<MOD_ID>/}. */
     private final Path pathConfig;
-    /** Path for per-player home files, e.g. {@code config/<modId>/homes/}. */
+    /** Path for per-player home files, e.g. {@code config/<MOD_ID>/homes/}. */
     private final Path pathConfigHomes;
     /** The {@code config.json} file on disk. */
     private final File fileConfig;
@@ -67,32 +62,29 @@ public class Storage {
     private final File fileWarps;
     /** The currently loaded mod configuration. */
     private final Config config;
+    /** The translations matching the language set in config */
+    private final Map<String, String> translations;
     /** Cache of the shared warp list, kept in sync with {@link #fileWarps}. */
     private List<Teleport> warps;
     /** Cache of loaded user homes, kept in sync with the corresponding files. */
     private Map<UUID, List<Teleport>> homes = new HashMap<UUID, List<Teleport>>();
 
     /**
-     * Creates a new file handler, ensuring the config directories exist and loading
-     * the config and warps from disk (creating them with
-     * default values if they don't already exist).
+     * Creates the necessary file handlers, ensuring the config directories exist
+     * and loading the config and warps from disk (creating them with default values
+     * if they don't already exist).
      *
-     * @param modId  the mod's identifier, used to resolve the config directory
-     * @param logger logger used to report I/O errors during load/save operations
      * @throws UncheckedIOException if the config directories and config/data files
      *                                  cannot be created
      */
-    public Storage(String modId, Logger logger) {
-        this.modId = modId;
-        this.logger = logger;
-        this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(modId);
+    public Storage() {
+        this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(PublicTeleport.MOD_ID);
         this.pathConfigHomes = pathConfig.resolve("homes");
         this.fileConfig = pathConfig.resolve("config.json").toFile();
         this.fileWarps = pathConfig.resolve("warps.json").toFile();
         createDirectories();
         this.config = loadConfig();
-        Messages.setModId(modId);
-        Messages.setTranslations(loadTranslations());
+        this.translations = loadTranslations();
         this.warps = loadFile(fileWarps, true);
     }
 
@@ -106,7 +98,7 @@ public class Storage {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            logger.error("(" + modId + ") Failed to create config directories!");
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to create config directories!"));
             throw new UncheckedIOException(e);
         }
     }
@@ -146,28 +138,29 @@ public class Storage {
 
             return mergedConfig;
         } catch (IOException e) {
-            logger.error("(" + modId + ") Failed to load config from: ", fileConfig.toPath().toString());
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load config from: {}"),
+                fileConfig.toPath().toString());
             throw new UncheckedIOException(e);
         }
     }
 
     private Map<String, String> loadTranslations() {
-        String languageFile = "assets/" + modId + "/lang/" + config.defaultLanguage() + ".json";
+        String languageFile = "assets/" + PublicTeleport.MOD_ID + "/lang/" + config.defaultLanguage() + ".json";
         FabricLoader fabricLoader = FabricLoader.getInstance();
         ModContainer modContainer;
         Path languagePath;
 
         try {
-            modContainer = fabricLoader.getModContainer(modId).get();
+            modContainer = fabricLoader.getModContainer(PublicTeleport.MOD_ID).get();
         } catch (NoSuchElementException e) {
-            logger.error("(" + modId + ") Could not find mod container!");
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find mod container!"));
             throw new NoSuchElementException(e);
         }
 
         try {
             languagePath = modContainer.findPath(languageFile).get();
         } catch (NoSuchElementException e) {
-            logger.error("(" + modId + ") Could not find language file!");
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find language file!"));
             throw new NoSuchElementException(e);
         }
 
@@ -177,7 +170,8 @@ public class Storage {
 
             return GSON.fromJson(reader, mapType);
         } catch (IOException e) {
-            logger.error("(" + modId + ") Failed to load language file from: ", languagePath.toString());
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load language file from: {}"),
+                languagePath.toString());
             throw new UncheckedIOException(e);
         }
     }
@@ -211,7 +205,8 @@ public class Storage {
 
             return GSON.fromJson(reader, listType);
         } catch (IOException e) {
-            logger.error("(" + modId + ") Failed to load data from: ", file.toPath().toString());
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"),
+                file.toPath().toString());
 
             if (failOnError) {
                 throw new UncheckedIOException(e);
@@ -247,7 +242,7 @@ public class Storage {
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            logger.error("(" + modId + ") Failed to save data to: ", file.toPath().toString());
+            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to save data to: {}"), file.toPath().toString());
 
             if (failOnError) {
                 throw new UncheckedIOException(e);
@@ -482,5 +477,9 @@ public class Storage {
      */
     public Config getConfig() {
         return config;
+    }
+
+    public Map<String, String> getTranslations() {
+        return translations;
     }
 }

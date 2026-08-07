@@ -22,50 +22,36 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.Requests;
-import timewaster.publicteleport.Storage;
-import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.records.Config;
 
 public class Registrar {
-    private final Storage storage;
-    private final Requests requests;
-    private final Teleports teleports;
-
     public static enum SuggestionType {
         NONE, HOMES, WARPS, PLAYERS
     }
 
-    public Registrar(Storage storage, Requests requests, Teleports teleports) {
-        this.storage = storage;
-        this.requests = requests;
-        this.teleports = teleports;
-
-        register();
-    }
-
-    private void register() {
-        Config config = storage.getConfig();
+    public static void registerCommands() {
+        Config config = PublicTeleport.storage.getConfig();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (config.enableSpawn()) {
-                new Spawn(dispatcher, storage, teleports);
+                Spawn.register(dispatcher);
             }
 
             if (config.enableWarps()) {
-                new Warps(dispatcher, this, storage, teleports);
+                Warps.register(dispatcher);
             }
 
             if (config.enableHomes()) {
-                new Homes(dispatcher, this, storage, teleports);
+                Homes.register(dispatcher);
             }
 
             if (config.enableBack()) {
-                new Back(dispatcher, teleports);
+                Back.register(dispatcher);
             }
 
             if (config.enableTpa() && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
-                new Tpa(dispatcher, this, requests);
+                Tpa.register(dispatcher);
             }
         });
     }
@@ -74,13 +60,14 @@ public class Registrar {
         return context.getSource().getPlayer();
     }
 
-    private CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
+    private static CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
         SuggestionsBuilder builder, SuggestionType type) {
         ServerPlayer player = getPlayer(context);
 
         if (type != SuggestionType.NONE) {
             if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
-                List<String> teleportNames = storage.getTeleportNames(player, type == SuggestionType.WARPS);
+                List<String> teleportNames = PublicTeleport.storage.getTeleportNames(player,
+                    type == SuggestionType.WARPS);
 
                 if (teleportNames != null) {
                     for (String name : teleportNames) {
@@ -108,7 +95,7 @@ public class Registrar {
         return callback.apply(player) ? 1 : 0;
     }
 
-    public RequiredArgumentBuilder<CommandSourceStack, String> buildArgumentString(@NotNull String argName,
+    public static RequiredArgumentBuilder<CommandSourceStack, String> buildArgumentString(@NotNull String argName,
         SuggestionType suggestionType, BiFunction<ServerPlayer, String, Boolean> callback) {
         return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
@@ -120,8 +107,9 @@ public class Registrar {
             });
     }
 
-    public RequiredArgumentBuilder<CommandSourceStack, EntitySelector> buildArgumentPlayer(@NotNull String argName,
-        SuggestionType suggestionType, BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
+    public static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> buildArgumentPlayer(
+        @NotNull String argName, SuggestionType suggestionType,
+        BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
         return Commands.argument(argName, EntityArgument.player())
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
             .executes(context -> {

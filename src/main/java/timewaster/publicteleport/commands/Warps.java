@@ -10,7 +10,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Messages;
-import timewaster.publicteleport.Storage;
+import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
@@ -19,24 +19,12 @@ public class Warps {
         .hasPermission(Permissions.COMMANDS_OWNER);
     private static final Registrar.SuggestionType typeNone = Registrar.SuggestionType.NONE;
     private static final Registrar.SuggestionType typeWarps = Registrar.SuggestionType.WARPS;
-    private final Registrar registrar;
-    private final Storage storage;
-    private final Teleports teleports;
 
-    public Warps(CommandDispatcher<CommandSourceStack> dispatcher, Registrar registrar, Storage storage,
-        Teleports teleports) {
-        this.registrar = registrar;
-        this.storage = storage;
-        this.teleports = teleports;
-
-        register(dispatcher);
-    }
-
-    private void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setwarp").requires(PERMISSIONS_OWNER)
-            .then(registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
-                    if (storage.getConfig().enableSpawn()) {
+                    if (PublicTeleport.storage.getConfig().enableSpawn()) {
                         Messages.sendMessage(player, "warp_reserved_spawn_set", Messages.Type.WARNING, "/setspawn");
                     } else {
                         Messages.sendMessage(player, "warp_reserved_name", Messages.Type.WARNING);
@@ -44,7 +32,7 @@ public class Warps {
                     return false;
                 }
 
-                Boolean isSaved = storage.setTeleport(player, Teleport.create(player, argValue), true);
+                Boolean isSaved = PublicTeleport.storage.setTeleport(player, Teleport.create(player, argValue), true);
 
                 if (isSaved == null) {
                     return false;
@@ -56,13 +44,13 @@ public class Warps {
             })));
 
         dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
-            .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
                     Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, "spawn");
                     return false;
                 }
 
-                Boolean success = storage.deleteTeleport(player, argValue, true);
+                Boolean success = PublicTeleport.storage.deleteTeleport(player, argValue, true);
 
                 if (success == null) {
                     return false;
@@ -78,9 +66,9 @@ public class Warps {
             })));
 
         dispatcher.register(Commands.literal("warp")
-            .then(registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
-                    if (storage.getConfig().enableSpawn()) {
+                    if (PublicTeleport.storage.getConfig().enableSpawn()) {
                         Messages.sendMessage(player, "warp_reserved_spawn_get", Messages.Type.WARNING, "/spawn");
                     } else {
                         Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, "spawn");
@@ -88,12 +76,12 @@ public class Warps {
                     return false;
                 }
 
-                return teleports.teleportPlayer(player, argValue, true);
+                return Teleports.teleportPlayer(player, argValue, true);
             })));
 
         dispatcher.register(Commands.literal("warps")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                List<String> names = storage.getTeleportNames(player, true);
+                List<String> names = PublicTeleport.storage.getTeleportNames(player, true);
 
                 if (names == null) {
                     return false;

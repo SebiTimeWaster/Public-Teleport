@@ -1,8 +1,5 @@
 package timewaster.publicteleport;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.ChatFormatting;
@@ -13,26 +10,15 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 public class Messages {
-    private static String modId;
-    private static Map<String, String> defaultTranslations = new HashMap<String, String>();
-
     public static enum Type {
         SUCCESS, WARNING, ERROR, REQUEST, BUTTON
-    }
-
-    public static void setModId(String modIdToSet) {
-        modId = modIdToSet;
-    }
-
-    public static void setTranslations(Map<String, String> translations) {
-        defaultTranslations = translations;
     }
 
     @NotNull
     public static MutableComponent getMessage(String identifier, Type messageType, Object... params) {
         MutableComponent component;
-        String key = modId + "." + identifier;
-        String defaultString = defaultTranslations.get(key);
+        String key = PublicTeleport.MOD_ID + "." + identifier;
+        String defaultString = PublicTeleport.storage.getTranslations().get(key);
         ChatFormatting color = switch (messageType) {
             case null -> null;
             case SUCCESS -> ChatFormatting.GREEN;

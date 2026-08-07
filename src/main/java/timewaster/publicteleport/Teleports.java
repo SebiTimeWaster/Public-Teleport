@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.MutableComponent;
@@ -17,12 +18,6 @@ import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
 public class Teleports {
-    private final Storage storage;
-
-    public Teleports(Storage storage) {
-        this.storage = storage;
-    }
-
     @SuppressWarnings("null")
     private static void doTeleportEffect(ServerPlayer player) {
         player.level().playSound(
@@ -81,7 +76,8 @@ public class Teleports {
         return result;
     }
 
-    private boolean teleportPlayer(ServerPlayer player, Teleport target, String originalTargetName, boolean isWarp) {
+    private static boolean teleportPlayer(ServerPlayer player, Teleport target, String originalTargetName,
+        boolean isWarp) {
         if (target == null) {
             return false;
         }
@@ -104,7 +100,7 @@ public class Teleports {
 
         if (result) {
             if (!target.name().equals("back")) {
-                storage.setTeleport(player, back, false);
+                PublicTeleport.storage.setTeleport(player, back, false);
             }
 
             Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS,
@@ -114,8 +110,16 @@ public class Teleports {
         return result;
     }
 
-    public boolean teleportPlayer(ServerPlayer player, String originalTargetName, boolean isWarp) {
-        Teleport teleportTarget = storage.getTeleport(player, originalTargetName, isWarp);
+    public static void registerDeathEvent() {
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, cause) -> {
+            if (entity instanceof ServerPlayer player) {
+                PublicTeleport.storage.setTeleport(player, Teleport.create(player, "back"), false);
+            }
+        });
+    }
+
+    public static boolean teleportPlayer(ServerPlayer player, String originalTargetName, boolean isWarp) {
+        Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, originalTargetName, isWarp);
 
         if (teleportTarget == null) {
             return false;
@@ -124,7 +128,7 @@ public class Teleports {
         return teleportPlayer(player, teleportTarget, originalTargetName, isWarp);
     }
 
-    public boolean teleportPlayer(ServerPlayer player, Teleport target) {
+    public static boolean teleportPlayer(ServerPlayer player, Teleport target) {
         return teleportPlayer(player, target, target.name(), false);
     }
 

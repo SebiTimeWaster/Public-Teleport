@@ -7,15 +7,15 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.records.Teleport;
 
 public class Requests {
-    private final List<Request> pendingRequests = new ArrayList<Request>();
-    private final Storage storage;
-    private final Teleports teleports;
+    private static final List<Request> pendingRequests = new ArrayList<Request>();
+    private static int tickCounter = 0;
 
     private static final record Request(
         @NotNull UUID sender,
@@ -26,12 +26,7 @@ public class Requests {
         long expires) {
     }
 
-    public Requests(Storage storage, Teleports teleports) {
-        this.storage = storage;
-        this.teleports = teleports;
-    }
-
-    private Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
+    private static Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
         return pendingRequests.stream()
             .filter(request -> {
                 return (sender == null || request.sender().equals(sender))
@@ -39,16 +34,16 @@ public class Requests {
             }).findFirst().orElse(null);
     }
 
-    private Request getRequest(UUID sender) {
+    private static Request getRequest(UUID sender) {
         return getRequest(sender, null);
     }
 
     @Nullable
-    private ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
+    private static ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
         return otherPlayer.level().getServer().getPlayerList().getPlayer(playerToGet);
     }
 
-    public void cleanup(MinecraftServer server) {
+    private static void cleanup(MinecraftServer server) {
         long now = System.currentTimeMillis();
 
         for (Request request : pendingRequests) {
@@ -70,14 +65,27 @@ public class Requests {
         pendingRequests.removeIf(request -> request.expires() <= now);
     }
 
-    public boolean sendRequest(ServerPlayer sender, ServerPlayer receiver, boolean reverse) {
+    public static void registerTickEvent() {
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            tickCounter++;
+
+            // 20 ticks = 1 second
+            if (tickCounter >= 20) {
+                tickCounter = 0;
+
+                cleanup(server);
+            }
+        });
+    }
+
+    public static boolean sendRequest(ServerPlayer sender, ServerPlayer receiver, boolean reverse) {
         Request oldRequest = getRequest(sender.getUUID());
         if (oldRequest != null) {
             Messages.sendMessage(sender, "request_old_exist", Messages.Type.ERROR, oldRequest.receiverName(),
                 "/tpcancel");
             return false;
         }
-        long expires = System.currentTimeMillis() + storage.getConfig().requestTimeout() * 1000;
+        long expires = System.currentTimeMillis() + PublicTeleport.storage.getConfig().requestTimeout() * 1000;
         String senderName = sender.getName().getString();
         String receiverName = receiver.getName().getString();
         String headlineIdentifier = reverse ? "request_received_rev" : "request_received";
@@ -100,7 +108,7 @@ public class Requests {
         return true;
     }
 
-    public boolean cancelRequest(ServerPlayer sender) {
+    public static boolean cancelRequest(ServerPlayer sender) {
         Request request = getRequest(sender.getUUID());
 
         if (request == null) {
@@ -120,7 +128,7 @@ public class Requests {
         return true;
     }
 
-    public boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+    public static boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
         Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
         if (request == null) {
@@ -142,9 +150,9 @@ public class Requests {
         Messages.sendMessage(receiver, "request_accepted_receiver", Messages.Type.SUCCESS, request.senderName());
 
         if (!request.reverse()) {
-            teleports.teleportPlayer(sender, Teleport.create(receiver, request.receiverName()));
+            Teleports.teleportPlayer(sender, Teleport.create(receiver, request.receiverName()));
         } else {
-            teleports.teleportPlayer(receiver, Teleport.create(sender, sender.getName().getString()));
+            Teleports.teleportPlayer(receiver, Teleport.create(sender, sender.getName().getString()));
         }
 
         pendingRequests.remove(request);
@@ -152,7 +160,7 @@ public class Requests {
         return true;
     }
 
-    public boolean denyRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+    public static boolean denyRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
         Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
         if (request == null) {
