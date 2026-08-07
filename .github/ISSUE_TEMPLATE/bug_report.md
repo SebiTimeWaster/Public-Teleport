@@ -23,16 +23,9 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Minecraft (please complete the following information):**
+ - Mod version: [e.g. 1.0.0-MC26.1+]
  - Minecraft version: [e.g. 26.1]
- - Fabric version: [e.g. 0.19.3]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+ - Fabric API version: [e.g. 0.145.1+26.1]
 
 **Additional context**
 Add any other context about the problem here.
