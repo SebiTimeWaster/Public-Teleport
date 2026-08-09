@@ -4,11 +4,12 @@
   <img alt="Public Teleport Logo" src="src/main/resources/assets/public-teleport/icon.png">
 </p>
 
-An easy-to-use Fabric Teleport Mod
+An easy-to-use Fabric Teleport Mod!
 
-- Homes, Warps, Back, Spawn, TPA
-- Server- and/or client-side (Multi/Singleplayer, client-side installation is NOT needed for server-side installation!)
+- Homes, Warps, Back, Spawn and TPA functionality
+- Checks if teleport destinations are safe to use to prevent suffocation
 - Minimal configuration with predefined values
+- Server- and/or client-side (Client-side installation is NOT required for server-side functionality, see section "Languages" below)
 
 ## Commands
 
@@ -29,12 +30,14 @@ An easy-to-use Fabric Teleport Mod
 | `/homes`               |         | List all your current homes                                                                                        |
 | **Back:**              |         |                                                                                                                    |
 | `/back`                |         | Teleport to your last location before teleporting or dying                                                         |
-| **TPA:**               |         | TPA functionality is disabled when run client-side!                                                                |
+| **TPA:**               |         |                                                                                                                    |
 | `/tpa <player>`        |         | Request teleportation to `<player>`                                                                                |
 | `/tpahere <player>`    |         | Request `<player>` to teleport to you                                                                              |
 | `/tpcancel`            |         | Cancel your teleportation request                                                                                  |
 | `/tpaccept [<player>]` |         | Accept request from `<player>` (Default: Most recent)                                                              |
 | `/tpdeny [<player>]`   |         | Deny request from `<player>` (Default: Most recent)                                                                |
+
+TPA functionality is disabled in singleplayer!
 
 ## Configuration
 
@@ -57,13 +60,13 @@ To change these settings edit the config file and restart your server.
 
 Currently only `en_us` and `de_de` are valid values for `defaultLanguage`. If you want to provide more translations feel free to open an Issue.
 
-### Multiplayer usage:
+### Multiplayer usage
 
 **Server-side**: The Configuration `defaultLanguage` defines the language all messages are in. (Output on the console is always in English.)
 
 **Client-side**: If the user has installed this mod on their client, `defaultLanguage` is overridden with the client's language setting.
 
-### Singleplayer usage:
+### Singleplayer usage
 
 The Configuration `defaultLanguage` has no effect; the client's language setting is used.
 

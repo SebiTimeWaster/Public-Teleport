@@ -44,7 +44,7 @@ public class Teleports {
     }
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        ServerLevel level = TeleportSafety.getLevelByTeleport(player, target);
+        ServerLevel level = TeleportSafety.getLevelFromTeleport(player, target);
 
         if (level == null) {
             Messages.sendMessage(player, "level_no_exist", Messages.Type.ERROR);

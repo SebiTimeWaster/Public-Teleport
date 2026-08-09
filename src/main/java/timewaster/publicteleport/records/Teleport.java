@@ -41,6 +41,6 @@ public final record Teleport(
             playerPos.getZ(),
             (Float) player.getYRot(),
             (Float) player.getXRot(),
-            player.level().dimension().identifier().toString());
+            TeleportSafety.getDimensionName(player.level()));
     }
 }
