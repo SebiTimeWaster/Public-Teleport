@@ -8,7 +8,8 @@ An easy-to-use Fabric Teleport Mod!
 
 - Homes, Warps, Back, Spawn and TPA functionality
 - Checks if teleport destinations are safe to use to prevent suffocation
-- Server- and/or client-side (Client-side installation is NOT required for server-side functionality, see section "Languages" below)
+- Usable in multiplayer (Server-side) or singleplayer (client-side)
+- Server-side functionality does NOT require client-side installation, but see section "Languages" below
 - Minimal configuration with predefined values
 
 ## Commands
