@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -12,6 +13,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ScaffoldingBlock;
 import timewaster.publicteleport.records.Teleport;
 
@@ -19,19 +22,45 @@ import timewaster.publicteleport.records.Teleport;
  * A collection of Utils to ensure safe teleportation.
  */
 public class TeleportSafety {
-    private static boolean isBlockTotallyEmpty(Level level, @NotNull BlockPos blockPos) {
-        return level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
+    private static boolean blockHasCollision(Level level, @NotNull BlockPos blockPos) {
+        return !level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
     }
 
     private static boolean isBlockEmpty(Level level, @NotNull BlockPos blockPos) {
-        return level.getBlockState(blockPos).getBlock() instanceof ScaffoldingBlock
-            || isBlockTotallyEmpty(level, blockPos);
+        Block block = level.getBlockState(blockPos).getBlock();
+
+        return block != Blocks.LAVA && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
     }
 
     private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
-        return (!isBlockTotallyEmpty(level, blockPos.below())
+        return (blockHasCollision(level, blockPos.below())
             && isBlockEmpty(level, blockPos)
             && isBlockEmpty(level, blockPos.above()));
+    }
+
+    public static boolean isBlockTeleportableAndWithoutPlayer(ServerPlayer player, Level level, BlockPos blockPos) {
+        boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
+        List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
+        boolean isBlockedByPlayer = false;
+
+        if (isBlockAvailable) {
+            for (ServerPlayer onlinePlayer : onlinePlayers) {
+                if (onlinePlayer != player
+                    && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 1.0, 2.0)) {
+                    isBlockedByPlayer = true;
+                }
+            }
+        }
+
+        return isBlockAvailable && !isBlockedByPlayer;
+    }
+
+    public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
+        double clearanceXZ, double clearanceY) {
+        return !getDimensionName(player.level()).equals(dimension)
+            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ
+            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY
+            || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
     }
 
     /**
@@ -62,12 +91,12 @@ public class TeleportSafety {
     /**
      * Gets a specific level from a {@link Teleport} target dimension identifier.
      *
-     * @param player the player to be teleported
-     * @param target the {@link Teleport} target
+     * @param player    the player to be teleported
+     * @param dimension the dimension name
      * @return the level matching the dimension identifier
      */
-    public static ServerLevel getLevelFromTeleport(ServerPlayer player, Teleport target) {
-        Identifier dimId = Identifier.parse(Objects.requireNonNull(target.dimension()));
+    public static ServerLevel getLevelFromDimension(ServerPlayer player, String dimension) {
+        Identifier dimId = Identifier.parse(Objects.requireNonNull(dimension));
         ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
 
         return player.level().getServer().getLevel(dimKey);
@@ -82,42 +111,51 @@ public class TeleportSafety {
      */
     public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
         BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
-        Level level = getLevelFromTeleport(player, target);
+        Level level = getLevelFromDimension(player, target.dimension());
 
         return isBlockTeleportable(level, blockPos);
     }
 
     /**
-     * Checks if the block below the given position (The {@link Teleport} target
-     * position) is a valid teleport target and if no other player is currently
-     * blocking it.
+     * Checks if any of the blocks in a certain radius around the given
+     * {@link target} position is a valid teleport target and if no other player is
+     * currently blocking it.
      *
      * @param player the player to be teleported
      * @param target the target position to check
-     * @return {@code true} if the target position is teleportable to
+     * @return {@link Teleport} the position that is teleportable to or {@code null}
+     *         is none was found
      */
-    public static boolean isPositionTeleportable(ServerPlayer player, Teleport target) {
-        Level level = getLevelFromTeleport(player, target);
-        boolean isBlockAvailable = isBlockTeleportable(level, new BlockPos(target.x(), target.y(), target.z()));
-        List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
-        boolean isBlockedByPlayer = false;
+    @Nullable
+    public static Teleport isPositionTeleportable(ServerPlayer player, Teleport target) {
+        Level level = getLevelFromDimension(player, target.dimension());
+        int[] orderY = { 0, 1, -1 };
+        int[] orderXZ = { 4, 6, 1, 9, 0, 10, 8, 2 };
 
-        PublicTeleport.LOGGER.error(PublicTeleport.prefix("players: {}"), onlinePlayers);
+        if (!isBlockTeleportableAndWithoutPlayer(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
+            for (int y : orderY) {
+                for (int i : orderXZ) {
+                    int x = ((i & 0x0000000C) >>> 2) - 1;
+                    int z = (i & 0x00000003) - 1;
+                    BlockPos testPos = new BlockPos(target.x() + x, target.y() + y, target.z() + z);
 
-        if (isBlockAvailable) {
-            for (ServerPlayer onlinePlayer : onlinePlayers) {
-                if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, target, 1.0, 2.0)) {
-                    isBlockedByPlayer = true;
+                    if (isBlockTeleportableAndWithoutPlayer(player, level, testPos)) {
+                        return new Teleport(
+                            target.name(),
+                            target.x() + x,
+                            target.y() + y,
+                            target.z() + z,
+                            target.yaw(),
+                            target.pitch(),
+                            target.dimension());
+                    }
                 }
             }
+
+            return null;
         }
 
-        // TODO: find alternative position if blocked by player
-        // TODO: make sure these checks work if chunk not loaded
-        // TODO: write docu
-
-        return isBlockAvailable && !isBlockedByPlayer;
+        return target;
     }
 
     /**
@@ -132,10 +170,7 @@ public class TeleportSafety {
      */
     public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ,
         double clearanceY) {
-
-        return !getDimensionName(player.level()).equals(getDimensionName(getLevelFromTeleport(player, target)))
-            || Math.abs(player.getX() - (target.x() + 0.5)) > clearanceXZ
-            || Math.abs(player.getY() - (target.y() + 0.01)) > clearanceY
-            || Math.abs(player.getZ() - (target.z() + 0.5)) > clearanceXZ;
+        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(),
+            clearanceXZ, clearanceY);
     }
 }

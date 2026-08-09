@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
 import timewaster.publicteleport.commands.Registrar;
 
+// TODO: new vector logo
+
 /**
  * Entry point of the Public Teleport mod.
  */

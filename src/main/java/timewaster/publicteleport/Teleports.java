@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.MutableComponent;
@@ -44,7 +46,7 @@ public class Teleports {
     }
 
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        ServerLevel level = TeleportSafety.getLevelFromTeleport(player, target);
+        ServerLevel level = TeleportSafety.getLevelFromDimension(player, target.dimension());
 
         if (level == null) {
             Messages.sendMessage(player, "level_no_exist", Messages.Type.ERROR);
@@ -72,7 +74,7 @@ public class Teleports {
         return result;
     }
 
-    private static boolean teleportPlayer(ServerPlayer player, Teleport target, String originalTargetName,
+    private static boolean teleportPlayer(ServerPlayer player, @Nullable ServerPlayer targetPlayer, Teleport target,
         boolean isWarp) {
         if (target == null) {
             return false;
@@ -80,29 +82,38 @@ public class Teleports {
 
         if (target.name().equals("public_teleport_not_found")) {
             Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.Type.ERROR,
-                originalTargetName);
+                target.name());
             return false;
         }
 
         if (!TeleportSafety.doesPlayerClearTarget(player, target, 2.0, 3.0)) {
-            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.WARNING, originalTargetName);
+            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.WARNING, target.name());
             return false;
         }
 
-        if (!TeleportSafety.isPositionTeleportable(player, target)) {
-            Messages.sendMessage(player, "teleport_unsafe", Messages.Type.ERROR, originalTargetName);
+        Teleport testedTarget = TeleportSafety.isPositionTeleportable(player, target);
+
+        if (testedTarget == null) {
+            if (targetPlayer == null) {
+                Messages.sendMessage(player, "teleport_unsafe", Messages.Type.ERROR, target.name());
+            } else {
+                Messages.sendMessage(player, "teleport_unsafe_tpa", Messages.Type.ERROR,
+                    targetPlayer.getName().getString());
+                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", Messages.Type.ERROR,
+                    player.getName().getString());
+            }
             return false;
         }
 
         Teleport back = Teleport.create(player, "back");
-        boolean result = teleport(player, target);
+        boolean result = teleport(player, testedTarget);
 
         if (result) {
-            if (!target.name().equals("back")) {
+            if (!testedTarget.name().equals("back")) {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
 
-            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS, target.name());
+            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS, testedTarget.name());
         }
 
         return result;
@@ -129,25 +140,27 @@ public class Teleports {
      * @param isWarp             {@code true} if the teleport is a Warp, not a Home
      * @return {@code true} if the destination was found and the teleport succeeded
      */
-    public static boolean teleportPlayer(ServerPlayer player, String originalTargetName, boolean isWarp) {
-        Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, originalTargetName, isWarp);
+    public static boolean teleportPlayer(ServerPlayer player, String targetName, boolean isWarp) {
+        Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, targetName, isWarp);
 
         if (teleportTarget == null) {
             return false;
         }
 
-        return teleportPlayer(player, teleportTarget, originalTargetName, isWarp);
+        return teleportPlayer(player, null, teleportTarget, isWarp);
     }
 
     /**
-     * Teleports the player to an already-resolved destination.
+     * Teleports the player to an already-resolved TPA destination.
      *
      * @param player the player to teleport
      * @param target the destination to teleport the player to
      * @return {@code true} if the teleport succeeded
      */
-    public static boolean teleportPlayer(ServerPlayer player, Teleport target) {
-        return teleportPlayer(player, target, target.name(), false);
+    public static boolean teleportPlayer(ServerPlayer player, ServerPlayer targetPlayer) {
+        Teleport teleportTarget = Teleport.create(targetPlayer, targetPlayer.getName().getString());
+
+        return teleportPlayer(player, targetPlayer, teleportTarget, false);
     }
 
     /**

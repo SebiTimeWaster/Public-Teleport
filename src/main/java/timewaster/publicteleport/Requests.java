@@ -11,7 +11,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.records.Teleport;
 
 /**
  * Manages TPA (player-to-player teleport request) state and behavior.
@@ -184,9 +183,9 @@ public class Requests {
         Messages.sendMessage(receiver, "request_accepted_receiver", Messages.Type.SUCCESS, request.senderName());
 
         if (!request.reverse()) {
-            Teleports.teleportPlayer(sender, Teleport.create(receiver, request.receiverName()));
+            Teleports.teleportPlayer(sender, receiver);
         } else {
-            Teleports.teleportPlayer(receiver, Teleport.create(sender, sender.getName().getString()));
+            Teleports.teleportPlayer(receiver, sender);
         }
 
         pendingRequests.remove(request);
