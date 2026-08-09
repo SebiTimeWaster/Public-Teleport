@@ -6,15 +6,11 @@ import java.util.Set;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -47,11 +43,8 @@ public class Teleports {
             0.25);
     }
 
-    @SuppressWarnings("unused")
     private static boolean teleport(ServerPlayer player, Teleport target) {
-        Identifier dimId = Identifier.parse(Objects.requireNonNull(target.dimension()));
-        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
-        ServerLevel level = player.level().getServer().getLevel(dimKey);
+        ServerLevel level = TeleportSafety.getLevelByTeleport(player, target);
 
         if (level == null) {
             Messages.sendMessage(player, "level_no_exist", Messages.Type.ERROR);
@@ -63,7 +56,7 @@ public class Teleports {
         boolean result = player.teleportTo(
             level,
             target.x() + 0.5,
-            target.y() + 0.05,
+            target.y() + 0.01,
             target.z() + 0.5,
             Objects.requireNonNull(Set.of()),
             target.yaw() != null ? (float) target.yaw() : player.getYRot(),
@@ -91,10 +84,13 @@ public class Teleports {
             return false;
         }
 
-        if (Math.abs(target.x() - Math.floor(player.getX())) <= 1 &&
-            Math.abs(target.y() - Math.ceil(player.getY())) <= 1 &&
-            Math.abs(target.z() - Math.floor(player.getZ())) <= 1) {
+        if (!TeleportSafety.doesPlayerClearTarget(player, target, 2.0, 3.0)) {
             Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.WARNING, originalTargetName);
+            return false;
+        }
+
+        if (!TeleportSafety.isPositionTeleportable(player, target)) {
+            Messages.sendMessage(player, "teleport_unsafe", Messages.Type.ERROR, originalTargetName);
             return false;
         }
 
@@ -106,8 +102,7 @@ public class Teleports {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
 
-            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS,
-                target.name());
+            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS, target.name());
         }
 
         return result;

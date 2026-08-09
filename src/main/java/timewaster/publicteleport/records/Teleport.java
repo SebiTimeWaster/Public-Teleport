@@ -1,6 +1,8 @@
 package timewaster.publicteleport.records;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
+import timewaster.publicteleport.TeleportSafety;
 
 /**
  * A single named teleport destination, used for both Warps and Homes.
@@ -30,11 +32,13 @@ public final record Teleport(
      * @return the teleport destination created
      */
     public static final Teleport create(ServerPlayer player, String name) {
+        BlockPos playerPos = TeleportSafety.getPlayerBlockPos(player);
+
         return new Teleport(
             name,
-            (int) Math.floor(player.getX()),
-            (int) Math.ceil(player.getY()),
-            (int) Math.floor(player.getZ()),
+            playerPos.getX(),
+            playerPos.getY(),
+            playerPos.getZ(),
             (Float) player.getYRot(),
             (Float) player.getXRot(),
             player.level().dimension().identifier().toString());

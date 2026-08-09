@@ -35,6 +35,8 @@
     "public-teleport.spawn_set": "Spawn gesetzt.",
     "public-teleport.teleport_to": "Zu %1$s teleportieren",
     "public-teleport.teleport_unnecessary": "Du befindest dich bereits bei %1$s.",
+    "public-teleport.teleport_unsafe": "Es ist nicht sicher, zum Ziel oder Spieler \"%1$s\" zu teleportieren, Teleport abgebrochen.",
+    "public-teleport.teleport_unsafe_set": "Es ist nicht sicher, zur aktuellen Position zu teleportieren, kann %1$s nicht setzen.",
     "public-teleport.teleported_to": "Erfolgreich teleportiert zu %1$s.",
     "public-teleport.unknown_error": "Unbekannter Fehler!",
     "public-teleport.warp_deleted": "Der Warp \"%1$s\" wurde gelöscht.",

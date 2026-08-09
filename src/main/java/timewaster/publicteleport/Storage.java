@@ -285,8 +285,8 @@ public class Storage {
      * @param player      the player trying to save the data
      * @param newTeleport the {@link Teleport} to add or update
      * @param isWarp      if it is a Warp, not a Home
-     * @return if successful: true; if a new teleport would go over the
-     *         {@link maxHomes} limit: false; if a file error occured: {@code null}
+     * @return if successful: {@code true}; if a new teleport would go over the
+     *         {@link maxHomes} limit: {@code false}; on file error: {@code null}
      */
     @Nullable
     public Boolean setTeleport(ServerPlayer player, Teleport newTeleport, boolean isWarp) {

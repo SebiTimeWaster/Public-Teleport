@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -27,7 +28,14 @@ public class Homes {
                     return false;
                 }
 
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, Teleport.create(player, argValue), false);
+                Teleport target = Teleport.create(player, argValue);
+
+                if (!TeleportSafety.isBlockTeleportable(player, target)) {
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Home");
+                    return false;
+                }
+
+                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
 
                 if (isSaved == null) {
                     return false;
@@ -43,7 +51,14 @@ public class Homes {
                 return true;
             }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, Teleport.create(player, "home"), false);
+                Teleport target = Teleport.create(player, "home");
+
+                if (!TeleportSafety.isBlockTeleportable(player, target)) {
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Home");
+                    return false;
+                }
+
+                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
 
                 if (isSaved == null) {
                     return false;

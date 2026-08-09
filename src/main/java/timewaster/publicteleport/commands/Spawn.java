@@ -11,6 +11,7 @@ import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -23,7 +24,14 @@ public class Spawn {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setspawn").requires(PERMISSIONS_OWNER)
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, Teleport.create(player, "spawn"), true);
+                Teleport target = Teleport.create(player, "spawn");
+
+                if (!TeleportSafety.isBlockTeleportable(player, target)) {
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Spawn");
+                    return false;
+                }
+
+                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, true);
 
                 if (isSaved == null) {
                     return false;

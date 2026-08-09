@@ -12,6 +12,7 @@ import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -35,7 +36,14 @@ public class Warps {
                     return false;
                 }
 
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, Teleport.create(player, argValue), true);
+                Teleport target = Teleport.create(player, argValue);
+
+                if (!TeleportSafety.isBlockTeleportable(player, target)) {
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Warp");
+                    return false;
+                }
+
+                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, true);
 
                 if (isSaved == null) {
                     return false;
