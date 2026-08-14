@@ -1,7 +1,5 @@
-# Public Teleport
-
 <p align="center">
-  <img alt="Public Teleport Logo" src="src/main/resources/assets/public-teleport/icon.png">
+  <img alt="Public Teleport Logo" src=".github/banner-700.png">
 </p>
 
 An easy-to-use Fabric Teleport Mod!
