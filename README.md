@@ -90,6 +90,7 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport):
 
 - Install Public Teleport, start your server and stop it once it has fully started
-- Copy and overwrite all files in `world/miniteleport/` to `config/public-teleport/`
+- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/`:
+  `cp -r world/miniteleport/* config/public-teleport/`
 
 [^1]: Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)
