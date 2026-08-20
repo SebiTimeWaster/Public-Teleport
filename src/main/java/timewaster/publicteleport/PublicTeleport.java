@@ -6,9 +6,17 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
 import timewaster.publicteleport.commands.Registrar;
 
-// TODO: help command
-// TODO: translate command names
-// TODO: think about TPA command names
+// TODO: find all edge cases to test and create document, THEN TEST!!!
+// TODO: multi-modloader compatibility
+
+/*
+release notes:
+
+added help command
+added tpahereall command
+widened search radius for teleportation safety check
+fixed teleporting would dismiss blocks for teleporting because of too conservative player spacing check
+ */
 
 /**
  * Entry point of the Public Teleport mod.

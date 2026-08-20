@@ -29,9 +29,10 @@ public class Warps {
             .then(Registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
                     if (PublicTeleport.storage.getConfig().enableSpawn()) {
-                        Messages.sendMessage(player, "warp_reserved_spawn_set", Messages.Type.WARNING, "/setspawn");
+                        Messages.sendMessage(player, "warp_reserved_spawn_set", Messages.MessageType.WARNING,
+                            "/setspawn");
                     } else {
-                        Messages.sendMessage(player, "warp_reserved_name", Messages.Type.WARNING);
+                        Messages.sendMessage(player, "warp_reserved_name", Messages.MessageType.WARNING);
                     }
                     return false;
                 }
@@ -39,7 +40,7 @@ public class Warps {
                 Teleport target = Teleport.create(player, argValue);
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Warp");
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Warp");
                     return false;
                 }
 
@@ -49,7 +50,7 @@ public class Warps {
                     return false;
                 }
 
-                Messages.sendMessage(player, "warp_set", Messages.Type.SUCCESS, argValue);
+                Messages.sendMessage(player, "warp_set", Messages.MessageType.SUCCESS, argValue);
 
                 return true;
             })));
@@ -57,7 +58,7 @@ public class Warps {
         dispatcher.register(Commands.literal("delwarp").requires(PERMISSIONS_OWNER)
             .then(Registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
-                    Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, "spawn");
+                    Messages.sendMessage(player, "warp_no_exist", Messages.MessageType.ERROR, "spawn");
                     return false;
                 }
 
@@ -68,9 +69,9 @@ public class Warps {
                 }
 
                 if (success) {
-                    Messages.sendMessage(player, "warp_deleted", Messages.Type.SUCCESS, argValue);
+                    Messages.sendMessage(player, "warp_deleted", Messages.MessageType.SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, argValue);
+                    Messages.sendMessage(player, "warp_no_exist", Messages.MessageType.ERROR, argValue);
                 }
 
                 return true;
@@ -80,9 +81,9 @@ public class Warps {
             .then(Registrar.buildArgumentString("name", typeWarps, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("spawn")) {
                     if (PublicTeleport.storage.getConfig().enableSpawn()) {
-                        Messages.sendMessage(player, "warp_reserved_spawn_get", Messages.Type.WARNING, "/spawn");
+                        Messages.sendMessage(player, "warp_reserved_spawn_get", Messages.MessageType.WARNING, "/spawn");
                     } else {
-                        Messages.sendMessage(player, "warp_no_exist", Messages.Type.ERROR, "spawn");
+                        Messages.sendMessage(player, "warp_no_exist", Messages.MessageType.ERROR, "spawn");
                     }
                     return false;
                 }

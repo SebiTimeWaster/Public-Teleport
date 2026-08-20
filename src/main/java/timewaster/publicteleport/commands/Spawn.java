@@ -27,7 +27,7 @@ public class Spawn {
                 Teleport target = Teleport.create(player, "spawn");
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Spawn");
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Spawn");
                     return false;
                 }
 
@@ -37,7 +37,7 @@ public class Spawn {
                     return false;
                 }
 
-                Messages.sendMessage(player, "spawn_set", Messages.Type.SUCCESS);
+                Messages.sendMessage(player, "spawn_set", Messages.MessageType.SUCCESS);
 
                 return true;
             })));

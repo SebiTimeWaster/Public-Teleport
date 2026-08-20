@@ -1,38 +1,38 @@
 package timewaster.publicteleport.commands;
 
+import java.util.function.Predicate;
+
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.Messages;
+import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Requests;
+import timewaster.publicteleport.Requests.RequestType;
 
 /**
  * Defines all TPA commands, registered by {@link Registrar}.
  */
 public class Tpa {
+    private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
+        .hasPermission(Permissions.COMMANDS_OWNER);
     private static final Registrar.SuggestionType typePlayers = Registrar.SuggestionType.PLAYERS;
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tpa")
-            .then(Registrar.buildArgumentPlayer("target", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
-                if (player.getName().equals(target.getName())) {
-                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.WARNING);
-                    return false;
-                }
-
-                return Requests.sendRequest(player, target, false);
+            .then(Registrar.buildArgumentPlayer("player", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
+                return Requests.sendRequest(player, target, RequestType.NORMAL);
             })));
 
         dispatcher.register(Commands.literal("tpahere")
-            .then(Registrar.buildArgumentPlayer("target", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
-                if (player == target) {
-                    Messages.sendMessage(player, "request_teleport_self", Messages.Type.WARNING);
-                    return false;
-                }
+            .then(Registrar.buildArgumentPlayer("player", typePlayers, (ServerPlayer player, ServerPlayer target) -> {
+                return Requests.sendRequest(player, target, RequestType.REVERSE);
+            })));
 
-                return Requests.sendRequest(player, target, true);
+        dispatcher.register(Commands.literal("tpahereall").requires(PERMISSIONS_OWNER)
+            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+                return Requests.sendRequest(player, null, RequestType.REVERSE_ALL);
             })));
 
         dispatcher.register(Commands.literal("tpcancel")
@@ -41,7 +41,7 @@ public class Tpa {
             })));
 
         dispatcher.register(Commands.literal("tpaccept")
-            .then(Registrar.buildArgumentPlayer("sender", typePlayers, (ServerPlayer player, ServerPlayer sender) -> {
+            .then(Registrar.buildArgumentPlayer("player", typePlayers, (ServerPlayer player, ServerPlayer sender) -> {
                 return Requests.acceptRequest(sender, player);
             }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
@@ -49,7 +49,7 @@ public class Tpa {
             })));
 
         dispatcher.register(Commands.literal("tpdeny")
-            .then(Registrar.buildArgumentPlayer("sender", typePlayers, (ServerPlayer player, ServerPlayer sender) -> {
+            .then(Registrar.buildArgumentPlayer("player", typePlayers, (ServerPlayer player, ServerPlayer sender) -> {
                 return Requests.denyRequest(sender, player);
             }))
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {

@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,15 +40,16 @@ public class TeleportSafety {
             && isBlockEmpty(level, blockPos.above()));
     }
 
-    public static boolean isBlockTeleportableAndWithoutPlayer(ServerPlayer player, Level level, BlockPos blockPos) {
+    public static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
         boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
-        List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
         boolean isBlockedByPlayer = false;
 
         if (isBlockAvailable) {
+            List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
+
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 1.0, 2.0)) {
+                    && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 0.6, 1.8)) {
                     isBlockedByPlayer = true;
                 }
             }
@@ -57,6 +60,7 @@ public class TeleportSafety {
 
     public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
         double clearanceXZ, double clearanceY) {
+
         return !getDimensionName(player.level()).equals(dimension)
             || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ
             || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY
@@ -127,19 +131,23 @@ public class TeleportSafety {
      *         is none was found
      */
     @Nullable
-    public static Teleport isPositionTeleportable(ServerPlayer player, Teleport target) {
+    public static Teleport findTeleportablePosition(ServerPlayer player, Teleport target, boolean ignorePlayers) {
         Level level = getLevelFromDimension(player, target.dimension());
-        int[] orderY = { 0, 1, -1 };
-        int[] orderXZ = { 4, 6, 1, 9, 0, 10, 8, 2 };
 
-        if (!isBlockTeleportableAndWithoutPlayer(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
+        if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
+            int[] orderY = { 0, 1, -1, 2, -2 };
+            List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52,
+                64, 65, 66, 67, 68);
+            Collections.shuffle(orderXZ);
+
             for (int y : orderY) {
                 for (int i : orderXZ) {
-                    int x = ((i & 0x0000000C) >>> 2) - 1;
-                    int z = (i & 0x00000003) - 1;
+                    int x = ((i & 0x000000F0) >>> 4) - 2;
+                    int z = (i & 0x0000000F) - 2;
                     BlockPos testPos = new BlockPos(target.x() + x, target.y() + y, target.z() + z);
 
-                    if (isBlockTeleportableAndWithoutPlayer(player, level, testPos)) {
+                    if ((ignorePlayers && isBlockTeleportable(level, testPos))
+                        || isBlockTeleportableAndWithoutPlayers(player, level, testPos)) {
                         return new Teleport(
                             target.name(),
                             target.x() + x,

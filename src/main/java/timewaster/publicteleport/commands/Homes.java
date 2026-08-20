@@ -24,14 +24,14 @@ public class Homes {
         dispatcher.register(Commands.literal("sethome")
             .then(Registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name", Messages.Type.WARNING);
+                    Messages.sendMessage(player, "home_reserved_name", Messages.MessageType.WARNING);
                     return false;
                 }
 
                 Teleport target = Teleport.create(player, argValue);
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Home");
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Home");
                     return false;
                 }
 
@@ -42,9 +42,9 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set_named", Messages.Type.SUCCESS, argValue);
+                    Messages.sendMessage(player, "home_set_named", Messages.MessageType.SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.WARNING,
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.MessageType.WARNING,
                         PublicTeleport.storage.getConfig().maxHomes());
                 }
 
@@ -54,7 +54,7 @@ public class Homes {
                 Teleport target = Teleport.create(player, "home");
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.Type.ERROR, "Home");
+                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Home");
                     return false;
                 }
 
@@ -65,9 +65,9 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set", Messages.Type.SUCCESS);
+                    Messages.sendMessage(player, "home_set", Messages.MessageType.SUCCESS);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.Type.WARNING,
+                    Messages.sendMessage(player, "home_set_max_reached", Messages.MessageType.WARNING,
                         PublicTeleport.storage.getConfig().maxHomes());
                 }
 
@@ -77,7 +77,7 @@ public class Homes {
         dispatcher.register(Commands.literal("delhome")
             .then(Registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
+                    Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
                     return false;
                 }
 
@@ -88,9 +88,9 @@ public class Homes {
                 }
 
                 if (success) {
-                    Messages.sendMessage(player, "home_deleted", Messages.Type.SUCCESS, argValue);
+                    Messages.sendMessage(player, "home_deleted", Messages.MessageType.SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
+                    Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
                 }
 
                 return true;
@@ -100,9 +100,9 @@ public class Homes {
             .then(Registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
                     if (PublicTeleport.storage.getConfig().enableBack()) {
-                        Messages.sendMessage(player, "home_reserved_name_get", Messages.Type.WARNING, "/back");
+                        Messages.sendMessage(player, "home_reserved_name_get", Messages.MessageType.WARNING, "/back");
                     } else {
-                        Messages.sendMessage(player, "home_no_exist", Messages.Type.ERROR, argValue);
+                        Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
                     }
                     return false;
                 }

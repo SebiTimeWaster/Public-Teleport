@@ -235,7 +235,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : player.getUUID());
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
             return null;
         }
 
@@ -263,7 +263,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
             return null;
         }
 
@@ -296,7 +296,7 @@ public class Storage {
         int numTeleports = 0;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
             return null;
         }
 
@@ -321,7 +321,7 @@ public class Storage {
         }
 
         if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-            Messages.sendMessage(player, "data_not_saved", Messages.Type.ERROR);
+            Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
             return null;
         }
 
@@ -343,7 +343,7 @@ public class Storage {
         boolean exists = false;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.Type.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
             return null;
         }
 
@@ -356,7 +356,7 @@ public class Storage {
 
         if (exists) {
             if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-                Messages.sendMessage(player, "data_not_saved", Messages.Type.ERROR);
+                Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
                 return null;
             }
 

@@ -13,32 +13,45 @@ import net.minecraft.server.level.ServerPlayer;
  * Builds and sends the mod's chat messages.
  */
 public class Messages {
-    public static enum Type {
-        SUCCESS, WARNING, ERROR, REQUEST, BUTTON
+    public static enum MessageType {
+        SUCCESS, WARNING, ERROR, HEADLINE, BUTTON, COMMAND, COMMAND_PARAM
+    }
+
+    @NotNull
+    private static MutableComponent addColor(@NotNull MutableComponent message, MessageType messageType) {
+        ChatFormatting color = switch (messageType) {
+            case null -> null;
+            case SUCCESS -> ChatFormatting.GREEN;
+            case WARNING -> ChatFormatting.YELLOW;
+            case ERROR -> ChatFormatting.RED;
+            case HEADLINE -> ChatFormatting.AQUA;
+            case BUTTON -> ChatFormatting.GOLD;
+            case COMMAND -> ChatFormatting.LIGHT_PURPLE;
+            case COMMAND_PARAM -> ChatFormatting.DARK_PURPLE;
+            default -> null;
+        };
+
+        if (color != null) {
+            return message.withStyle(color);
+        } else {
+            return message;
+        }
     }
 
     /**
      * Resolves an identifier into a message and formats it
      *
      * @param identifier  the message identifier without the {@link MOD_ID} prefix
-     * @param messageType the {@link Type} determining the message's chat color
+     * @param messageType the {@link MessageType} determining the message's chat
+     *                        color
      * @param params      the values for the translation placeholders
      * @return the resolved, colored, translatable component
      */
     @NotNull
-    public static MutableComponent getMessage(String identifier, Type messageType, Object... params) {
+    public static MutableComponent getMessage(String identifier, MessageType messageType, Object... params) {
         MutableComponent component;
         String key = PublicTeleport.MOD_ID + "." + identifier;
         String defaultString = PublicTeleport.storage.getTranslations().get(key);
-        ChatFormatting color = switch (messageType) {
-            case null -> null;
-            case SUCCESS -> ChatFormatting.GREEN;
-            case WARNING -> ChatFormatting.YELLOW;
-            case ERROR -> ChatFormatting.RED;
-            case REQUEST -> ChatFormatting.AQUA;
-            case BUTTON -> ChatFormatting.GOLD;
-            default -> null;
-        };
 
         if (defaultString == null) {
             defaultString = key;
@@ -50,11 +63,7 @@ public class Messages {
             component = Component.translatableWithFallback(key, defaultString, params);
         }
 
-        if (color != null) {
-            component = component.withStyle(color);
-        }
-
-        return component;
+        return addColor(component, messageType);
     }
 
     /**
@@ -62,10 +71,11 @@ public class Messages {
      *
      * @param player      the player to send the message to
      * @param identifier  the message identifier without the {@link MOD_ID} prefix
-     * @param messageType the {@link Type} determining the message's chat color
+     * @param messageType the {@link MessageType} determining the message's chat
+     *                        color
      * @param params      the values for the translation placeholders
      */
-    public static void sendMessage(ServerPlayer player, String identifier, Type messageType, Object... params) {
+    public static void sendMessage(ServerPlayer player, String identifier, MessageType messageType, Object... params) {
         player.sendSystemMessage(getMessage(identifier, messageType, params));
     }
 
@@ -80,12 +90,27 @@ public class Messages {
          * Resolves a message via {@link Messages#getMessage} and appends it.
          *
          * @param identifier  the message identifier without the {@link MOD_ID} prefix
-         * @param messageType the {@link Type} determining the message's chat color
+         * @param messageType the {@link MessageType} determining the message's chat
+         *                        color
          * @param params      the values for the translation placeholders
          * @return this builder, for chaining
          */
-        public MessageBuilder append(String identifier, Type messageType, Object... params) {
+        public MessageBuilder append(String identifier, MessageType messageType, Object... params) {
             message.append(getMessage(identifier, messageType, params));
+
+            return this;
+        }
+
+        /**
+         * Appends raw, non-translated text to the message and colors it.
+         *
+         * @param text        the text to append
+         * @param messageType the {@link MessageType} determining the message's chat
+         *                        color
+         * @return this builder, for chaining
+         */
+        public MessageBuilder appendRawColored(@NotNull String text, MessageType messageType) {
+            message.append(addColor(Component.literal(text), messageType));
 
             return this;
         }
@@ -96,7 +121,7 @@ public class Messages {
          * @param text the text to append
          * @return this builder, for chaining
          */
-        public MessageBuilder append(@NotNull String text) {
+        public MessageBuilder appendRaw(@NotNull String text) {
             message.append(text);
 
             return this;

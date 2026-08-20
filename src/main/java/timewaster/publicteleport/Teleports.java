@@ -20,7 +20,7 @@ import timewaster.publicteleport.records.Teleport;
  */
 public class Teleports {
     @SuppressWarnings("null")
-    private static void doTeleportEffect(ServerPlayer player) {
+    private static void teleportEffect(ServerPlayer player) {
         player.level().playSound(
             null,
             player.getBlockX() + 0.5,
@@ -45,15 +45,14 @@ public class Teleports {
             0.25);
     }
 
-    private static boolean teleport(ServerPlayer player, Teleport target) {
-        ServerLevel level = TeleportSafety.getLevelFromDimension(player, target.dimension());
-
-        if (level == null) {
-            Messages.sendMessage(player, "level_no_exist", Messages.Type.ERROR);
+    private static boolean teleport(ServerPlayer player, Teleport target, ServerLevel level) {
+        if (target == null || level == null) {
             return false;
         }
 
-        doTeleportEffect(player);
+        Teleport back = Teleport.create(player, "back");
+
+        teleportEffect(player);
 
         boolean result = player.teleportTo(
             level,
@@ -66,57 +65,47 @@ public class Teleports {
             true);
 
         if (result) {
-            doTeleportEffect(player);
+            teleportEffect(player);
+
+            if (!target.name().equals("back")) {
+                PublicTeleport.storage.setTeleport(player, back, false);
+            }
+
+            Messages.sendMessage(player, "teleported_to", Messages.MessageType.SUCCESS, target.name());
         } else {
-            Messages.sendMessage(player, "unknown_error", Messages.Type.ERROR);
+            Messages.sendMessage(player, "unknown_error", Messages.MessageType.ERROR);
         }
 
         return result;
     }
 
-    private static boolean teleportPlayer(ServerPlayer player, @Nullable ServerPlayer targetPlayer, Teleport target,
-        boolean isWarp) {
-        if (target == null) {
-            return false;
-        }
-
-        if (target.name().equals("public_teleport_not_found")) {
-            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.Type.ERROR,
-                target.name());
-            return false;
+    @Nullable
+    private static Teleport teleportPreflightCheck(ServerPlayer player, @Nullable ServerPlayer targetPlayer,
+        Teleport target, ServerLevel level, boolean ignorePlayers) {
+        if (level == null) {
+            Messages.sendMessage(player, "level_no_exist", Messages.MessageType.ERROR);
+            return null;
         }
 
         if (!TeleportSafety.doesPlayerClearTarget(player, target, 2.0, 3.0)) {
-            Messages.sendMessage(player, "teleport_unnecessary", Messages.Type.WARNING, target.name());
-            return false;
+            Messages.sendMessage(player, "teleport_unnecessary", Messages.MessageType.WARNING, target.name());
+            return null;
         }
 
-        Teleport testedTarget = TeleportSafety.isPositionTeleportable(player, target);
-
+        Teleport testedTarget = TeleportSafety.findTeleportablePosition(player, target, ignorePlayers);
         if (testedTarget == null) {
             if (targetPlayer == null) {
-                Messages.sendMessage(player, "teleport_unsafe", Messages.Type.ERROR, target.name());
+                Messages.sendMessage(player, "teleport_unsafe", Messages.MessageType.ERROR, target.name());
             } else {
-                Messages.sendMessage(player, "teleport_unsafe_tpa", Messages.Type.ERROR,
+                Messages.sendMessage(player, "teleport_unsafe_tpa", Messages.MessageType.ERROR,
                     targetPlayer.getName().getString());
-                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", Messages.Type.ERROR,
+                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", Messages.MessageType.ERROR,
                     player.getName().getString());
             }
-            return false;
+            return null;
         }
 
-        Teleport back = Teleport.create(player, "back");
-        boolean result = teleport(player, testedTarget);
-
-        if (result) {
-            if (!testedTarget.name().equals("back")) {
-                PublicTeleport.storage.setTeleport(player, back, false);
-            }
-
-            Messages.sendMessage(player, "teleported_to", Messages.Type.SUCCESS, testedTarget.name());
-        }
-
-        return result;
+        return testedTarget;
     }
 
     /**
@@ -142,12 +131,18 @@ public class Teleports {
      */
     public static boolean teleportPlayer(ServerPlayer player, String targetName, boolean isWarp) {
         Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, targetName, isWarp);
-
         if (teleportTarget == null) {
             return false;
         }
+        if (teleportTarget.name().equals("public_teleport_not_found")) {
+            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.MessageType.ERROR,
+                targetName);
+            return false;
+        }
+        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        Teleport testedTarget = teleportPreflightCheck(player, null, teleportTarget, level, false);
 
-        return teleportPlayer(player, null, teleportTarget, isWarp);
+        return teleport(player, testedTarget, level);
     }
 
     /**
@@ -157,10 +152,12 @@ public class Teleports {
      * @param target the destination to teleport the player to
      * @return {@code true} if the teleport succeeded
      */
-    public static boolean teleportPlayer(ServerPlayer player, ServerPlayer targetPlayer) {
+    public static boolean teleportPlayer(ServerPlayer player, ServerPlayer targetPlayer, boolean isTpaHereAll) {
         Teleport teleportTarget = Teleport.create(targetPlayer, targetPlayer.getName().getString());
+        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        Teleport testedTarget = teleportPreflightCheck(player, targetPlayer, teleportTarget, level, isTpaHereAll);
 
-        return teleportPlayer(player, targetPlayer, teleportTarget, false);
+        return teleport(player, testedTarget, level);
     }
 
     /**
@@ -173,17 +170,17 @@ public class Teleports {
      */
     public static void listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
         if (teleportNames.size() == 0) {
-            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.Type.WARNING);
+            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.MessageType.WARNING);
         } else {
             Messages.MessageBuilder builder = new Messages.MessageBuilder().append(
-                isWarps ? "headline_warps" : "headline_homes", Messages.Type.REQUEST);
+                isWarps ? "headline_warps" : "headline_homes", Messages.MessageType.HEADLINE);
 
             for (String name : teleportNames) {
-                MutableComponent buttonText = Messages.getMessage("button_named", Messages.Type.BUTTON, name);
+                MutableComponent buttonText = Messages.getMessage("button_named", Messages.MessageType.BUTTON, name);
                 MutableComponent hoverText = Messages.getMessage("teleport_to", null, name);
                 String command = isWarps ? "/warp " + name : "/home " + name;
 
-                builder.append("\n  ").button(buttonText, hoverText, command);
+                builder.appendRaw("\n  ").button(buttonText, hoverText, command);
             }
 
             builder.send(player);

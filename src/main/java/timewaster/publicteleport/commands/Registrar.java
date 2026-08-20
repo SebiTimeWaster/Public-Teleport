@@ -73,6 +73,8 @@ public class Registrar {
         Config config = PublicTeleport.storage.getConfig();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            Help.register(dispatcher, config);
+
             if (config.enableSpawn()) {
                 Spawn.register(dispatcher);
             }
