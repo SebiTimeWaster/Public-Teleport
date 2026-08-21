@@ -1,5 +1,6 @@
 package timewaster.publicteleport.commands;
 
+import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -8,6 +9,7 @@ import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -67,12 +69,37 @@ public class Registrar {
     }
 
     /**
+     * This is only for internal manual testing together with the mod
+     * https://github.com/senseiwells/PuppetPlayers and is only active when the
+     * coresponding JVM argument "PuppetMaster" is set.
+     * I.e.: "java -Xmx2G -DPuppetMaster=1 -jar fabric-server-..."
+     */
+    private static void puppets(CommandDispatcher<CommandSourceStack> dispatcher) {
+        List<String> args = ManagementFactory.getRuntimeMXBean().getInputArguments();
+
+        if (args.contains("-DPuppetMaster=1")) {
+            dispatcher.register(Commands.literal("addpuppets")
+                .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+
+                    for (int i = 0; i < 5; i++) {
+                        player.level().getServer().getCommands().performPrefixedCommand(
+                            player.createCommandSourceStack(),
+                            "/puppet " + ((Double) Math.random()).toString().substring(2, 12) + " spawn");
+                    }
+
+                    return true;
+                })));
+        }
+    }
+
+    /**
      * Registers the mod's commands with Fabric's command dispatcher.
      */
     public static void registerCommands() {
         Config config = PublicTeleport.storage.getConfig();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            puppets(dispatcher);
             Help.register(dispatcher, config);
 
             if (config.enableSpawn()) {

@@ -1,0 +1,51 @@
+  Action                                            Outcome     Condition
+Requests:
+  [tpa]                                             (success)   sent, both sides are notified
+  [tpahere]                                         (success)   sent, both sides are notified
+  [tpahereall]                                      (success)   sent, both sides are notified
+  [tpa]                                             (warning)   30 second timeout (set in config), both sides are notified
+  [tpa]                                             (warning)   to yourself
+  [tpa]                                             (error)     request already exists
+  [tpcancel]                                        (error)     no request exists
+  [tpcancel]                                        (warning)   cancelled, receiver
+  [tpcancel]                                        (success)   cancelled, sender
+  [tpaccept]                                        (error)     no request exists
+  [tpaccept]                                        (error)     sender no longer ingame
+  [tpaccept]                                        (success)   accepted, both sides are notified, teleport executed
+  [tpdeny]                                          (error)     no request exists
+  [tpdeny]                                          (warning)   denied, sender
+  [tpdeny]                                          (success)   denied, receiver
+Teleports:
+  [home]                                            (success)   teleport executed
+  [home]                                            (warning)   already at target
+  [home, sethome, warp, setwarp, spawn, setspawn]   (error)     target not spawn safe
+  [tpaccept]                                        (error)     target not spawn safe, normal and reverse, both sides are notified
+  [home]                                            (error)     target not found
+  [homes, warps]                                    (warning)   no targets exist
+  [homes, warps]                                    (success)   lists targets
+  [home]                                            (success)   target is Y +1 if standing on slab, carpet, etc
+  [tpahereall]                                      (success)   20 players find blocks around you, 2 blocks outward of position
+Back:
+  [back]                                            (success)   back is set after any teleport or death
+Help:
+  [helpteleport]                                    (success)   shows command list
+Homes (both named and unnamed!):
+  [sethome]                                         (warning)   reserved name "back"
+  [home]                                            (error)     "back" doesnt exist (spawn disabled)
+  [home]                                            (warning)   reserved name "back" with '/back" hint (spawn enabled)
+  [sethome]                                         (success)   set
+  [sethome]                                         (warning)   max homes reached
+  [delhome]                                         (success)   deleted
+  [delhome]                                         (error)     tried to delete "back"
+  [home, delhome]                                   (error)     doesnt exist
+Spawn:
+  [setspawn]                                        (success)   set
+Warps:
+  [setwarp]                                         (warning)   reserved name "spawn" (spawn disabled)
+  [warp]                                            (error)     "spawn" doesnt exist (spawn disabled)
+  [setwarp]                                         (warning)   reserved name "spawn" with '/setspawn" hint (spawn enabled, OP)
+  [warp]                                            (warning)   reserved name "spawn" with '/spawn" hint (spawn enabled)
+  [setwarp]                                         (success)   set
+  [delwarp]                                         (error)     tried to delete "spawn"
+  [delwarp]                                         (success)   deleted
+  [warp, delwarp]                                   (error)     doesnt exist

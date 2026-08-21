@@ -87,14 +87,5 @@ public class Help {
 
                 return true;
             })));
-
-        dispatcher.register(Commands.literal("doit")
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-
-                player.level().getServer().getCommands().performPrefixedCommand(player.createCommandSourceStack(),
-                    "/puppet " + ((Double) Math.random()).toString().substring(2, 12) + " spawn");
-
-                return true;
-            })));
     }
 }
