@@ -22,7 +22,7 @@ Teleports:
   [homes, warps]                                    (warning)   no targets exist
   [homes, warps]                                    (success)   lists targets
   [home]                                            (success)   target is Y +1 if standing on slab, carpet, etc
-  [tpahereall]                                      (success)   20 players find blocks around you, 2 blocks outward of position
+  [tpahereall]                                      (success)   20 players find blocks around you, up to 2 blocks outward of position
 Back:
   [back]                                            (success)   back is set after any teleport or death
 Help:
