@@ -1,8 +1,6 @@
   Action                                            Outcome     Condition
 Requests:
-  [tpa]                                             (success)   sent, both sides are notified
-  [tpahere]                                         (success)   sent, both sides are notified
-  [tpahereall]                                      (success)   sent, both sides are notified
+  [tpa, tpahere, tpahereall]                        (success)   sent, both sides are notified
   [tpa]                                             (warning)   30 second timeout (set in config), both sides are notified
   [tpa]                                             (warning)   to yourself
   [tpa]                                             (error)     request already exists
@@ -28,11 +26,11 @@ Teleports:
 Back:
   [back]                                            (success)   back is set after any teleport or death
 Help:
-  [helpteleport]                                    (success)   shows command list
+  [helpteleport]                                    (success)   shows command list, respects enabled configs
 Homes (both named and unnamed!):
   [sethome]                                         (warning)   reserved name "back"
-  [home]                                            (error)     "back" doesnt exist (spawn disabled)
-  [home]                                            (warning)   reserved name "back" with '/back" hint (spawn enabled)
+  [home]                                            (error)     "back" doesnt exist (back disabled)
+  [home]                                            (warning)   reserved name "back" with '/back" hint (back enabled)
   [sethome]                                         (success)   set
   [sethome]                                         (warning)   max homes reached
   [delhome]                                         (success)   deleted
@@ -43,7 +41,7 @@ Spawn:
 Warps:
   [setwarp]                                         (warning)   reserved name "spawn" (spawn disabled)
   [warp]                                            (error)     "spawn" doesnt exist (spawn disabled)
-  [setwarp]                                         (warning)   reserved name "spawn" with '/setspawn" hint (spawn enabled, OP)
+  [setwarp]                                         (warning)   reserved name "spawn" with '/setspawn" hint (spawn enabled)
   [warp]                                            (warning)   reserved name "spawn" with '/spawn" hint (spawn enabled)
   [setwarp]                                         (success)   set
   [delwarp]                                         (error)     tried to delete "spawn"
