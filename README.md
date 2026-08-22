@@ -52,7 +52,6 @@ Please note:
 - TPA functionality is disabled in singleplayer.
 - `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point.
 - `/tpaccept` searches for a spawnable block around the target position to teleport the user to.
-- When using `/tpahereall`, people will not be able to teleport to you when there are no more empty spawnable blocks around you. (Limited search radius)
 
 ## Configuration
 
