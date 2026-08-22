@@ -68,7 +68,12 @@ To change these settings edit the config file and restart your server/client.
 
 ## Languages
 
-Currently only `en_us` and `de_de` are valid values for `defaultLanguage`. If you want to provide more translations feel free to open an Issue.
+| Language | Value (`defaultLanguage` config field) |
+| -------- | -------------------------------------- |
+| English  | `en_us`                                |
+| German   | `de_de`                                |
+
+If you want to provide more translations feel free to open an Issue.
 
 ### Multiplayer usage
 
