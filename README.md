@@ -45,13 +45,13 @@ An easy-to-use Fabric Teleport Mod!
 
 Please note:
 
-- TPA functionality is disabled in singleplayer.
-- `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point.
-- `/tpaccept` searches for a spawnable block around the target position to teleport the user to.
+- TPA functionality is disabled in singleplayer
+- `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point
+- `/tpaccept` searches for a spawnable block around the target position to teleport the user to
 
 ## Configuration
 
-On first run a config file is created in `config/public-teleport/config.json` with these defaults:
+On first run a config file is created (`config/public-teleport/config.json`) with these defaults:
 
 | Field             | Default | Description                                                                              |
 | ----------------- | ------- | ---------------------------------------------------------------------------------------- |
@@ -64,7 +64,7 @@ On first run a config file is created in `config/public-teleport/config.json` wi
 | `enableBack`      | true    | If the `/back` command is enabled                                                        |
 | `enableTpa`       | true    | If the `/tpa, /tpahere, /tpahereall, /tpcancel, /tpaccept, /tpdeny` commands are enabled |
 
-To change these settings edit the config file and restart your server.
+To change these settings edit the config file and restart your server/client.
 
 ## Languages
 
@@ -84,16 +84,16 @@ The Configuration `defaultLanguage` has no effect; the client's language setting
 
 Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 
-- Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into your `mods` folder on your server or client
-- Restart your server or client
+- Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into the `mods` folder on your server/client
+- (Re)Start your server/client
 - If needed edit the configuration as described in the section "Configuration" above
 
 ## Migration from MiniTeleport
 
 If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport):
 
-- Install Public Teleport, start your server and stop it once it has fully started
-- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/`: `cp -r world/miniteleport/* config/public-teleport/`
+- Install Public Teleport, start your server/client and stop it once it has fully started
+- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/` (Linux: `cp -r world/miniteleport/* config/public-teleport/`)
 
 <hr>
 
