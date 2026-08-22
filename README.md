@@ -1,7 +1,6 @@
 <p align="center">
     <img alt="Public Teleport Logo" src=".github/banner-700.png">
 </p>
-<br>
 
 An easy-to-use Fabric Teleport Mod!
 
@@ -12,12 +11,9 @@ An easy-to-use Fabric Teleport Mod!
 - Minimal configuration with predefined values
 
 <br>
-<br>
 <p align="center">
-    <img alt="Public Teleport Logo" src=".github/bus-500.png">
+    <img alt="Public Teleport Logo" src=".github/bus-500.png"> *
 </p>
-
-<sub>[^1]</sub>
 
 ## Commands
 
@@ -97,7 +93,8 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport):
 
 - Install Public Teleport, start your server and stop it once it has fully started
-- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/`:
-  `cp -r world/miniteleport/* config/public-teleport/`
+- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/`: `cp -r world/miniteleport/* config/public-teleport/`
 
-[^1]: Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)
+<hr>
+
+<sub>* Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)</sub>
