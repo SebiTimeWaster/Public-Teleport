@@ -7,6 +7,8 @@ import net.fabricmc.api.ModInitializer;
 import timewaster.publicteleport.commands.Registrar;
 
 // TODO: multi-modloader compatibility
+// TODO: when creating warps add spawn warp with minecraft spawn data
+// TODO: add portals between dimension and in the same dimension
 
 /**
  * Entry point of the Public Teleport mod.
