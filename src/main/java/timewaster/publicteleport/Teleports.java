@@ -121,31 +121,6 @@ public class Teleports {
     }
 
     /**
-     * Looks up a named teleport destination (a home or a warp) and teleports
-     * the player to it if found.
-     *
-     * @param player             the player to teleport
-     * @param originalTargetName the name of the home or warp to teleport to
-     * @param isWarp             {@code true} if the teleport is a Warp, not a Home
-     * @return {@code true} if the destination was found and the teleport succeeded
-     */
-    public static boolean teleportPlayer(ServerPlayer player, String targetName, boolean isWarp) {
-        Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, targetName, isWarp);
-        if (teleportTarget == null) {
-            return false;
-        }
-        if (teleportTarget.name().equals("public_teleport_not_found")) {
-            Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.MessageType.ERROR,
-                targetName);
-            return false;
-        }
-        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
-        Teleport testedTarget = teleportPreflightCheck(player, null, teleportTarget, level, false);
-
-        return teleport(player, testedTarget, level);
-    }
-
-    /**
      * Teleports the player to an already-resolved TPA destination.
      *
      * @param player the player to teleport
@@ -158,6 +133,50 @@ public class Teleports {
         Teleport testedTarget = teleportPreflightCheck(player, targetPlayer, teleportTarget, level, isTpaHereAll);
 
         return teleport(player, testedTarget, level);
+    }
+
+    /**
+     * Looks up a named teleport destination (a home or a warp) and teleports the
+     * player to it if found. Uses the fallback if it is specified otherwise.
+     *
+     * @param player     the player to teleport
+     * @param targetName the name of the home or warp to teleport to
+     * @param fallback   is used if not {@code null} and the target cannot be found
+     * @param isWarp     {@code true} if the teleport is a Warp, not a Home
+     * @return {@code true} if the destination was found and the teleport succeeded
+     */
+    public static boolean teleportPlayer(ServerPlayer player, String targetName, @Nullable Teleport fallback,
+        boolean isWarp) {
+        Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, targetName, isWarp);
+        if (teleportTarget == null) {
+            return false;
+        }
+        if (teleportTarget.name().equals("public_teleport_not_found")) {
+            if (fallback == null) {
+                Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.MessageType.ERROR,
+                    targetName);
+                return false;
+            } else {
+                teleportTarget = fallback;
+            }
+        }
+        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        Teleport testedTarget = teleportPreflightCheck(player, null, teleportTarget, level, false);
+
+        return teleport(player, testedTarget, level);
+    }
+
+    /**
+     * Looks up a named teleport destination (a home or a warp) and teleports
+     * the player to it if found.
+     *
+     * @param player             the player to teleport
+     * @param originalTargetName the name of the home or warp to teleport to
+     * @param isWarp             {@code true} if the teleport is a Warp, not a Home
+     * @return {@code true} if the destination was found and the teleport succeeded
+     */
+    public static boolean teleportPlayer(ServerPlayer player, String targetName, boolean isWarp) {
+        return teleportPlayer(player, targetName, null, isWarp);
     }
 
     /**

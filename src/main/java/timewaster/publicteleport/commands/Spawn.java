@@ -8,6 +8,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelData.RespawnData;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Registrar;
@@ -45,7 +47,17 @@ public class Spawn {
 
         dispatcher.register(Commands.literal("spawn")
             .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return Teleports.teleportPlayer(player, "spawn", true);
+                RespawnData spawnData = player.level().getServer().getLevel(Level.OVERWORLD).getRespawnData();
+                Teleport fallback = new Teleport(
+                    "spawn",
+                    spawnData.pos().getX(),
+                    spawnData.pos().getY(),
+                    spawnData.pos().getZ(),
+                    spawnData.yaw(),
+                    spawnData.pitch(),
+                    "minecraft:overworld");
+
+                return Teleports.teleportPlayer(player, "spawn", fallback, true);
             })));
     }
 }
