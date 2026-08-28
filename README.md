@@ -10,7 +10,6 @@ An easy-to-use Fabric Teleport Mod!
 - Server-side functionality does NOT require client-side installation, but see section "Languages" below
 - Minimal configuration with predefined values
 
-<br>
 <p align="center">
     <img alt="Public Teleport Logo" src=".github/bus-500.png"> *
 </p>
@@ -102,4 +101,4 @@ If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport
 
 <hr>
 
-<sub>* Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)</sub>
+<sub>\* Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)</sub>
