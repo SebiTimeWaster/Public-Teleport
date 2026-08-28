@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
 
 // TODO: multi-modloader compatibility
-// TODO: when creating warps add spawn warp with minecraft spawn data
 // TODO: add portals between dimension and in the same dimension
 
 /**
