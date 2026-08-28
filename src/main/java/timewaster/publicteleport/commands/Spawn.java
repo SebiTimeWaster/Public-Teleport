@@ -55,7 +55,7 @@ public class Spawn {
                     spawnData.pos().getZ(),
                     spawnData.yaw(),
                     spawnData.pitch(),
-                    "minecraft:overworld");
+                    spawnData.dimension().identifier().toString());
 
                 return Teleports.teleportPlayer(player, "spawn", fallback, true);
             })));
