@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ModInitializer;
-import timewaster.publicteleport.commands.Registrar;
 
 // TODO: multi-modloader compatibility
 // TODO: when creating warps add spawn warp with minecraft spawn data

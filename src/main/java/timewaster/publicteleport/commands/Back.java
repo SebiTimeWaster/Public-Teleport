@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.Teleports;
 
 /**

@@ -1,4 +1,4 @@
-package timewaster.publicteleport.commands;
+package timewaster.publicteleport;
 
 import java.lang.management.ManagementFactory;
 import java.util.List;
@@ -24,7 +24,12 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.PublicTeleport;
+import timewaster.publicteleport.commands.Back;
+import timewaster.publicteleport.commands.Help;
+import timewaster.publicteleport.commands.Homes;
+import timewaster.publicteleport.commands.Spawn;
+import timewaster.publicteleport.commands.Tpa;
+import timewaster.publicteleport.commands.Warps;
 import timewaster.publicteleport.records.Config;
 
 /**
@@ -72,7 +77,7 @@ public class Registrar {
      * This is only for internal manual testing together with the mod
      * https://github.com/senseiwells/PuppetPlayers and is only active when the
      * coresponding JVM argument "PuppetMaster" is set.
-     * I.e.: "java -Xmx2G -DPuppetMaster=1 -jar fabric-server-..."
+     * I.e.: "java -Xmx2G -DPuppetMaster=1 -jar server.jar nogui"
      */
     private static void puppets(CommandDispatcher<CommandSourceStack> dispatcher) {
         List<String> args = ManagementFactory.getRuntimeMXBean().getInputArguments();

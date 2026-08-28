@@ -9,8 +9,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
-import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
 /**

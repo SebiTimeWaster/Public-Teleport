@@ -8,6 +8,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.Requests;
 import timewaster.publicteleport.Requests.RequestType;
 

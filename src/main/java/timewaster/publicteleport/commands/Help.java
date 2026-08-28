@@ -9,6 +9,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Messages;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.records.Config;
 
 /**

@@ -11,8 +11,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
-import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
 /**
