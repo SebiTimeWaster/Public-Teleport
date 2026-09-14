@@ -1,5 +1,12 @@
 package timewaster.publicteleport.commands;
 
+import static timewaster.publicteleport.Messages.MessageType.COMMAND;
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
+import static timewaster.publicteleport.Registrar.SuggestionType.PORTALS;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -38,9 +45,9 @@ import timewaster.publicteleport.records.Teleport;
  */
 public class Portals {
     private static final Integer MIN = Integer.MIN_VALUE;
-    private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
     private static final Pattern HOST_PATTERN = Pattern.compile(
         "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
+    private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
 
     @Nullable
     private static Vec3 getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
@@ -58,7 +65,7 @@ public class Portals {
             player));
 
         if (blockHitResult.getType() != BlockHitResult.Type.BLOCK) {
-            Messages.sendMessage(player, "portal_set_no_block", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "portal_set_no_block", ERROR);
             return null;
         }
 
@@ -94,7 +101,7 @@ public class Portals {
         Teleport target = Teleport.create(player, name);
 
         if (action.equals("targetPosition") && !TeleportSafety.isBlockTeleportable(player, target)) {
-            Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Portal");
+            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Portal");
             return null;
         }
 
@@ -103,7 +110,7 @@ public class Portals {
             String sanitisedUrl = sanitiseTargetUrl(url);
 
             if (sanitisedUrl == null) {
-                Messages.sendMessage(player, "portal_set_url_invalid", Messages.MessageType.ERROR, url);
+                Messages.sendMessage(player, "portal_set_url_invalid", ERROR, url);
                 return null;
             }
 
@@ -174,7 +181,7 @@ public class Portals {
             }
 
             tempPortalData.remove(portal.target().name());
-            Messages.sendMessage(player, "portal_set", Messages.MessageType.SUCCESS, portal.target().name());
+            Messages.sendMessage(player, "portal_set", SUCCESS, portal.target().name());
 
             return true;
         }
@@ -192,7 +199,7 @@ public class Portals {
             default -> "unknown_error";
         };
 
-        Messages.sendMessage(player, successIdentifier, Messages.MessageType.SUCCESS, name);
+        Messages.sendMessage(player, successIdentifier, SUCCESS, name);
     }
 
     private static int setPortalData(CommandContext<CommandSourceStack> context, String action) {
@@ -227,7 +234,7 @@ public class Portals {
                         .executes((context) -> setPortalData(context, "targetUrl"))))));
 
         dispatcher.register(Commands.literal("delportal").requires(Commands.hasPermission(hasPermission))
-            .then(Registrar.buildArgumentString("name", Registrar.SuggestionType.PORTALS,
+            .then(Registrar.buildArgumentString("name", PORTALS,
                 (ServerPlayer player, String name) -> {
                     Boolean success = PublicTeleport.storage.deletePortal(player, name);
 
@@ -236,9 +243,9 @@ public class Portals {
                     }
 
                     if (success) {
-                        Messages.sendMessage(player, "portal_deleted", Messages.MessageType.SUCCESS, name);
+                        Messages.sendMessage(player, "portal_deleted", SUCCESS, name);
                     } else {
-                        Messages.sendMessage(player, "portal_no_exist", Messages.MessageType.ERROR, name);
+                        Messages.sendMessage(player, "portal_no_exist", ERROR, name);
                         return false;
                     }
 
@@ -246,21 +253,21 @@ public class Portals {
                 })));
 
         dispatcher.register(Commands.literal("portals").requires(Commands.hasPermission(hasPermission))
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 List<Portal> portals = PublicTeleport.storage.getPortals();
 
                 if (portals.size() == 0) {
-                    Messages.sendMessage(player, "portal_none", Messages.MessageType.WARNING);
+                    Messages.sendMessage(player, "portal_none", WARNING);
                 } else {
                     Messages.MessageBuilder builder = new Messages.MessageBuilder().append("headline_portals",
-                        Messages.MessageType.HEADLINE);
+                        HEADLINE);
 
-                    portals.sort(Comparator.comparing(portal -> portal.target().name()));
+                    portals.sort(Comparator.comparing((portal) -> portal.target().name()));
 
                     for (Portal portal : portals) {
                         builder.appendRaw("\n  ")
                             .appendRawColored(Objects.requireNonNull(portal.target().name()),
-                                Messages.MessageType.COMMAND)
+                                COMMAND)
                             .appendRawColored("  " + portal.dimension().substring(10) + "  "
                                 + portal.aX() + " " + portal.aY() + " " + portal.aZ(), null);
                     }

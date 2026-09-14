@@ -14,7 +14,7 @@ import timewaster.publicteleport.Teleports;
 public class Back {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("back")
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 return Teleports.teleportPlayer(player, "back", false);
             })));
     }

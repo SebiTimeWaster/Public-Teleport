@@ -1,5 +1,10 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +37,7 @@ public class Requests {
 
     private static Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
         return pendingRequests.stream()
-            .filter(request -> {
+            .filter((request) -> {
                 return (sender == null || request.sender().equals(sender))
                     && (receiver == null || request.receiver().equals(receiver));
             }).findFirst().orElse(null);
@@ -52,21 +57,21 @@ public class Requests {
         String senderName = sender.getName().getString();
         String receiverName = receiver.getName().getString();
         String headlineIdentifier = (requestType == RequestType.NORMAL) ? "request_received" : "request_received_rev";
-        MutableComponent acceptButtonText = Messages.getMessage("button_accept", Messages.MessageType.SUCCESS);
+        MutableComponent acceptButtonText = Messages.getMessage("button_accept", SUCCESS);
         MutableComponent acceptHoverText = Messages.getMessage("request_accept", null, senderName);
-        MutableComponent denyButtonText = Messages.getMessage("button_deny", Messages.MessageType.ERROR);
+        MutableComponent denyButtonText = Messages.getMessage("button_deny", ERROR);
         MutableComponent denyHoverText = Messages.getMessage("request_deny", null, senderName);
 
         pendingRequests
             .add(new Request(sender.getUUID(), receiver.getUUID(), senderName, receiverName, requestType, expires));
 
         new Messages.MessageBuilder()
-            .append(headlineIdentifier, Messages.MessageType.HEADLINE, senderName)
+            .append(headlineIdentifier, HEADLINE, senderName)
             .button(acceptButtonText, acceptHoverText, "/tpaccept " + senderName)
             .appendRaw("  ")
             .button(denyButtonText, denyHoverText, "/tpdeny " + senderName)
             .send(receiver);
-        Messages.sendMessage(sender, "request_sent", Messages.MessageType.SUCCESS, receiverName);
+        Messages.sendMessage(sender, "request_sent", SUCCESS, receiverName);
     }
 
     /**
@@ -83,17 +88,17 @@ public class Requests {
                 ServerPlayer receiver = server.getPlayerList().getPlayer(request.receiver());
 
                 if (sender != null) {
-                    Messages.sendMessage(sender, "request_timedout_sender", Messages.MessageType.WARNING,
+                    Messages.sendMessage(sender, "request_timedout_sender", WARNING,
                         request.receiverName());
                 }
                 if (receiver != null) {
-                    Messages.sendMessage(receiver, "request_timedout_receiver", Messages.MessageType.WARNING,
+                    Messages.sendMessage(receiver, "request_timedout_receiver", WARNING,
                         request.senderName());
                 }
             }
         }
 
-        pendingRequests.removeIf(request -> request.expires() <= now);
+        pendingRequests.removeIf((request) -> request.expires() <= now);
     }
 
     /**
@@ -107,13 +112,13 @@ public class Requests {
      */
     public static boolean sendRequest(ServerPlayer sender, @Nullable ServerPlayer receiver, RequestType requestType) {
         if (sender == receiver) {
-            Messages.sendMessage(sender, "request_teleport_self", Messages.MessageType.WARNING);
+            Messages.sendMessage(sender, "request_teleport_self", WARNING);
             return false;
         }
 
         Request oldRequest = getRequest(sender.getUUID());
         if (oldRequest != null) {
-            Messages.sendMessage(sender, "request_old_exist", Messages.MessageType.ERROR, oldRequest.receiverName(),
+            Messages.sendMessage(sender, "request_old_exist", ERROR, oldRequest.receiverName(),
                 "/tpcancel");
             return false;
         }
@@ -142,11 +147,11 @@ public class Requests {
      *         {@code false} if {@code sender} had no pending request
      */
     public static boolean cancelRequest(ServerPlayer sender) {
-        List<Request> requests = pendingRequests.stream().filter(request -> request.sender().equals(sender.getUUID()))
+        List<Request> requests = pendingRequests.stream().filter((request) -> request.sender().equals(sender.getUUID()))
             .toList();
 
         if (requests.size() == 0) {
-            Messages.sendMessage(sender, "request_no_exist", Messages.MessageType.ERROR);
+            Messages.sendMessage(sender, "request_no_exist", ERROR);
             return false;
         }
 
@@ -154,10 +159,10 @@ public class Requests {
             ServerPlayer receiver = getPlayerByOtherPlayer(request.receiver(), sender);
 
             if (receiver != null) {
-                Messages.sendMessage(receiver, "request_cancelled_receiver", Messages.MessageType.WARNING,
+                Messages.sendMessage(receiver, "request_cancelled_receiver", WARNING,
                     sender.getName().getString());
             }
-            Messages.sendMessage(sender, "request_cancelled_sender", Messages.MessageType.SUCCESS);
+            Messages.sendMessage(sender, "request_cancelled_sender", SUCCESS);
 
             pendingRequests.remove(request);
         }
@@ -178,7 +183,7 @@ public class Requests {
         Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
         if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", Messages.MessageType.ERROR);
+            Messages.sendMessage(receiver, "request_no_exist", ERROR);
             return false;
         }
 
@@ -187,14 +192,14 @@ public class Requests {
         }
 
         if (sender == null) {
-            Messages.sendMessage(receiver, "request_sender_no_ingame", Messages.MessageType.ERROR,
+            Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR,
                 request.senderName());
             pendingRequests.remove(request);
             return false;
         }
 
-        Messages.sendMessage(sender, "request_accepted_sender", Messages.MessageType.SUCCESS, request.receiverName());
-        Messages.sendMessage(receiver, "request_accepted_receiver", Messages.MessageType.SUCCESS, request.senderName());
+        Messages.sendMessage(sender, "request_accepted_sender", SUCCESS, request.receiverName());
+        Messages.sendMessage(receiver, "request_accepted_receiver", SUCCESS, request.senderName());
 
         if (request.requestType == RequestType.NORMAL) {
             Teleports.teleportPlayer(sender, receiver, false);
@@ -220,7 +225,7 @@ public class Requests {
         Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
         if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", Messages.MessageType.ERROR);
+            Messages.sendMessage(receiver, "request_no_exist", ERROR);
             return false;
         }
 
@@ -229,9 +234,9 @@ public class Requests {
         }
 
         if (sender != null) {
-            Messages.sendMessage(sender, "request_denied_sender", Messages.MessageType.WARNING, request.receiverName());
+            Messages.sendMessage(sender, "request_denied_sender", WARNING, request.receiverName());
         }
-        Messages.sendMessage(receiver, "request_denied_receiver", Messages.MessageType.SUCCESS, request.senderName());
+        Messages.sendMessage(receiver, "request_denied_receiver", SUCCESS, request.senderName());
 
         pendingRequests.remove(request);
 

@@ -75,7 +75,7 @@ public class Registrar {
             if (type == SuggestionType.PORTALS) {
                 List<Portal> portals = PublicTeleport.storage.getPortals();
 
-                portals.sort(Comparator.comparing(portal -> portal.target().name()));
+                portals.sort(Comparator.comparing((portal) -> portal.target().name()));
 
                 for (Portal portal : portals) {
                     builder.suggest(portal.target().name());
@@ -97,7 +97,7 @@ public class Registrar {
 
         if (args.contains("-DPuppetMaster=1")) {
             dispatcher.register(Commands.literal("addpuppets")
-                .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+                .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
 
                     for (int i = 0; i < 5; i++) {
                         player.level().getServer().getCommands().performPrefixedCommand(
@@ -197,7 +197,7 @@ public class Registrar {
         SuggestionType suggestionType, BiFunction<ServerPlayer, String, Boolean> callback) {
         return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
-            .executes(context -> {
+            .executes((context) -> {
                 ServerPlayer player = getPlayer(context);
                 String argValue = Objects.requireNonNull(StringArgumentType.getString(context, argName));
 
@@ -223,7 +223,7 @@ public class Registrar {
         BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
         return Commands.argument(argName, EntityArgument.player())
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
-            .executes(context -> {
+            .executes((context) -> {
                 ServerPlayer player = getPlayer(context);
                 ServerPlayer target = EntityArgument.getPlayer(Objects.requireNonNull(context), argName);
 

@@ -137,7 +137,7 @@ public class Messages {
          */
         public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
             @NotNull String command) {
-            message.append(buttonText.withStyle(style -> style
+            message.append(buttonText.withStyle((style) -> style
                 .withClickEvent(new ClickEvent.RunCommand(command))
                 .withHoverEvent(new HoverEvent.ShowText(hoverText))));
 

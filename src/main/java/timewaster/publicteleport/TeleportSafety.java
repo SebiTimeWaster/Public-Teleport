@@ -48,6 +48,7 @@ public class TeleportSafety {
             List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
+                // player width/height
                 if (onlinePlayer != player
                     && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 0.6, 1.8)) {
                     isBlockedByPlayer = true;
@@ -62,8 +63,8 @@ public class TeleportSafety {
         double clearanceXZ, double clearanceY) {
 
         return !getDimensionName(player.level()).equals(dimension)
-            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ
-            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY
+            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
+            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
             || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
     }
 
@@ -139,7 +140,7 @@ public class TeleportSafety {
         if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
             int[] orderY = { 0, 1, -1, 2, -2 };
             List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52,
-                64, 65, 66, 67, 68);
+                64, 65, 66, 67, 68); // this defines the order blocks are searched in
             Collections.shuffle(orderXZ);
 
             for (int y : orderY) {

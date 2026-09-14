@@ -1,5 +1,11 @@
 package timewaster.publicteleport.commands;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
+import static timewaster.publicteleport.Registrar.SuggestionType.HOMES;
+import static timewaster.publicteleport.Registrar.SuggestionType.NONE;
+
 import java.util.List;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -18,21 +24,18 @@ import timewaster.publicteleport.records.Teleport;
  * Defines all Home commands, registered by {@link Registrar}.
  */
 public class Homes {
-    private static final Registrar.SuggestionType typeNone = Registrar.SuggestionType.NONE;
-    private static final Registrar.SuggestionType typeHomes = Registrar.SuggestionType.HOMES;
-
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("sethome")
-            .then(Registrar.buildArgumentString("name", typeNone, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", NONE, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_reserved_name", Messages.MessageType.WARNING);
+                    Messages.sendMessage(player, "home_reserved_name", WARNING);
                     return false;
                 }
 
                 Teleport target = Teleport.create(player, argValue);
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Home");
+                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
                     return false;
                 }
 
@@ -43,19 +46,19 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set_named", Messages.MessageType.SUCCESS, argValue);
+                    Messages.sendMessage(player, "home_set_named", SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.MessageType.WARNING,
+                    Messages.sendMessage(player, "home_set_max_reached", WARNING,
                         PublicTeleport.storage.getConfig().maxHomes());
                 }
 
                 return true;
             }))
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 Teleport target = Teleport.create(player, "home");
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Home");
+                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
                     return false;
                 }
 
@@ -66,9 +69,9 @@ public class Homes {
                 }
 
                 if (isSaved) {
-                    Messages.sendMessage(player, "home_set", Messages.MessageType.SUCCESS);
+                    Messages.sendMessage(player, "home_set", SUCCESS);
                 } else {
-                    Messages.sendMessage(player, "home_set_max_reached", Messages.MessageType.WARNING,
+                    Messages.sendMessage(player, "home_set_max_reached", WARNING,
                         PublicTeleport.storage.getConfig().maxHomes());
                 }
 
@@ -76,9 +79,9 @@ public class Homes {
             })));
 
         dispatcher.register(Commands.literal("delhome")
-            .then(Registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", HOMES, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
-                    Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
+                    Messages.sendMessage(player, "home_no_exist", ERROR, argValue);
                     return false;
                 }
 
@@ -89,33 +92,33 @@ public class Homes {
                 }
 
                 if (success) {
-                    Messages.sendMessage(player, "home_deleted", Messages.MessageType.SUCCESS, argValue);
+                    Messages.sendMessage(player, "home_deleted", SUCCESS, argValue);
                 } else {
-                    Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
+                    Messages.sendMessage(player, "home_no_exist", ERROR, argValue);
                 }
 
                 return true;
             })));
 
         dispatcher.register(Commands.literal("home")
-            .then(Registrar.buildArgumentString("name", typeHomes, (ServerPlayer player, String argValue) -> {
+            .then(Registrar.buildArgumentString("name", HOMES, (ServerPlayer player, String argValue) -> {
                 if (argValue.equals("back")) {
                     if (PublicTeleport.storage.getConfig().enableBack()) {
-                        Messages.sendMessage(player, "home_reserved_name_get", Messages.MessageType.WARNING, "/back");
+                        Messages.sendMessage(player, "home_reserved_name_get", WARNING, "/back");
                     } else {
-                        Messages.sendMessage(player, "home_no_exist", Messages.MessageType.ERROR, argValue);
+                        Messages.sendMessage(player, "home_no_exist", ERROR, argValue);
                     }
                     return false;
                 }
 
                 return Teleports.teleportPlayer(player, argValue, false);
             }))
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 return Teleports.teleportPlayer(player, "home", false);
             })));
 
         dispatcher.register(Commands.literal("homes")
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 List<String> names = PublicTeleport.storage.getTeleportNames(player, false);
 
                 if (names == null) {

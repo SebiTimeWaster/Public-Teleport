@@ -9,10 +9,7 @@ import timewaster.publicteleport.records.Config;
 
 // TODO: Multi-modloader compatibility
 // TODO: RTP random teleport functionality
-// TODO: uppercase constants (final) + magic numbers
 // TODO: reused helper functions to utils
-// TODO: arrow functions always brackets
-// TODO: Types Enums save to var if multiple occurences
 
 /**
  * Entry point of the Public Teleport mod.
@@ -31,7 +28,7 @@ public class PublicTeleport implements ModInitializer {
         Teleports.registerDeathEvent();
 
         if (config.enablePortals() || config.enableTpa()) {
-            ServerTickEvents.END_SERVER_TICK.register(server -> {
+            ServerTickEvents.END_SERVER_TICK.register((server) -> {
                 tickCounter++;
 
                 // 5 ticks = 0.25 seconds

@@ -1,5 +1,11 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.BUTTON;
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -23,7 +29,7 @@ public class Teleports {
     private static void teleportEffect(ServerPlayer player) {
         player.level().playSound(
             null,
-            player.getBlockX() + 0.5,
+            player.getBlockX() + 0.5, // middle point of player (roughly)
             player.getBlockY() + 1.0,
             player.getBlockZ() + 0.5,
             SoundEvents.ENDERMAN_TELEPORT,
@@ -31,6 +37,7 @@ public class Teleports {
             1.0f,
             1.0f);
 
+        // all numbers where visually determined to fit
         player.level().sendParticles(
             ParticleTypes.PORTAL,
             true,
@@ -56,8 +63,8 @@ public class Teleports {
 
         boolean result = player.teleportTo(
             level,
-            target.x() + 0.5,
-            target.y() + 0.01,
+            target.x() + 0.5, // middle point of block
+            target.y() + 0.01, // slightly above ground
             target.z() + 0.5,
             Objects.requireNonNull(Set.of()),
             target.yaw() != null ? (float) target.yaw() : player.getYRot(),
@@ -71,9 +78,9 @@ public class Teleports {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
 
-            Messages.sendMessage(player, "teleported_to", Messages.MessageType.SUCCESS, target.name());
+            Messages.sendMessage(player, "teleported_to", SUCCESS, target.name());
         } else {
-            Messages.sendMessage(player, "unknown_error", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "unknown_error", ERROR);
         }
 
         return result;
@@ -83,23 +90,24 @@ public class Teleports {
     private static Teleport teleportPreflightCheck(ServerPlayer player, @Nullable ServerPlayer targetPlayer,
         Teleport target, ServerLevel level, boolean ignorePlayers) {
         if (level == null) {
-            Messages.sendMessage(player, "level_no_exist", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "level_no_exist", ERROR);
             return null;
         }
 
+        // don't teleport if already closer than 2 blocks to the target
         if (!TeleportSafety.doesPlayerClearTarget(player, target, 2.0, 3.0)) {
-            Messages.sendMessage(player, "teleport_unnecessary", Messages.MessageType.WARNING, target.name());
+            Messages.sendMessage(player, "teleport_unnecessary", WARNING, target.name());
             return null;
         }
 
         Teleport testedTarget = TeleportSafety.findTeleportablePosition(player, target, ignorePlayers);
         if (testedTarget == null) {
             if (targetPlayer == null) {
-                Messages.sendMessage(player, "teleport_unsafe", Messages.MessageType.ERROR, target.name());
+                Messages.sendMessage(player, "teleport_unsafe", ERROR, target.name());
             } else {
-                Messages.sendMessage(player, "teleport_unsafe_tpa", Messages.MessageType.ERROR,
+                Messages.sendMessage(player, "teleport_unsafe_tpa", ERROR,
                     targetPlayer.getName().getString());
-                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", Messages.MessageType.ERROR,
+                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", ERROR,
                     player.getName().getString());
             }
             return null;
@@ -168,7 +176,7 @@ public class Teleports {
         }
         if (teleportTarget.name().equals("public_teleport_not_found")) {
             if (fallback == null) {
-                Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", Messages.MessageType.ERROR,
+                Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", ERROR,
                     targetName);
                 return false;
             } else {
@@ -204,13 +212,13 @@ public class Teleports {
      */
     public static void listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
         if (teleportNames.size() == 0) {
-            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", Messages.MessageType.WARNING);
+            Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", WARNING);
         } else {
             Messages.MessageBuilder builder = new Messages.MessageBuilder().append(
-                isWarps ? "headline_warps" : "headline_homes", Messages.MessageType.HEADLINE);
+                isWarps ? "headline_warps" : "headline_homes", HEADLINE);
 
             for (String name : teleportNames) {
-                MutableComponent buttonText = Messages.getMessage("button_named", Messages.MessageType.BUTTON, name);
+                MutableComponent buttonText = Messages.getMessage("button_named", BUTTON, name);
                 MutableComponent hoverText = Messages.getMessage("teleport_to", null, name);
                 String command = isWarps ? "/warp " + name : "/home " + name;
 

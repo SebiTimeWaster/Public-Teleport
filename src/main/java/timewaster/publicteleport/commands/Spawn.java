@@ -1,5 +1,8 @@
 package timewaster.publicteleport.commands;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -20,11 +23,11 @@ import timewaster.publicteleport.records.Teleport;
 public class Spawn {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setspawn").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 Teleport target = Teleport.create(player, "spawn");
 
                 if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Spawn");
+                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Spawn");
                     return false;
                 }
 
@@ -34,13 +37,13 @@ public class Spawn {
                     return false;
                 }
 
-                Messages.sendMessage(player, "spawn_set", Messages.MessageType.SUCCESS);
+                Messages.sendMessage(player, "spawn_set", SUCCESS);
 
                 return true;
             })));
 
         dispatcher.register(Commands.literal("spawn")
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 RespawnData spawnData = player.level().getServer().getLevel(Level.OVERWORLD).getRespawnData();
                 Teleport fallback = new Teleport(
                     "spawn",

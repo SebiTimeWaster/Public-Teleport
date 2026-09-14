@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -243,7 +245,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : player.getUUID());
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", ERROR);
             return null;
         }
 
@@ -271,7 +273,7 @@ public class Storage {
         List<Teleport> teleports = loadTeleports(isWarp ? null : uuid);
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", ERROR);
             return null;
         }
 
@@ -304,7 +306,7 @@ public class Storage {
         int numTeleports = 0;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", ERROR);
             return null;
         }
 
@@ -329,7 +331,7 @@ public class Storage {
         }
 
         if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-            Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_saved", ERROR);
             return null;
         }
 
@@ -352,7 +354,7 @@ public class Storage {
         boolean exists = false;
 
         if (teleports == null) {
-            Messages.sendMessage(player, "data_not_loaded", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_loaded", ERROR);
             return null;
         }
 
@@ -365,7 +367,7 @@ public class Storage {
 
         if (exists) {
             if (!saveTeleports(isWarp ? null : uuid, teleports)) {
-                Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
+                Messages.sendMessage(player, "data_not_saved", ERROR);
                 return null;
             }
 
@@ -397,7 +399,7 @@ public class Storage {
         }
 
         if (!saveFile(filePortals, portals, false)) {
-            Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
+            Messages.sendMessage(player, "data_not_saved", ERROR);
             return false;
         }
 
@@ -425,7 +427,7 @@ public class Storage {
 
         if (exists) {
             if (!saveFile(filePortals, portals, false)) {
-                Messages.sendMessage(player, "data_not_saved", Messages.MessageType.ERROR);
+                Messages.sendMessage(player, "data_not_saved", ERROR);
                 return null;
             }
 

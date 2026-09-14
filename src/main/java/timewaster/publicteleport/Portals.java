@@ -70,10 +70,10 @@ public class Portals {
                         portalH / 2.0 + portal.aY() - 0.5,
                         portalD / 2.0 + portal.aZ(),
                         volume * 2,
-                        portalW / 5.5,
+                        portalW / 5.5, // 5.5 was visually determined to fit
                         portalH / 5.5,
                         portalD / 5.5,
-                        0.25);
+                        0.25); // 0.25 was visually determined to fit
 
                 }
             }
