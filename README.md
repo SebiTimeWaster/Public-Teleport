@@ -17,44 +17,44 @@ An easy-to-use Fabric Teleport and Portal Mod!
 
 ## Commands
 
-| Command                                         | Only OP | Description                                                                                              |
-| ----------------------------------------------- | :-----: | -------------------------------------------------------------------------------------------------------- |
-| `/helpteleport`                                 |         | Shows information about the commands the player can use                                                  |
-| **Spawn:**                                      |         |                                                                                                          |
-| `/setspawn`                                     |    ✓    | Sets the Spawn point at the players current position/n(Unrelated to the Minecraft world spawn)           |
-| `/spawn`                                        |         | Teleports to Spawn (Needs to be set via the `/setspawn` command)                                         |
-| **Warps:**                                      |         |                                                                                                          |
-| `/setwarp <name>`                               |    ✓    | Sets a Warp position at the players current position                                                     |
-| `/delwarp <name>`                               |    ✓    | Deletes a Warp                                                                                           |
-| `/warp <name>`                                  |         | Teleports to a Warp                                                                                      |
-| `/warps`                                        |         | Lists all Warps                                                                                          |
-| **Homes:**                                      |         |                                                                                                          |
-| `/sethome [<name>]`                             |         | Sets a Home position at the players current position (Default: `home`)                                   |
-| `/delhome <name>`                               |         | Deletes a Home                                                                                           |
-| `/home [<name>]`                                |         | Teleports to a Home (Default: `home`)                                                                    |
-| `/homes`                                        |         | Lists all your homes                                                                                     |
-| **Back:**                                       |         |                                                                                                          |
-| `/back`                                         |         | Teleports to the last location before using a Home, Warp, or dying                                       |
-| **Portals:**                                    |         |                                                                                                          |
-| `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" position from the full block that is currently looked at                                 |
-| `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" position from the full block that is currently looked at                                   |
-| `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at the players current position                                               |
-| `/setportal <name> target "<domain/ip>:<port>"` |  ✓ / ✗  | Sets the "target" to another Minecraft servers URL/n(Only OP can use this command for security reasons!) |
-| `/delportal <name>`                             |  ✓ / ✗  | Deletes a Portal                                                                                         |
-| `/portals`                                      |  ✓ / ✗  | Lists all Portals                                                                                        |
-| **TPA:**                                        |         |                                                                                                          |
-| `/tpa <player>`                                 |         | Requests teleportation to `<player>`                                                                     |
-| `/tpahere <player>`                             |         | Requests `<player>` to teleport to you                                                                   |
-| `/tpahereall`                                   |    ✓    | Requests ALL players to teleport to you                                                                  |
-| `/tpcancel`                                     |         | Cancels your teleportation request                                                                       |
-| `/tpaccept [<player>]`                          |         | Accepts request from `<player>` (Default: Most recent)                                                   |
-| `/tpdeny [<player>]`                            |         | Denies request from `<player>` (Default: Most recent)                                                    |
+| Command                                         | Only OP | Description                                                                                             |
+| ----------------------------------------------- | :-----: | ------------------------------------------------------------------------------------------------------- |
+| `/helpteleport`                                 |         | Shows information about the commands the player can use                                                 |
+| **Spawn:**                                      |         |                                                                                                         |
+| `/setspawn`                                     |    ✓    | Sets the Spawn point at the player's current position (Unrelated to the Minecraft world spawn)          |
+| `/spawn`                                        |         | Teleports to Spawn (Needs to be set via the `/setspawn` command)                                        |
+| **Warps:**                                      |         |                                                                                                         |
+| `/setwarp <name>`                               |    ✓    | Sets a Warp position at the player's current position                                                   |
+| `/delwarp <name>`                               |    ✓    | Deletes a Warp                                                                                          |
+| `/warp <name>`                                  |         | Teleports to a Warp                                                                                     |
+| `/warps`                                        |         | Lists all Warps                                                                                         |
+| **Homes:**                                      |         |                                                                                                         |
+| `/sethome [<name>]`                             |         | Sets a Home position at the player's current position (Default: `home`)                                 |
+| `/delhome <name>`                               |         | Deletes a Home                                                                                          |
+| `/home [<name>]`                                |         | Teleports to a Home (Default: `home`)                                                                   |
+| `/homes`                                        |         | Lists all your homes                                                                                    |
+| **Back:**                                       |         |                                                                                                         |
+| `/back`                                         |         | Teleports to the last location before using a Home, Warp, or dying                                      |
+| **Portals:**                                    |         |                                                                                                         |
+| `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" position from the full block that is currently looked at                                |
+| `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" position from the full block that is currently looked at                                  |
+| `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at the player's current position                                             |
+| `/setportal <name> target "<domain/ip>:<port>"` |  ✓ / ✗  | Sets the "target" to another Minecraft servers URL (Only OP can use this command for security reasons!) |
+| `/delportal <name>`                             |  ✓ / ✗  | Deletes a Portal                                                                                        |
+| `/portals`                                      |  ✓ / ✗  | Lists all Portals                                                                                       |
+| **TPA:**                                        |         |                                                                                                         |
+| `/tpa <player>`                                 |         | Requests teleportation to `<player>`                                                                    |
+| `/tpahere <player>`                             |         | Requests `<player>` to teleport to you                                                                  |
+| `/tpahereall`                                   |    ✓    | Requests ALL players to teleport to you                                                                 |
+| `/tpcancel`                                     |         | Cancels your teleportation request                                                                      |
+| `/tpaccept [<player>]`                          |         | Accepts request from `<player>` (Default: Most recent)                                                  |
+| `/tpdeny [<player>]`                            |         | Denies request from `<player>` (Default: Most recent)                                                   |
 
 Please note:
 
 - TPA functionality is disabled in singleplayer
 - `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point
-- The `/setportal` command has three parts (`from`, `to`, `target`), all three parts need to be set with the same name for the Portal to be saved, started Portals that are not saved yet are lost on server restart.
+- The `/setportal` command has three parts (`from`, `to`, `target`); all three parts need to be set with the same name for the Portal to be saved. Started Portals that are not saved yet are lost on server restart.
 - `/tpaccept` searches for a spawnable block around the target position to teleport the player to
 
 ## Configuration
@@ -72,15 +72,15 @@ On first run a config file is created (`config/public-teleport/config.json`) wit
 | `enableTpa`            | true    | When true the `/tpa, /tpahere, /tpahereall, /tpcancel, /tpaccept, /tpdeny` commands are enabled |
 | `maxHomes`             | 10      | The maximum amount of homes a player can have (Set to `0` to disable limit)                     |
 | `requestTimeout`       | 60      | How long a teleport request is active before it is removed in seconds                           |
-| `portalCommandsOnlyOp` | true    | When true only OP can use the Portal commands (Portals themselfs are always usable by anyone)   |
+| `portalCommandsOnlyOp` | true    | When true only OP can use the Portal commands (Portals themselves are always usable by anyone)  |
 
 To change these settings edit the config file and restart your server/client.
 
 ## Portals
 
 Portals are physical areas a user can walk into to be teleported to the associated target position or being redirected to the associated Minecraft server.
-Portals can have any size, but the bigger they are the more particles a client has to render, so there is a performance tradeoff with extremely large Portals.
-The default block a Portal is created with are Purple Stained Glass Panes, but they can easily be replaced with any block that a user can walk into, i.e. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc..
+When a Portal is created (Saved) the portal area is filled with Purple Stained Glass Panes, but they can be broken and replaced with any block that a user can walk into, i.e. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc.
+Portals can have any size, but the bigger they are, the more particles a client has to render, so there is a performance tradeoff with extremely large Portals.
 
 ## Languages
 
@@ -89,7 +89,7 @@ The default block a Portal is created with are Purple Stained Glass Panes, but t
 | English  | `en_us`                                |
 | German   | `de_de`                                |
 
-If you want to provide more translations feel free to open an Issue.
+If you want to provide more translations, feel free to open an Issue.
 
 ### Multiplayer usage
 

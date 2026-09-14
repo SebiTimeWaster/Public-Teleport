@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +39,8 @@ import timewaster.publicteleport.records.Teleport;
 public class Portals {
     private static final Integer MIN = Integer.MIN_VALUE;
     private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
+    private static final Pattern HOST_PATTERN = Pattern.compile(
+        "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
 
     @Nullable
     private static Vec3 getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
@@ -63,6 +66,29 @@ public class Portals {
     }
 
     @Nullable
+    private static String sanitiseTargetUrl(String url) {
+        String[] parts = url.split(":(?=[^:]*$)");
+        if (parts.length != 2) {
+            return null;
+        }
+        String host = parts[0];
+        String portString = parts[1];
+        int port;
+
+        try {
+            port = Integer.parseInt(portString);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+
+        if (port < 1 || port > 65535 || !HOST_PATTERN.matcher(host).matches()) {
+            return null;
+        }
+
+        return host + ":" + port;
+    }
+
+    @Nullable
     private static Teleport createPortalTarget(CommandContext<CommandSourceStack> context, ServerPlayer player,
         String action, String name) {
         Teleport target = Teleport.create(player, name);
@@ -74,9 +100,14 @@ public class Portals {
 
         if (action.equals("targetUrl")) {
             String url = StringArgumentType.getString(context, "url");
-            // TODO: string checks
+            String sanitisedUrl = sanitiseTargetUrl(url);
 
-            target = new Teleport(name, 0, 0, 0, 0.0f, 0.0f, "url:" + url);
+            if (sanitisedUrl == null) {
+                Messages.sendMessage(player, "portal_set_url_invalid", Messages.MessageType.ERROR, url);
+                return null;
+            }
+
+            target = new Teleport(name, 0, 0, 0, 0.0f, 0.0f, "url:" + sanitisedUrl);
         }
 
         return target;
