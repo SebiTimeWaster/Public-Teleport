@@ -4,9 +4,9 @@ on: [pull_request]
 jobs:
     Explore-GitHub-Actions:
         runs-on: ubuntu-latest
+        runs:
+            using: 'node24'
+            main: 'main.js'
         steps:
             - name: Duplicate Code Cross-Check
-              runs:
-                  using: 'node24'
-                  main: 'main.js'
               uses: astubbs/duplicate-code-cross-check@v1.0.0
