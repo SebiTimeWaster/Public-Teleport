@@ -2,11 +2,16 @@ name: Pull Request
 run-name: Validate Pull Request
 on: [pull_request]
 jobs:
-    Explore-GitHub-Actions:
+    duplicate-code:
         runs-on: ubuntu-latest
-        runs:
-            using: 'node24'
-            main: 'main.js'
+        permissions:
+            contents: read
+            pull-requests: write
         steps:
-            - name: Duplicate Code Cross-Check
-              uses: astubbs/duplicate-code-cross-check@v1.0.0
+            - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+            - uses: astubbs/duplicate-code-cross-check@v1
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  directories: src
