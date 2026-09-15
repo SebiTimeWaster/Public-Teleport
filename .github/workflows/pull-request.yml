@@ -1,12 +1,12 @@
 name: Pull Request
-run-name: Valide Pull Request
+run-name: Validate Pull Request
 on: [pull_request]
-runs:
-    using: 'node24'
-    main: 'main.js'
 jobs:
     Explore-GitHub-Actions:
         runs-on: ubuntu-latest
         steps:
             - name: Duplicate Code Cross-Check
+              runs:
+                  using: 'node24'
+                  main: 'main.js'
               uses: astubbs/duplicate-code-cross-check@v1.0.0
