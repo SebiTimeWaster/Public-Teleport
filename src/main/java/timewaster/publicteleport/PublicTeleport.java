@@ -7,9 +7,8 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import timewaster.publicteleport.records.Config;
 
-// TODO: Multi-modloader compatibility
+// TODO: Multi-modloader compatibility (Maybe)
 // TODO: RTP random teleport functionality
-// TODO: reused helper functions to utils
 
 /**
  * Entry point of the Public Teleport mod.

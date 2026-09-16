@@ -3,6 +3,7 @@ package timewaster.publicteleport.records;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Utils;
 
 /**
  * A single named teleport destination, used for both Warps and Homes.
@@ -41,6 +42,6 @@ public record Teleport(
             playerPos.getZ(),
             (Float) player.getYRot(),
             (Float) player.getXRot(),
-            TeleportSafety.getDimensionName(player.level()));
+            Utils.getDimensionNameByLevel(player.level()));
     }
 }

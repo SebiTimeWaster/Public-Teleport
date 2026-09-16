@@ -5,16 +5,11 @@ import static timewaster.publicteleport.Messages.MessageType.ERROR;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -81,12 +76,12 @@ public final class TeleportSafety {
         boolean isBlockedByPlayer = false;
 
         if (isBlockAvailable) {
-            List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
+            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(level);
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 // player width/height
                 if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 0.6, 1.8)) {
+                    && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
                     isBlockedByPlayer = true;
                 }
             }
@@ -109,20 +104,10 @@ public final class TeleportSafety {
     public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
         double clearanceXZ, double clearanceY) {
 
-        return !getDimensionName(player.level()).equals(dimension)
+        return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
             || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
             || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
             || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
-    }
-
-    /**
-     * Get the dimension name from a given {@link Level}
-     *
-     * @param level the level to get the name from
-     * @return the fetched name
-     */
-    public static String getDimensionName(Level level) {
-        return level.dimension().identifier().toString();
     }
 
     /**
@@ -141,20 +126,6 @@ public final class TeleportSafety {
     }
 
     /**
-     * Gets a specific level from a {@link Teleport} target dimension identifier.
-     *
-     * @param player    the player to be teleported
-     * @param dimension the dimension name
-     * @return the level matching the dimension identifier
-     */
-    public static ServerLevel getLevelFromDimension(ServerPlayer player, String dimension) {
-        Identifier dimId = Identifier.parse(Objects.requireNonNull(dimension));
-        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
-
-        return player.level().getServer().getLevel(dimKey);
-    }
-
-    /**
      * Checks if a specified {@link BlockPos} is a valid teleport target.
      *
      * @param player the player to be teleported
@@ -163,7 +134,7 @@ public final class TeleportSafety {
      */
     public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
         BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
-        Level level = getLevelFromDimension(player, target.dimension());
+        Level level = Utils.getLevelbyDimension(player, target.dimension());
 
         return isBlockTeleportable(level, blockPos);
     }
@@ -182,7 +153,7 @@ public final class TeleportSafety {
      */
     @Nullable
     public static Teleport findTeleportablePosition(ServerPlayer player, Teleport target, boolean ignorePlayers) {
-        Level level = getLevelFromDimension(player, target.dimension());
+        Level level = Utils.getLevelbyDimension(player, target.dimension());
 
         if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
             int[] orderY = { 0, 1, -1, 2, -2 };

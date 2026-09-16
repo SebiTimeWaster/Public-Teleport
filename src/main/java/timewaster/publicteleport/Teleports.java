@@ -139,7 +139,7 @@ public final class Teleports {
      * @return {@code true} if the teleport succeeded
      */
     public static boolean teleportPlayer(ServerPlayer player, Teleport teleportTarget) {
-        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        ServerLevel level = Utils.getLevelbyDimension(player, teleportTarget.dimension());
         Teleport testedTarget = teleportPreflightCheck(player, null, teleportTarget, level, false);
 
         return teleport(player, testedTarget, level);
@@ -155,7 +155,7 @@ public final class Teleports {
      */
     public static boolean teleportPlayer(ServerPlayer player, ServerPlayer targetPlayer, boolean isTpaHereAll) {
         Teleport teleportTarget = Teleport.create(targetPlayer, targetPlayer.getName().getString());
-        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        ServerLevel level = Utils.getLevelbyDimension(player, teleportTarget.dimension());
         Teleport testedTarget = teleportPreflightCheck(player, targetPlayer, teleportTarget, level, isTpaHereAll);
 
         return teleport(player, testedTarget, level);
@@ -186,7 +186,7 @@ public final class Teleports {
                 teleportTarget = fallback;
             }
         }
-        ServerLevel level = TeleportSafety.getLevelFromDimension(player, teleportTarget.dimension());
+        ServerLevel level = Utils.getLevelbyDimension(player, teleportTarget.dimension());
         Teleport testedTarget = teleportPreflightCheck(player, null, teleportTarget, level, false);
 
         return teleport(player, testedTarget, level);

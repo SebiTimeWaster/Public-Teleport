@@ -37,6 +37,7 @@ import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Utils;
 import timewaster.publicteleport.records.Portal;
 import timewaster.publicteleport.records.Teleport;
 
@@ -44,13 +45,13 @@ import timewaster.publicteleport.records.Teleport;
  * Defines all Portal commands, registered by {@link Registrar}.
  */
 public final class Portals {
-    private Portals() {
-    }
-
     private static final Integer MIN = Integer.MIN_VALUE;
     private static final Pattern HOST_PATTERN = Pattern.compile(
         "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
     private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
+
+    private Portals() {
+    }
 
     @Nullable
     private static Vec3 getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
@@ -132,7 +133,7 @@ public final class Portals {
         if (blockPosition == null || teleportTarget == null) {
             return null;
         }
-        String dimensionIdentifier = player.level().dimension().identifier().toString();
+        String dimensionIdentifier = Utils.getDimensionNameByLevel(player.level());
         Portal existingPortalData = tempPortalData.getOrDefault(name,
             new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
 
@@ -167,7 +168,7 @@ public final class Portals {
         portal = normalisePortal(portal);
 
         if (PublicTeleport.storage.setPortal(player, portal)) {
-            Level level = TeleportSafety.getLevelFromDimension(player, portal.dimension());
+            Level level = Utils.getLevelbyDimension(player, portal.dimension());
             Block purplePane = BuiltInRegistries.BLOCK
                 .getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
 

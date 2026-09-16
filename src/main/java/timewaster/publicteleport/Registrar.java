@@ -40,20 +40,16 @@ import timewaster.publicteleport.records.Portal;
  * the individual command classes to build their argument nodes.
  */
 public final class Registrar {
-    private Registrar() {
-    }
-
     public enum SuggestionType {
         HOMES, NONE, PLAYERS, PORTALS, WARPS
     }
 
-    private static ServerPlayer getPlayer(CommandContext<CommandSourceStack> context) {
-        return context.getSource().getPlayer();
+    private Registrar() {
     }
 
     private static CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
         SuggestionsBuilder builder, SuggestionType type) {
-        ServerPlayer player = getPlayer(context);
+        ServerPlayer player = Utils.getPlayerByContext(context);
 
         if (type != SuggestionType.NONE) {
             if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
@@ -103,7 +99,7 @@ public final class Registrar {
                 .executes((context) -> contextWrapper(context, (ServerPlayer player) -> {
 
                     for (int i = 0; i < 5; i++) {
-                        player.level().getServer().getCommands().performPrefixedCommand(
+                        Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(
                             player.createCommandSourceStack(),
                             "/puppet " + ((Double) Math.random()).toString().substring(2, 12) + " spawn");
                     }
@@ -116,9 +112,9 @@ public final class Registrar {
                     (ServerPlayer player, String argValue) -> {
                         String[] parts = argValue.split("p");
 
-                        for (ServerPlayer onePlayer : player.level().getServer().getPlayerList().getPlayers()) {
+                        for (ServerPlayer onePlayer : Utils.getPlayersByLevel(player.level())) {
                             if (onePlayer.getClass().toString().contains("PuppetPlayer")) {
-                                player.level().getServer().getCommands().performPrefixedCommand(
+                                Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(
                                     player.createCommandSourceStack(), "/puppet " + onePlayer.getName().getString()
                                         + " actions run minecraft:move_to position " + parts[0] + " " + parts[1] + " "
                                         + parts[2] + " false true");
@@ -178,7 +174,7 @@ public final class Registrar {
      */
     public static int contextWrapper(CommandContext<CommandSourceStack> context,
         Function<ServerPlayer, Boolean> callback) {
-        ServerPlayer player = getPlayer(context);
+        ServerPlayer player = Utils.getPlayerByContext(context);
 
         return callback.apply(player) ? 1 : 0;
     }
@@ -201,7 +197,7 @@ public final class Registrar {
         return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
             .executes((context) -> {
-                ServerPlayer player = getPlayer(context);
+                ServerPlayer player = Utils.getPlayerByContext(context);
                 String argValue = Objects.requireNonNull(StringArgumentType.getString(context, argName));
 
                 return callback.apply(player, argValue) ? 1 : 0;
@@ -227,7 +223,7 @@ public final class Registrar {
         return Commands.argument(argName, EntityArgument.player())
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
             .executes((context) -> {
-                ServerPlayer player = getPlayer(context);
+                ServerPlayer player = Utils.getPlayerByContext(context);
                 ServerPlayer target = EntityArgument.getPlayer(Objects.requireNonNull(context), argName);
 
                 return callback.apply(player, target) ? 1 : 0;

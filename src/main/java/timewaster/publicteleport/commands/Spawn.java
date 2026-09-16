@@ -13,6 +13,7 @@ import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.Utils;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -39,7 +40,7 @@ public final class Spawn {
 
         dispatcher.register(Commands.literal("spawn")
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                RespawnData spawnData = player.level().getServer().getLevel(Level.OVERWORLD).getRespawnData();
+                RespawnData spawnData = Utils.getServerByPlayer(player).getLevel(Level.OVERWORLD).getRespawnData();
                 Teleport fallback = new Teleport(
                     "spawn",
                     spawnData.pos().getX(),

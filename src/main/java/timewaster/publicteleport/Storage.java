@@ -55,6 +55,7 @@ public class Storage {
     private Map<UUID, List<Teleport>> homes = new HashMap<UUID, List<Teleport>>();
     private List<Portal> portals;
 
+    @SuppressWarnings("null")
     public Storage() {
         this.pathConfig = FabricLoader.getInstance().getConfigDir().resolve(PublicTeleport.MOD_ID);
         this.pathConfigHomes = pathConfig.resolve("homes");
@@ -214,6 +215,7 @@ public class Storage {
         return pathConfigHomes.resolve(uuid + ".json").toFile();
     }
 
+    @SuppressWarnings("null")
     private List<Teleport> loadTeleports(@Nullable UUID uuid) {
         List<Teleport> teleports;
 
@@ -328,12 +330,14 @@ public class Storage {
         }
 
         for (int i = 0; i < teleports.size(); i++) {
-            if (teleports.get(i).name().equals(newTeleport.name())) {
+            String teleportName = teleports.get(i).name();
+
+            if (teleportName.equals(newTeleport.name())) {
                 teleports.set(i, newTeleport);
                 exists = true;
             }
 
-            if (!"back".equals(teleports.get(i).name())) {
+            if (!"back".equals(teleportName)) {
                 numTeleports++;
             }
         }

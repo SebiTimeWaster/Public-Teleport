@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 
 /**
  * Manages TPA (player-to-player teleport request) state and behavior.
@@ -71,7 +72,7 @@ public final class Requests {
 
     @Nullable
     private static ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
-        return otherPlayer.level().getServer().getPlayerList().getPlayer(playerToGet);
+        return Utils.getServerByPlayer(otherPlayer).getPlayerList().getPlayer(playerToGet);
     }
 
     private static void createRequest(ServerPlayer sender, ServerPlayer receiver, RequestType requestType) {
@@ -106,8 +107,9 @@ public final class Requests {
 
         for (Request request : pendingRequests) {
             if (request.expires() <= now) {
-                ServerPlayer sender = server.getPlayerList().getPlayer(request.sender());
-                ServerPlayer receiver = server.getPlayerList().getPlayer(request.receiver());
+                PlayerList playerList = server.getPlayerList();
+                ServerPlayer sender = playerList.getPlayer(request.sender());
+                ServerPlayer receiver = playerList.getPlayer(request.receiver());
 
                 if (sender != null) {
                     Messages.sendMessage(sender, "request_timedout_sender", WARNING,
@@ -146,7 +148,7 @@ public final class Requests {
         }
 
         if (requestType == RequestType.REVERSE_ALL) {
-            List<ServerPlayer> onlinePlayers = sender.level().getServer().getPlayerList().getPlayers();
+            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(sender.level());
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 if (sender != onlinePlayer) {

@@ -43,7 +43,7 @@ public final class Portals {
         double playerHeight = 1.8; // player is 1.8 blocks high
         double blockSize = 1.0; // width of a block to check far edges
 
-        return !player.level().dimension().identifier().toString().equals(portal.dimension())
+        return !Utils.getDimensionNameByLevel(player.level()).equals(portal.dimension())
             || player.getX() < portal.aX() - playerWidth || player.getX() > portal.bX() + blockSize + playerWidth
             || player.getY() < portal.aY() - playerHeight || player.getY() > portal.bY() + blockSize
             || player.getZ() < portal.aZ() - playerWidth || player.getZ() > portal.bZ() + blockSize + playerWidth;
@@ -59,7 +59,7 @@ public final class Portals {
 
         for (Portal portal : portals) {
             for (ServerLevel level : server.getAllLevels()) {
-                if (portal.dimension().equals(level.dimension().identifier().toString())) {
+                if (portal.dimension().equals(Utils.getDimensionNameByLevel(level))) {
                     int portalW = portal.bX() - portal.aX() + 1;
                     int portalH = portal.bY() - portal.aY() + 1;
                     int portalD = portal.bZ() - portal.aZ() + 1;
