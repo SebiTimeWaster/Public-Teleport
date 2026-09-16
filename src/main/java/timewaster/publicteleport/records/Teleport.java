@@ -15,7 +15,7 @@ import timewaster.publicteleport.TeleportSafety;
  * @param pitch     facing pitch in degrees, or {@code null} if not set
  * @param dimension identifier of the dimension/world this teleport belongs to
  */
-public final record Teleport(
+public record Teleport(
     String name,
     int x,
     int y,
@@ -31,7 +31,7 @@ public final record Teleport(
      * @param name   the name of the teleport destination
      * @return the teleport destination created
      */
-    public static final Teleport create(ServerPlayer player, String name) {
+    public static Teleport create(ServerPlayer player, String name) {
         BlockPos playerPos = TeleportSafety.getPlayerBlockPos(player);
 
         return new Teleport(

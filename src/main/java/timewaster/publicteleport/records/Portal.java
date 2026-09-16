@@ -12,7 +12,7 @@ package timewaster.publicteleport.records;
  * @param bZ        to position z-coordinate
  * @param target    the target to teleport a player walking into the portal to
  */
-public final record Portal(
+public record Portal(
     String dimension,
     int aX,
     int aY,

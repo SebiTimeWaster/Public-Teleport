@@ -72,7 +72,9 @@ public class Storage {
         try {
             Files.createDirectories(pathConfigHomes);
         } catch (IOException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to create config directories!"));
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to create config directories!"));
+            }
             throw new UncheckedIOException(e);
         }
     }
@@ -106,8 +108,10 @@ public class Storage {
 
             return mergedConfig;
         } catch (IOException | JsonParseException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load config from: {}"),
-                fileConfig.toPath().toString());
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load config from: {}"),
+                    fileConfig.toPath().toString());
+            }
 
             throw new RuntimeException(e);
         }
@@ -122,14 +126,18 @@ public class Storage {
         try {
             modContainer = fabricLoader.getModContainer(PublicTeleport.MOD_ID).get();
         } catch (NoSuchElementException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find mod container!"));
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find mod container!"));
+            }
             throw new NoSuchElementException(e);
         }
 
         try {
             languagePath = modContainer.findPath(languageFile).get();
         } catch (NoSuchElementException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find language file: {}"), languageFile);
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Could not find language file: {}"), languageFile);
+            }
             throw new NoSuchElementException(e);
         }
 
@@ -139,13 +147,16 @@ public class Storage {
 
             return GSON.fromJson(reader, mapType);
         } catch (IOException | JsonParseException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load language from: {}"),
-                languagePath.toString());
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load language from: {}"),
+                    languagePath.toString());
+            }
 
             throw new RuntimeException(e);
         }
     }
 
+    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private <T> List<T> loadFile(File file, Class<T> elementType, boolean failOnError) {
         List<T> defaultValue = new ArrayList<T>();
 
@@ -159,8 +170,10 @@ public class Storage {
 
             return GSON.fromJson(reader, listType);
         } catch (IOException | JsonParseException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"),
-                file.toPath().toString());
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"),
+                    file.toPath().toString());
+            }
 
             if (failOnError) {
                 throw new RuntimeException(e);
@@ -182,7 +195,10 @@ public class Storage {
 
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException | JsonIOException e) {
-            PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to save data to: {}"), file.toPath().toString());
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to save data to: {}"),
+                    file.toPath().toString());
+            }
 
             if (failOnError) {
                 throw new RuntimeException(e);
@@ -267,6 +283,7 @@ public class Storage {
      *         file error occured
      */
     @Nullable
+    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     public List<String> getTeleportNames(ServerPlayer player, boolean isWarp) {
         List<String> names = new ArrayList<String>();
         UUID uuid = player.getUUID();
@@ -278,8 +295,8 @@ public class Storage {
         }
 
         for (Teleport teleport : teleports) {
-            if ((!isWarp && !teleport.name().equals("back")) ||
-                (isWarp && !teleport.name().equals("spawn"))) {
+            if ((!isWarp && !"back".equals(teleport.name())) ||
+                (isWarp && !"spawn".equals(teleport.name()))) {
                 names.add(teleport.name());
             }
         }
@@ -316,14 +333,14 @@ public class Storage {
                 exists = true;
             }
 
-            if (!teleports.get(i).name().equals("back")) {
+            if (!"back".equals(teleports.get(i).name())) {
                 numTeleports++;
             }
         }
 
         if (!exists) {
             if (!isWarp && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
-                && !newTeleport.name().equals("back")) {
+                && !"back".equals(newTeleport.name())) {
                 return false;
             }
 

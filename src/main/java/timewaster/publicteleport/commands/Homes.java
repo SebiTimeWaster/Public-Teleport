@@ -23,64 +23,51 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Defines all Home commands, registered by {@link Registrar}.
  */
-public class Homes {
+public final class Homes {
+    private Homes() {
+    }
+
+    private static boolean setHome(ServerPlayer player, String name) {
+        Teleport target = Teleport.create(player, name);
+
+        if (!TeleportSafety.isBlockTeleportable(player, target)) {
+            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
+            return false;
+        }
+
+        Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
+
+        if (isSaved == null) {
+            return false;
+        }
+
+        if (isSaved) {
+            Messages.sendMessage(player, "home_set" + ("home".equals(name) ? "" : "_named"), SUCCESS, name);
+        } else {
+            Messages.sendMessage(player, "home_set_max_reached", WARNING,
+                PublicTeleport.storage.getConfig().maxHomes());
+        }
+
+        return true;
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("sethome")
             .then(Registrar.buildArgumentString("name", NONE, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("back")) {
+                if ("back".equals(argValue)) {
                     Messages.sendMessage(player, "home_reserved_name", WARNING);
                     return false;
                 }
 
-                Teleport target = Teleport.create(player, argValue);
-
-                if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
-                    return false;
-                }
-
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
-
-                if (isSaved == null) {
-                    return false;
-                }
-
-                if (isSaved) {
-                    Messages.sendMessage(player, "home_set_named", SUCCESS, argValue);
-                } else {
-                    Messages.sendMessage(player, "home_set_max_reached", WARNING,
-                        PublicTeleport.storage.getConfig().maxHomes());
-                }
-
-                return true;
+                return setHome(player, argValue);
             }))
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                Teleport target = Teleport.create(player, "home");
-
-                if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
-                    return false;
-                }
-
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
-
-                if (isSaved == null) {
-                    return false;
-                }
-
-                if (isSaved) {
-                    Messages.sendMessage(player, "home_set", SUCCESS);
-                } else {
-                    Messages.sendMessage(player, "home_set_max_reached", WARNING,
-                        PublicTeleport.storage.getConfig().maxHomes());
-                }
-
-                return true;
+                return setHome(player, "home");
             })));
 
         dispatcher.register(Commands.literal("delhome")
             .then(Registrar.buildArgumentString("name", HOMES, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("back")) {
+                if ("back".equals(argValue)) {
                     Messages.sendMessage(player, "home_no_exist", ERROR, argValue);
                     return false;
                 }
@@ -102,7 +89,7 @@ public class Homes {
 
         dispatcher.register(Commands.literal("home")
             .then(Registrar.buildArgumentString("name", HOMES, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("back")) {
+                if ("back".equals(argValue)) {
                     if (PublicTeleport.storage.getConfig().enableBack()) {
                         Messages.sendMessage(player, "home_reserved_name_get", WARNING, "/back");
                     } else {

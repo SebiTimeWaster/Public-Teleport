@@ -14,9 +14,12 @@ import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.records.Portal;
 import timewaster.publicteleport.records.Teleport;
 
-public class Portals {
+public final class Portals {
     private static Map<ServerPlayer, Boolean> playerStates = new HashMap<ServerPlayer, Boolean>();
     private static Map<ServerPlayer, Vec3> playerPositions = new HashMap<ServerPlayer, Vec3>();
+
+    private Portals() {
+    }
 
     private static void teleportOrRedirectPlayer(ServerPlayer player, Teleport target, Vec3 oldPosition) {
         if (target.dimension().startsWith("url:")) {
@@ -89,7 +92,7 @@ public class Portals {
     public static void check(MinecraftServer server) {
         List<Portal> portals = PublicTeleport.storage.getPortals();
 
-        if (portals.size() == 0) {
+        if (portals.isEmpty()) {
             return;
         }
 

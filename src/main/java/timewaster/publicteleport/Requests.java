@@ -19,14 +19,17 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Manages TPA (player-to-player teleport request) state and behavior.
  */
-public class Requests {
+public final class Requests {
+    private Requests() {
+    }
+
     private static final List<Request> pendingRequests = new ArrayList<Request>();
 
-    public static enum RequestType {
+    public enum RequestType {
         NORMAL, REVERSE, REVERSE_ALL
     }
 
-    private static final record Request(
+    private record Request(
         @NotNull UUID sender,
         @NotNull UUID receiver,
         String senderName,
@@ -150,7 +153,7 @@ public class Requests {
         List<Request> requests = pendingRequests.stream().filter((request) -> request.sender().equals(sender.getUUID()))
             .toList();
 
-        if (requests.size() == 0) {
+        if (requests.isEmpty()) {
             Messages.sendMessage(sender, "request_no_exist", ERROR);
             return false;
         }

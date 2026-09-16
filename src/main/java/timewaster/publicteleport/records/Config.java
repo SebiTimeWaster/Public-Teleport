@@ -14,7 +14,7 @@ package timewaster.publicteleport.records;
  * @param requestTimeout       how long a teleport request is active in seconds
  * @param portalCommandsOnlyOp whether only OPs can use the Portal commands
  */
-public final record Config(
+public record Config(
     String defaultLanguage,
     boolean enableSpawn,
     boolean enableWarps,

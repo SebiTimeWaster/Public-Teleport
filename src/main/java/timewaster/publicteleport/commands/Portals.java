@@ -43,7 +43,10 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Defines all Portal commands, registered by {@link Registrar}.
  */
-public class Portals {
+public final class Portals {
+    private Portals() {
+    }
+
     private static final Integer MIN = Integer.MIN_VALUE;
     private static final Pattern HOST_PATTERN = Pattern.compile(
         "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
@@ -51,7 +54,7 @@ public class Portals {
 
     @Nullable
     private static Vec3 getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
-        if (!action.equals("from") && !action.equals("to")) {
+        if (!"from".equals(action) && !"to".equals(action)) {
             return new Vec3(0.0, 0.0, 0.0);
         }
         Vec3 start = player.getEyePosition(1.0f);
@@ -100,12 +103,12 @@ public class Portals {
         String action, String name) {
         Teleport target = Teleport.create(player, name);
 
-        if (action.equals("targetPosition") && !TeleportSafety.isBlockTeleportable(player, target)) {
+        if ("targetPosition".equals(action) && !TeleportSafety.isBlockTeleportable(player, target)) {
             Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Portal");
             return null;
         }
 
-        if (action.equals("targetUrl")) {
+        if ("targetUrl".equals(action)) {
             String url = StringArgumentType.getString(context, "url");
             String sanitisedUrl = sanitiseTargetUrl(url);
 
@@ -134,14 +137,14 @@ public class Portals {
             new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
 
         Portal newPortalData = new Portal(
-            (action.equals("from") || action.equals("to")) ? dimensionIdentifier : existingPortalData.dimension(),
-            (action.equals("from")) ? (int) Math.floor(blockPosition.x()) : existingPortalData.aX(),
-            (action.equals("from")) ? (int) Math.floor(blockPosition.y()) : existingPortalData.aY(),
-            (action.equals("from")) ? (int) Math.floor(blockPosition.z()) : existingPortalData.aZ(),
-            (action.equals("to")) ? (int) Math.floor(blockPosition.x()) : existingPortalData.bX(),
-            (action.equals("to")) ? (int) Math.floor(blockPosition.y()) : existingPortalData.bY(),
-            (action.equals("to")) ? (int) Math.floor(blockPosition.z()) : existingPortalData.bZ(),
-            (action.startsWith("target")) ? teleportTarget : existingPortalData.target());
+            ("from".equals(action) || "to".equals(action)) ? dimensionIdentifier : existingPortalData.dimension(),
+            "from".equals(action) ? (int) Math.floor(blockPosition.x()) : existingPortalData.aX(),
+            "from".equals(action) ? (int) Math.floor(blockPosition.y()) : existingPortalData.aY(),
+            "from".equals(action) ? (int) Math.floor(blockPosition.z()) : existingPortalData.aZ(),
+            "to".equals(action) ? (int) Math.floor(blockPosition.x()) : existingPortalData.bX(),
+            "to".equals(action) ? (int) Math.floor(blockPosition.y()) : existingPortalData.bY(),
+            "to".equals(action) ? (int) Math.floor(blockPosition.z()) : existingPortalData.bZ(),
+            action.startsWith("target") ? teleportTarget : existingPortalData.target());
 
         tempPortalData.put(name, newPortalData);
 
@@ -256,7 +259,7 @@ public class Portals {
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 List<Portal> portals = PublicTeleport.storage.getPortals();
 
-                if (portals.size() == 0) {
+                if (portals.isEmpty()) {
                     Messages.sendMessage(player, "portal_none", WARNING);
                 } else {
                     Messages.MessageBuilder builder = new Messages.MessageBuilder().append("headline_portals",

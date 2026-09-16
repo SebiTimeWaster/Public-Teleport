@@ -16,7 +16,10 @@ import timewaster.publicteleport.Requests;
 /**
  * Defines all TPA commands, registered by {@link Registrar}.
  */
-public class Tpa {
+public final class Tpa {
+    private Tpa() {
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tpa")
             .then(Registrar.buildArgumentPlayer("player", PLAYERS, (ServerPlayer player, ServerPlayer target) -> {

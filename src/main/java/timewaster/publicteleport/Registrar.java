@@ -39,8 +39,11 @@ import timewaster.publicteleport.records.Portal;
  * Registers the mod's Brigadier commands and provides shared helpers used by
  * the individual command classes to build their argument nodes.
  */
-public class Registrar {
-    public static enum SuggestionType {
+public final class Registrar {
+    private Registrar() {
+    }
+
+    public enum SuggestionType {
         HOMES, NONE, PLAYERS, PORTALS, WARPS
     }
 
@@ -97,7 +100,7 @@ public class Registrar {
 
         if (args.contains("-DPuppetMaster=1")) {
             dispatcher.register(Commands.literal("addpuppets")
-                .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+                .executes((context) -> contextWrapper(context, (ServerPlayer player) -> {
 
                     for (int i = 0; i < 5; i++) {
                         player.level().getServer().getCommands().performPrefixedCommand(
@@ -109,7 +112,7 @@ public class Registrar {
                 })));
 
             dispatcher.register(Commands.literal("movepuppets")
-                .then(Registrar.buildArgumentString("position", SuggestionType.NONE,
+                .then(buildArgumentString("position", SuggestionType.NONE,
                     (ServerPlayer player, String argValue) -> {
                         String[] parts = argValue.split("p");
 

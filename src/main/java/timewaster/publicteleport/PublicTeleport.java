@@ -52,7 +52,9 @@ public class PublicTeleport implements ModInitializer {
             });
         }
 
-        LOGGER.info(prefix("Initialized!"));
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(prefix("Initialized!"));
+        }
     }
 
     /**

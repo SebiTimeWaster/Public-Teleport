@@ -23,11 +23,14 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Defines all Warp commands, registered by {@link Registrar}.
  */
-public class Warps {
+public final class Warps {
+    private Warps() {
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setwarp").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .then(Registrar.buildArgumentString("name", NONE, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("spawn")) {
+                if ("spawn".equals(argValue)) {
                     if (PublicTeleport.storage.getConfig().enableSpawn()) {
                         Messages.sendMessage(player, "warp_reserved_spawn_set", WARNING,
                             "/setspawn");
@@ -57,7 +60,7 @@ public class Warps {
 
         dispatcher.register(Commands.literal("delwarp").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .then(Registrar.buildArgumentString("name", WARPS, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("spawn")) {
+                if ("spawn".equals(argValue)) {
                     Messages.sendMessage(player, "warp_no_exist", ERROR, "spawn");
                     return false;
                 }
@@ -79,7 +82,7 @@ public class Warps {
 
         dispatcher.register(Commands.literal("warp")
             .then(Registrar.buildArgumentString("name", WARPS, (ServerPlayer player, String argValue) -> {
-                if (argValue.equals("spawn")) {
+                if ("spawn".equals(argValue)) {
                     if (PublicTeleport.storage.getConfig().enableSpawn()) {
                         Messages.sendMessage(player, "warp_reserved_spawn_get", WARNING, "/spawn");
                     } else {

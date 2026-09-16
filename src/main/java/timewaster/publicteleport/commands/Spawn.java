@@ -20,7 +20,10 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Defines all Spawn commands, registered by {@link Registrar}.
  */
-public class Spawn {
+public final class Spawn {
+    private Spawn() {
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setspawn").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {

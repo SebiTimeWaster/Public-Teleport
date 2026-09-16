@@ -23,7 +23,10 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * A collection of Utils to ensure safe teleportation.
  */
-public class TeleportSafety {
+public final class TeleportSafety {
+    private TeleportSafety() {
+    }
+
     private static boolean blockHasCollision(Level level, @NotNull BlockPos blockPos) {
         return !level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
     }
@@ -35,9 +38,9 @@ public class TeleportSafety {
     }
 
     private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
-        return (blockHasCollision(level, blockPos.below())
+        return blockHasCollision(level, blockPos.below())
             && isBlockEmpty(level, blockPos)
-            && isBlockEmpty(level, blockPos.above()));
+            && isBlockEmpty(level, blockPos.above());
     }
 
     public static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {

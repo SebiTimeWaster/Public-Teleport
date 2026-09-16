@@ -12,9 +12,12 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Builds and sends the mod's chat messages.
  */
-public class Messages {
-    public static enum MessageType {
+public final class Messages {
+    public enum MessageType {
         SUCCESS, WARNING, ERROR, HEADLINE, BUTTON, COMMAND, COMMAND_PARAM
+    }
+
+    private Messages() {
     }
 
     @NotNull

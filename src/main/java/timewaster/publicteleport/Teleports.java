@@ -24,7 +24,10 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Performs the mod's actual teleportation logic, and holds adjacent helpers.
  */
-public class Teleports {
+public final class Teleports {
+    private Teleports() {
+    }
+
     @SuppressWarnings("null")
     private static void teleportEffect(ServerPlayer player) {
         player.level().playSound(
@@ -74,7 +77,7 @@ public class Teleports {
         if (result) {
             teleportEffect(player);
 
-            if (!target.name().equals("back")) {
+            if (!"back".equals(target.name())) {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
 
@@ -174,7 +177,7 @@ public class Teleports {
         if (teleportTarget == null) {
             return false;
         }
-        if (teleportTarget.name().equals("public_teleport_not_found")) {
+        if ("public_teleport_not_found".equals(teleportTarget.name())) {
             if (fallback == null) {
                 Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", ERROR,
                     targetName);
@@ -211,7 +214,7 @@ public class Teleports {
      * @param isWarps       {@code true} if the list has Warps, not Homes
      */
     public static void listTeleportNames(ServerPlayer player, List<String> teleportNames, boolean isWarps) {
-        if (teleportNames.size() == 0) {
+        if (teleportNames.isEmpty()) {
             Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", WARNING);
         } else {
             Messages.MessageBuilder builder = new Messages.MessageBuilder().append(

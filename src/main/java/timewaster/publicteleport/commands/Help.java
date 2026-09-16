@@ -19,7 +19,10 @@ import timewaster.publicteleport.records.Config;
 /**
  * Defines the Help command, registered by {@link Registrar}.
  */
-public class Help {
+public final class Help {
+    private Help() {
+    }
+
     private static void createHelpLine(Messages.MessageBuilder message, String command, String identifier,
         String params) {
         String[] hasParamName = { "setwarp", "delwarp", "warp", "sethome", "delhome", "home", "setportal",
@@ -34,7 +37,7 @@ public class Help {
         if (ArrayUtils.contains(hasParamPlayer, command)) {
             message.appendRaw(" ").append("command_param_player", COMMAND_PARAM);
         }
-        if (!params.equals("")) {
+        if (!"".equals(params)) {
             message.appendRaw(" ").appendRawColored(params, COMMAND_PARAM);
         }
 
