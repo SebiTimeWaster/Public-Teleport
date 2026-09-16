@@ -1,6 +1,5 @@
 package timewaster.publicteleport.commands;
 
-import static timewaster.publicteleport.Messages.MessageType.ERROR;
 import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -11,7 +10,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelData.RespawnData;
 import timewaster.publicteleport.Messages;
-import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Teleports;
@@ -28,13 +26,7 @@ public final class Spawn {
         dispatcher.register(Commands.literal("setspawn").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 Teleport target = Teleport.create(player, "spawn");
-
-                if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Spawn");
-                    return false;
-                }
-
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, true);
+                Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, true, "Spawn");
 
                 if (isSaved == null) {
                     return false;

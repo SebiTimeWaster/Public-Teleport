@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +45,37 @@ public final class TeleportSafety {
             && isBlockEmpty(level, blockPos.above());
     }
 
+    /**
+     * Checks that {@code target} is a safe place to stand on and, if so, persists
+     * it as a Warp or Home.
+     *
+     * @param player the player trying to save the data
+     * @param target the {@link Teleport} to save
+     * @param isWarp if it is a Warp, not a Home
+     * @param type   the type of teleport
+     * @return {@code true} if saved; {@code false} if a new teleport would go over
+     *         the max homes limit; {@code null} if the position was unsafe or a
+     *         file error occured
+     */
+    @Nullable
+    public static Boolean setSpawnableTeleport(ServerPlayer player, Teleport target, boolean isWarp, String type) {
+        if (!isBlockTeleportable(player, target)) {
+            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, type);
+            return null;
+        }
+
+        return PublicTeleport.storage.setTeleport(player, target, isWarp);
+    }
+
+    /**
+     * Checks if {@code blockPos} is a safe place to stand on and if it is not
+     * occupied by other players.
+     *
+     * @param player   the player trying to teleport here
+     * @param level    the level of the block to test
+     * @param blockPos the block position to check
+     * @return {@code true} if safe
+     */
     public static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
         boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
         boolean isBlockedByPlayer = false;
@@ -62,6 +95,17 @@ public final class TeleportSafety {
         return isBlockAvailable && !isBlockedByPlayer;
     }
 
+    /**
+     * Checks if the player's position collides with a block positions plus a
+     * specified clearance around it.
+     *
+     * @param player      the player to check
+     * @param blockPos    the block position to check
+     * @param dimension   the dimension the block position is in
+     * @param clearanceXZ the clearance in the X and Z directions
+     * @param clearanceY  the clearance in the Y direction
+     * @return {@code true} if player clears the area
+     */
     public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
         double clearanceXZ, double clearanceY) {
 

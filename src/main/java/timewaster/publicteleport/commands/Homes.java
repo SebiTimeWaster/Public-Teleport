@@ -29,13 +29,7 @@ public final class Homes {
 
     private static boolean setHome(ServerPlayer player, String name) {
         Teleport target = Teleport.create(player, name);
-
-        if (!TeleportSafety.isBlockTeleportable(player, target)) {
-            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Home");
-            return false;
-        }
-
-        Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, false);
+        Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, false, "Home");
 
         if (isSaved == null) {
             return false;

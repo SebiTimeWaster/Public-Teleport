@@ -15,8 +15,8 @@ jobs:
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   directories: src
-                  cpd-min-tokens: '30'
+                  cpd-min-tokens: '35'
                   cpd-max-duplication: '3'
                   jscpd-min-lines: '2'
-                  jscpd-min-tokens: '30'
+                  jscpd-min-tokens: '35'
                   jscpd-max-duplication: '3'

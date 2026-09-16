@@ -20,9 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
  * Manages TPA (player-to-player teleport request) state and behavior.
  */
 public final class Requests {
-    private Requests() {
-    }
-
     private static final List<Request> pendingRequests = new ArrayList<Request>();
 
     public enum RequestType {
@@ -38,6 +35,12 @@ public final class Requests {
         long expires) {
     }
 
+    private record ResolvedRequest(Request request, @Nullable ServerPlayer sender) {
+    }
+
+    private Requests() {
+    }
+
     private static Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
         return pendingRequests.stream()
             .filter((request) -> {
@@ -48,6 +51,22 @@ public final class Requests {
 
     private static Request getRequest(UUID sender) {
         return getRequest(sender, null);
+    }
+
+    @Nullable
+    private static ResolvedRequest resolveRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
+
+        if (request == null) {
+            Messages.sendMessage(receiver, "request_no_exist", ERROR);
+            return null;
+        }
+
+        if (sender == null) {
+            sender = getPlayerByOtherPlayer(request.sender(), receiver);
+        }
+
+        return new ResolvedRequest(request, sender);
     }
 
     @Nullable
@@ -183,16 +202,12 @@ public final class Requests {
      * @return {@code true} if a matching request was found and executed
      */
     public static boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
-        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
-
-        if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", ERROR);
+        ResolvedRequest resolved = resolveRequest(sender, receiver);
+        if (resolved == null) {
             return false;
         }
-
-        if (sender == null) {
-            sender = getPlayerByOtherPlayer(request.sender(), receiver);
-        }
+        Request request = resolved.request();
+        sender = resolved.sender();
 
         if (sender == null) {
             Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR,
@@ -225,16 +240,12 @@ public final class Requests {
      * @return {@code true} if a matching request was found and removed
      */
     public static boolean denyRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
-        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
-
-        if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", ERROR);
+        ResolvedRequest resolved = resolveRequest(sender, receiver);
+        if (resolved == null) {
             return false;
         }
-
-        if (sender == null) {
-            sender = getPlayerByOtherPlayer(request.sender(), receiver);
-        }
+        Request request = resolved.request();
+        sender = resolved.sender();
 
         if (sender != null) {
             Messages.sendMessage(sender, "request_denied_sender", WARNING, request.receiverName());

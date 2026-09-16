@@ -41,13 +41,7 @@ public final class Warps {
                 }
 
                 Teleport target = Teleport.create(player, argValue);
-
-                if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Warp");
-                    return false;
-                }
-
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, true);
+                Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, true, "Warp");
 
                 if (isSaved == null) {
                     return false;

@@ -4,6 +4,8 @@ import static timewaster.publicteleport.Messages.MessageType.COMMAND;
 import static timewaster.publicteleport.Messages.MessageType.COMMAND_PARAM;
 import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -38,7 +40,7 @@ public final class Help {
             message.appendRaw(" ").append("command_param_player", COMMAND_PARAM);
         }
         if (!"".equals(params)) {
-            message.appendRaw(" ").appendRawColored(params, COMMAND_PARAM);
+            message.appendRaw(" ").appendRawColored(Objects.requireNonNull(params), COMMAND_PARAM);
         }
 
         message.appendRaw("\n    ").append("help_" + identifier, null);
