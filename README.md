@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="Public Teleport Logo" src=".github/banner-700.png">
+    <img alt="Public Teleport Logo" src=".github/Public-Teleport-Banner-700.png">
 </p>
 
 An easy-to-use Fabric Teleport Mod!
@@ -11,7 +11,7 @@ An easy-to-use Fabric Teleport Mod!
 - Minimal configuration with predefined values
 
 <p align="center">
-    <img alt="Public Teleport Logo" src=".github/bus-500.png"> *
+    <img alt="Public Teleport Logo" src=".github/Public-Teleport-Bus-500.png"> *
 </p>
 
 ## Commands
@@ -91,13 +91,6 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 - Download the `.jar` file from the [Releases page](https://github.com/SebiTimeWaster/Public-Teleport/releases) that fits your Minecraft version and put it into the `mods` folder on your server/client
 - (Re)Start your server/client
 - If needed edit the configuration as described in the section "Configuration" above
-
-## Migration from MiniTeleport
-
-If you are migrating from [MiniTeleport](https://github.com/luxmiyu/miniteleport):
-
-- Install Public Teleport, start your server/client and stop it once it has fully started
-- Copy and overwrite all files/directories from `world/miniteleport/` to `config/public-teleport/` (Linux: `cp -r world/miniteleport/* config/public-teleport/`)
 
 <hr>
 
