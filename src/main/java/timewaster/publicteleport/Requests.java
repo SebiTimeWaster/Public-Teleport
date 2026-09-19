@@ -1,5 +1,10 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -7,23 +12,22 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 
 /**
  * Manages TPA (player-to-player teleport request) state and behavior.
  */
-public class Requests {
+public final class Requests {
     private static final List<Request> pendingRequests = new ArrayList<Request>();
-    private static int tickCounter = 0;
 
-    public static enum RequestType {
+    public enum RequestType {
         NORMAL, REVERSE, REVERSE_ALL
     }
 
-    private static final record Request(
+    private record Request(
         @NotNull UUID sender,
         @NotNull UUID receiver,
         String senderName,
@@ -32,9 +36,15 @@ public class Requests {
         long expires) {
     }
 
+    private record ResolvedRequest(Request request, @Nullable ServerPlayer sender) {
+    }
+
+    private Requests() {
+    }
+
     private static Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
         return pendingRequests.stream()
-            .filter(request -> {
+            .filter((request) -> {
                 return (sender == null || request.sender().equals(sender))
                     && (receiver == null || request.receiver().equals(receiver));
             }).findFirst().orElse(null);
@@ -45,30 +55,24 @@ public class Requests {
     }
 
     @Nullable
-    private static ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
-        return otherPlayer.level().getServer().getPlayerList().getPlayer(playerToGet);
-    }
+    private static ResolvedRequest resolveRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
+        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
 
-    private static void cleanup(MinecraftServer server) {
-        long now = System.currentTimeMillis();
-
-        for (Request request : pendingRequests) {
-            ServerPlayer sender = server.getPlayerList().getPlayer(request.sender());
-            ServerPlayer receiver = server.getPlayerList().getPlayer(request.receiver());
-
-            if (request.expires() <= now) {
-                if (sender != null) {
-                    Messages.sendMessage(sender, "request_timedout_sender", Messages.MessageType.WARNING,
-                        request.receiverName());
-                }
-                if (receiver != null) {
-                    Messages.sendMessage(receiver, "request_timedout_receiver", Messages.MessageType.WARNING,
-                        request.senderName());
-                }
-            }
+        if (request == null) {
+            Messages.sendMessage(receiver, "request_no_exist", ERROR);
+            return null;
         }
 
-        pendingRequests.removeIf(request -> request.expires() <= now);
+        if (sender == null) {
+            sender = getPlayerByOtherPlayer(request.sender(), receiver);
+        }
+
+        return new ResolvedRequest(request, sender);
+    }
+
+    @Nullable
+    private static ServerPlayer getPlayerByOtherPlayer(@NotNull UUID playerToGet, ServerPlayer otherPlayer) {
+        return Utils.getServerByPlayer(otherPlayer).getPlayerList().getPlayer(playerToGet);
     }
 
     private static void createRequest(ServerPlayer sender, ServerPlayer receiver, RequestType requestType) {
@@ -76,67 +80,75 @@ public class Requests {
         String senderName = sender.getName().getString();
         String receiverName = receiver.getName().getString();
         String headlineIdentifier = (requestType == RequestType.NORMAL) ? "request_received" : "request_received_rev";
-        MutableComponent acceptButtonText = Messages.getMessage("button_accept", Messages.MessageType.SUCCESS);
+        MutableComponent acceptButtonText = Messages.getMessage("button_accept", SUCCESS);
         MutableComponent acceptHoverText = Messages.getMessage("request_accept", null, senderName);
-        MutableComponent denyButtonText = Messages.getMessage("button_deny", Messages.MessageType.ERROR);
+        MutableComponent denyButtonText = Messages.getMessage("button_deny", ERROR);
         MutableComponent denyHoverText = Messages.getMessage("request_deny", null, senderName);
 
         pendingRequests
             .add(new Request(sender.getUUID(), receiver.getUUID(), senderName, receiverName, requestType, expires));
 
         new Messages.MessageBuilder()
-            .append(headlineIdentifier, Messages.MessageType.HEADLINE, senderName)
+            .append(headlineIdentifier, HEADLINE, senderName)
             .button(acceptButtonText, acceptHoverText, "/tpaccept " + senderName)
             .appendRaw("  ")
             .button(denyButtonText, denyHoverText, "/tpdeny " + senderName)
             .send(receiver);
-        Messages.sendMessage(sender, "request_sent", Messages.MessageType.SUCCESS, receiverName);
+        Messages.sendMessage(sender, "request_sent", SUCCESS, receiverName);
     }
 
     /**
-     * Registers a periodic server-tick listener that removes stale pending TPA
-     * requests.
+     * Checks for stale requests and cleans them up once per second.
+     *
+     * @param server the server object to get involved players
      */
-    public static void registerTickEvent() {
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            tickCounter++;
+    public static void cleanup(MinecraftServer server) {
+        long now = System.currentTimeMillis();
 
-            // 20 ticks = 1 second
-            if (tickCounter >= 20) {
-                tickCounter = 0;
+        for (Request request : pendingRequests) {
+            if (request.expires() <= now) {
+                PlayerList playerList = server.getPlayerList();
+                ServerPlayer sender = playerList.getPlayer(request.sender());
+                ServerPlayer receiver = playerList.getPlayer(request.receiver());
 
-                cleanup(server);
+                if (sender != null) {
+                    Messages.sendMessage(sender, "request_timedout_sender", WARNING,
+                        request.receiverName());
+                }
+                if (receiver != null) {
+                    Messages.sendMessage(receiver, "request_timedout_receiver", WARNING,
+                        request.senderName());
+                }
             }
-        });
+        }
+
+        pendingRequests.removeIf((request) -> request.expires() <= now);
     }
 
     /**
      * Sends a TPA request from one player to another, notifying both players.
      *
-     * @param sender   the player initiating the request
-     * @param receiver the player being asked to accept or deny the request or
-     *                     {@code null} if {@link RequestType.REVERSE_ALL}
-     * @param reverse  if {@code true}, the {@link receiver} is teleported to the
-     *                     {@link sender} instead of the normal direction
-     * @param all      if {@code true} all online players are asked to teleport to
-     *                     the sender
+     * @param sender      the player initiating the request
+     * @param receiver    the player being asked to accept or deny the request or
+     *                        {@code null} if {@link RequestType.REVERSE_ALL}
+     * @param requestType what type of request is being made
      * @return {@code true} if the request was created and sent
      */
     public static boolean sendRequest(ServerPlayer sender, @Nullable ServerPlayer receiver, RequestType requestType) {
         if (sender == receiver) {
-            Messages.sendMessage(sender, "request_teleport_self", Messages.MessageType.WARNING);
+            Messages.sendMessage(sender, "request_teleport_self", WARNING);
             return false;
         }
 
         Request oldRequest = getRequest(sender.getUUID());
         if (oldRequest != null) {
-            Messages.sendMessage(sender, "request_old_exist", Messages.MessageType.ERROR, oldRequest.receiverName(),
+            Messages.sendMessage(sender, "request_old_exist", ERROR, oldRequest.receiverName(),
                 "/tpcancel");
             return false;
         }
 
         if (requestType == RequestType.REVERSE_ALL) {
-            List<ServerPlayer> onlinePlayers = sender.level().getServer().getPlayerList().getPlayers();
+            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(sender.level());
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 if (sender != onlinePlayer) {
@@ -159,11 +171,11 @@ public class Requests {
      *         {@code false} if {@code sender} had no pending request
      */
     public static boolean cancelRequest(ServerPlayer sender) {
-        List<Request> requests = pendingRequests.stream().filter(request -> request.sender().equals(sender.getUUID()))
+        List<Request> requests = pendingRequests.stream().filter((request) -> request.sender().equals(sender.getUUID()))
             .toList();
 
-        if (requests.size() == 0) {
-            Messages.sendMessage(sender, "request_no_exist", Messages.MessageType.ERROR);
+        if (requests.isEmpty()) {
+            Messages.sendMessage(sender, "request_no_exist", ERROR);
             return false;
         }
 
@@ -171,10 +183,10 @@ public class Requests {
             ServerPlayer receiver = getPlayerByOtherPlayer(request.receiver(), sender);
 
             if (receiver != null) {
-                Messages.sendMessage(receiver, "request_cancelled_receiver", Messages.MessageType.WARNING,
+                Messages.sendMessage(receiver, "request_cancelled_receiver", WARNING,
                     sender.getName().getString());
             }
-            Messages.sendMessage(sender, "request_cancelled_sender", Messages.MessageType.SUCCESS);
+            Messages.sendMessage(sender, "request_cancelled_sender", SUCCESS);
 
             pendingRequests.remove(request);
         }
@@ -192,26 +204,22 @@ public class Requests {
      * @return {@code true} if a matching request was found and executed
      */
     public static boolean acceptRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
-        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
-
-        if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", Messages.MessageType.ERROR);
+        ResolvedRequest resolved = resolveRequest(sender, receiver);
+        if (resolved == null) {
             return false;
         }
+        Request request = resolved.request();
+        sender = resolved.sender();
 
         if (sender == null) {
-            sender = getPlayerByOtherPlayer(request.sender(), receiver);
-        }
-
-        if (sender == null) {
-            Messages.sendMessage(receiver, "request_sender_no_ingame", Messages.MessageType.ERROR,
+            Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR,
                 request.senderName());
             pendingRequests.remove(request);
             return false;
         }
 
-        Messages.sendMessage(sender, "request_accepted_sender", Messages.MessageType.SUCCESS, request.receiverName());
-        Messages.sendMessage(receiver, "request_accepted_receiver", Messages.MessageType.SUCCESS, request.senderName());
+        Messages.sendMessage(sender, "request_accepted_sender", SUCCESS, request.receiverName());
+        Messages.sendMessage(receiver, "request_accepted_receiver", SUCCESS, request.senderName());
 
         if (request.requestType == RequestType.NORMAL) {
             Teleports.teleportPlayer(sender, receiver, false);
@@ -234,21 +242,17 @@ public class Requests {
      * @return {@code true} if a matching request was found and removed
      */
     public static boolean denyRequest(@Nullable ServerPlayer sender, ServerPlayer receiver) {
-        Request request = getRequest(sender != null ? sender.getUUID() : null, receiver.getUUID());
-
-        if (request == null) {
-            Messages.sendMessage(receiver, "request_no_exist", Messages.MessageType.ERROR);
+        ResolvedRequest resolved = resolveRequest(sender, receiver);
+        if (resolved == null) {
             return false;
         }
-
-        if (sender == null) {
-            sender = getPlayerByOtherPlayer(request.sender(), receiver);
-        }
+        Request request = resolved.request();
+        sender = resolved.sender();
 
         if (sender != null) {
-            Messages.sendMessage(sender, "request_denied_sender", Messages.MessageType.WARNING, request.receiverName());
+            Messages.sendMessage(sender, "request_denied_sender", WARNING, request.receiverName());
         }
-        Messages.sendMessage(receiver, "request_denied_receiver", Messages.MessageType.SUCCESS, request.senderName());
+        Messages.sendMessage(receiver, "request_denied_receiver", SUCCESS, request.senderName());
 
         pendingRequests.remove(request);
 

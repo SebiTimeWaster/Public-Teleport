@@ -1,18 +1,15 @@
 package timewaster.publicteleport;
 
+import static timewaster.publicteleport.Messages.MessageType.ERROR;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -23,7 +20,10 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * A collection of Utils to ensure safe teleportation.
  */
-public class TeleportSafety {
+public final class TeleportSafety {
+    private TeleportSafety() {
+    }
+
     private static boolean blockHasCollision(Level level, @NotNull BlockPos blockPos) {
         return !level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
     }
@@ -35,21 +35,53 @@ public class TeleportSafety {
     }
 
     private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
-        return (blockHasCollision(level, blockPos.below())
+        return blockHasCollision(level, blockPos.below())
             && isBlockEmpty(level, blockPos)
-            && isBlockEmpty(level, blockPos.above()));
+            && isBlockEmpty(level, blockPos.above());
     }
 
+    /**
+     * Checks that {@code target} is a safe place to stand on and, if so, persists
+     * it as a Warp or Home.
+     *
+     * @param player the player trying to save the data
+     * @param target the {@link Teleport} to save
+     * @param isWarp if it is a Warp, not a Home
+     * @param type   the type of teleport
+     * @return {@code true} if saved; {@code false} if a new teleport would go over
+     *         the max homes limit; {@code null} if the position was unsafe or a
+     *         file error occured
+     */
+    @Nullable
+    public static Boolean setSpawnableTeleport(ServerPlayer player, Teleport target, boolean isWarp, String type) {
+        if (!isBlockTeleportable(player, target)) {
+            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, type);
+            return null;
+        }
+
+        return PublicTeleport.storage.setTeleport(player, target, isWarp);
+    }
+
+    /**
+     * Checks if {@code blockPos} is a safe place to stand on and if it is not
+     * occupied by other players.
+     *
+     * @param player   the player trying to teleport here
+     * @param level    the level of the block to test
+     * @param blockPos the block position to check
+     * @return {@code true} if safe
+     */
     public static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
         boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
         boolean isBlockedByPlayer = false;
 
         if (isBlockAvailable) {
-            List<ServerPlayer> onlinePlayers = level.getServer().getPlayerList().getPlayers();
+            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(level);
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
+                // player width/height
                 if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, blockPos, getDimensionName(level), 0.6, 1.8)) {
+                    && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
                     isBlockedByPlayer = true;
                 }
             }
@@ -58,23 +90,24 @@ public class TeleportSafety {
         return isBlockAvailable && !isBlockedByPlayer;
     }
 
+    /**
+     * Checks if the player's position collides with a block positions plus a
+     * specified clearance around it.
+     *
+     * @param player      the player to check
+     * @param blockPos    the block position to check
+     * @param dimension   the dimension the block position is in
+     * @param clearanceXZ the clearance in the X and Z directions
+     * @param clearanceY  the clearance in the Y direction
+     * @return {@code true} if player clears the area
+     */
     public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
         double clearanceXZ, double clearanceY) {
 
-        return !getDimensionName(player.level()).equals(dimension)
-            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ
-            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY
+        return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
+            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
+            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
             || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
-    }
-
-    /**
-     * Get the dimension name from a given {@link Level}
-     *
-     * @param level the level to get the name from
-     * @return the fetched name
-     */
-    public static String getDimensionName(Level level) {
-        return level.dimension().identifier().toString();
     }
 
     /**
@@ -93,29 +126,15 @@ public class TeleportSafety {
     }
 
     /**
-     * Gets a specific level from a {@link Teleport} target dimension identifier.
-     *
-     * @param player    the player to be teleported
-     * @param dimension the dimension name
-     * @return the level matching the dimension identifier
-     */
-    public static ServerLevel getLevelFromDimension(ServerPlayer player, String dimension) {
-        Identifier dimId = Identifier.parse(Objects.requireNonNull(dimension));
-        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimId);
-
-        return player.level().getServer().getLevel(dimKey);
-    }
-
-    /**
      * Checks if a specified {@link BlockPos} is a valid teleport target.
      *
-     * @param level    the level the blockPos is in
-     * @param blockPos the position to check
+     * @param player the player to be teleported
+     * @param target the position to check
      * @return {@code true} is position is clear to use
      */
     public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
         BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
-        Level level = getLevelFromDimension(player, target.dimension());
+        Level level = Utils.getLevelbyDimension(player, target.dimension());
 
         return isBlockTeleportable(level, blockPos);
     }
@@ -125,19 +144,21 @@ public class TeleportSafety {
      * {@link target} position is a valid teleport target and if no other player is
      * currently blocking it.
      *
-     * @param player the player to be teleported
-     * @param target the target position to check
+     * @param player        the player to be teleported
+     * @param target        the position to check
+     * @param ignorePlayers if block checks around the target block should ignore
+     *                          players blocking them to make sure /tpahereall works
      * @return {@link Teleport} the position that is teleportable to or {@code null}
      *         is none was found
      */
     @Nullable
     public static Teleport findTeleportablePosition(ServerPlayer player, Teleport target, boolean ignorePlayers) {
-        Level level = getLevelFromDimension(player, target.dimension());
+        Level level = Utils.getLevelbyDimension(player, target.dimension());
 
         if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
             int[] orderY = { 0, 1, -1, 2, -2 };
             List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52,
-                64, 65, 66, 67, 68);
+                64, 65, 66, 67, 68); // this defines the order blocks are searched in
             Collections.shuffle(orderXZ);
 
             for (int y : orderY) {
@@ -171,7 +192,7 @@ public class TeleportSafety {
      * specified clearances
      *
      * @param player      the player whos position to check
-     * @param target      the target whos position to check
+     * @param target      the position to check
      * @param clearanceXZ the minimum clearance in the X and Z directions needed
      * @param clearanceY  the minimum clearance in the Y direction needed
      * @return

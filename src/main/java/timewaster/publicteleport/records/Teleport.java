@@ -3,6 +3,7 @@ package timewaster.publicteleport.records;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Utils;
 
 /**
  * A single named teleport destination, used for both Warps and Homes.
@@ -15,7 +16,7 @@ import timewaster.publicteleport.TeleportSafety;
  * @param pitch     facing pitch in degrees, or {@code null} if not set
  * @param dimension identifier of the dimension/world this teleport belongs to
  */
-public final record Teleport(
+public record Teleport(
     String name,
     int x,
     int y,
@@ -31,7 +32,7 @@ public final record Teleport(
      * @param name   the name of the teleport destination
      * @return the teleport destination created
      */
-    public static final Teleport create(ServerPlayer player, String name) {
+    public static Teleport create(ServerPlayer player, String name) {
         BlockPos playerPos = TeleportSafety.getPlayerBlockPos(player);
 
         return new Teleport(
@@ -41,6 +42,6 @@ public final record Teleport(
             playerPos.getZ(),
             (Float) player.getYRot(),
             (Float) player.getXRot(),
-            TeleportSafety.getDimensionName(player.level()));
+            Utils.getDimensionNameByLevel(player.level()));
     }
 }
