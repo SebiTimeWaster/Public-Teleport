@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="Public Teleport Logo" src=".github/banner-700.png">
+    <img alt="Public Teleport Banner" src="https://cdn.jsdelivr.net/gh/SebiTimeWaster/Public-Teleport@main/.github/Public-Teleport_Banner_700.png">
 </p>
 
 An easy-to-use Fabric Teleport and Portal Mod!
@@ -12,7 +12,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 - Minimal configuration with predefined values
 
 <p align="center">
-    <img alt="Public Teleport Logo" src=".github/bus-500.png"> *
+    <img alt="Public Teleport Bus" src="https://cdn.jsdelivr.net/gh/SebiTimeWaster/Public-Teleport@main/.github/Public-Teleport_Bus_500.png"> *
 </p>
 
 ## Commands
