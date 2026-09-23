@@ -23,10 +23,11 @@ public final class Portals {
 
     private static void teleportOrRedirectPlayer(ServerPlayer player, Teleport target, Vec3 oldPosition) {
         if (target.dimension().startsWith("url:")) {
-            String[] parts = target.dimension().split(":(?=[^:]*$)");
+            String url = target.dimension().substring(4);
+            int splitPosition = url.lastIndexOf(":");
             ClientboundTransferPacket packet = new ClientboundTransferPacket(
-                Objects.requireNonNull(parts[1]),
-                Integer.parseInt(parts[2]));
+                Objects.requireNonNull(url.substring(0, splitPosition)),
+                Integer.parseInt(url.substring(splitPosition + 1)));
 
             if (oldPosition != null) {
                 player.setPos(oldPosition);

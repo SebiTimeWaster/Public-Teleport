@@ -8,10 +8,12 @@ package timewaster.publicteleport.records;
  * @param enableWarps          whether the Warps features are enabled
  * @param enableHomes          whether the Homes features are enabled
  * @param enableBack           whether the Back features are enabled
+ * @param enableRtp            whether the RTP feature is enabled
  * @param enablePortals        whether the Portals features are enabled
  * @param enableTpa            whether the TPA features are enabled
  * @param maxHomes             maximum number of Homes a single player may set
  * @param requestTimeout       how long a teleport request is active in seconds
+ * @param rtpRadius            the max radius in blocks from spawn RTP chooses
  * @param portalCommandsOnlyOp whether only OPs can use the Portal commands
  */
 public record Config(
@@ -20,9 +22,11 @@ public record Config(
     boolean enableWarps,
     boolean enableHomes,
     boolean enableBack,
+    boolean enableRtp,
     boolean enablePortals,
     boolean enableTpa,
     int maxHomes,
     int requestTimeout,
+    int rtpRadius,
     boolean portalCommandsOnlyOp) {
 }

@@ -42,7 +42,19 @@ import timewaster.publicteleport.records.Teleport;
  * Loads and saves data in multiple files in the config directory
  */
 public class Storage {
-    private static final Config configDefault = new Config("en_us", true, true, true, true, true, true, 10, 60, true);
+    private static final Config configDefault = new Config(
+        "en_us",
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        10,
+        60,
+        5000,
+        true);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final Path pathConfig;
     private final Path pathConfigHomes;

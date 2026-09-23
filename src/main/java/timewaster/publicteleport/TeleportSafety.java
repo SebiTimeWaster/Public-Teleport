@@ -5,16 +5,25 @@ import static timewaster.publicteleport.Messages.MessageType.ERROR;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ScaffoldingBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -25,19 +34,36 @@ public final class TeleportSafety {
     }
 
     private static boolean blockHasCollision(Level level, @NotNull BlockPos blockPos) {
-        return !level.getBlockState(blockPos).getCollisionShape(level, blockPos).isEmpty();
+        BlockState blockState = level.getBlockState(blockPos);
+
+        return blockState.getBlock() != Blocks.MAGMA_BLOCK && !blockState.getCollisionShape(level, blockPos).isEmpty();
     }
 
     private static boolean isBlockEmpty(Level level, @NotNull BlockPos blockPos) {
         Block block = level.getBlockState(blockPos).getBlock();
 
-        return block != Blocks.LAVA && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
+        return block != Blocks.LAVA && block != Blocks.FIRE
+            && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
     }
 
     private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
         return blockHasCollision(level, blockPos.below())
             && isBlockEmpty(level, blockPos)
             && isBlockEmpty(level, blockPos.above());
+    }
+
+    private static int findTeleportableYBelowCeiling(ServerLevel level, int x, int z) {
+        // start 6 blocks below ceiling to avoid entrapment
+        int top = level.getMinY() + level.dimensionType().logicalHeight() - 6;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
+
+        for (; pos.getY() > level.getMinY(); pos.move(0, -1, 0)) {
+            if (isBlockTeleportable(level, pos)) {
+                return pos.getY();
+            }
+        }
+
+        return Integer.MIN_VALUE;
     }
 
     /**
@@ -88,6 +114,64 @@ public final class TeleportSafety {
         }
 
         return isBlockAvailable && !isBlockedByPlayer;
+    }
+
+    /**
+     * Searches for a random teleportable position within {@code rtpRadius} blocks
+     * of the dimensions center (spawn) with a maximum of 3 attempts.
+     *
+     * @param player the player to teleport
+     * @return a future resolving to a random {@link Teleport} position, or to
+     *         {@code null} if none was found
+     */
+    public static CompletableFuture<BlockPos> findRandomTeleportablePosition(ServerPlayer player) {
+        ServerLevel level = player.level();
+        BlockPos center = level.dimension().equals(Level.OVERWORLD) ? level.getRespawnData().pos() : BlockPos.ZERO;
+        int radius = PublicTeleport.storage.getConfig().rtpRadius();
+
+        return findRandomTeleportablePositionAttempt(player, level, center, radius, 1);
+    }
+
+    private static CompletableFuture<BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player,
+        ServerLevel level, BlockPos center, int radius, int attempt) {
+        double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
+        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * radius;
+        int x = center.getX() + (int) Math.round(Math.cos(angle) * distance);
+        int z = center.getZ() + (int) Math.round(Math.sin(angle) * distance);
+        // 128 blocks = 8 chunks minimum distance
+        if (!doesPlayerClearTarget(player, new BlockPos(x, level.getSeaLevel(), z),
+            Utils.getDimensionNameByLevel(level), 128, level.getMaxY())) {
+            if (attempt >= 3) {
+                return CompletableFuture.completedFuture(null);
+            } else {
+                return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
+            }
+        }
+        ChunkPos chunkPos = new ChunkPos(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
+
+        return level.getChunkSource().addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, chunkPos, 0)
+            .thenComposeAsync(ignored -> {
+                LevelChunk levelChunk = level.getChunk(chunkPos.x(), chunkPos.z());
+                int y;
+                if (level.dimensionType().hasCeiling()) {
+                    y = findTeleportableYBelowCeiling(level, x, z);
+                } else {
+                    y = levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
+                }
+                BlockPos blockPos = new BlockPos(x, y, z);
+
+                PublicTeleport.LOGGER.info("random pos: {}", blockPos);
+
+                if (y > Integer.MIN_VALUE && isBlockTeleportableAndWithoutPlayers(player, level, blockPos)) {
+                    return CompletableFuture.completedFuture(blockPos);
+                }
+
+                if (attempt >= 3) {
+                    return CompletableFuture.completedFuture(null);
+                }
+
+                return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
+            }, level.getServer());
     }
 
     /**

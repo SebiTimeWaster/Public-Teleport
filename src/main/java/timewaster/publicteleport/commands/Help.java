@@ -89,6 +89,11 @@ public final class Help {
                     createHelpLine(message, "back");
                 }
 
+                if (config.enableRtp()) {
+                    message.appendRawColored("\n RTP:", HEADLINE);
+                    createHelpLine(message, "rtp");
+                }
+
                 if (config.enablePortals() && (!config.portalCommandsOnlyOp() || isOwner)) {
                     message.appendRawColored("\n Portals:", HEADLINE);
                     createHelpLine(message, "setportal", "setportal_from", "from");

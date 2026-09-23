@@ -81,7 +81,12 @@ public final class Teleports {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
 
-            Messages.sendMessage(player, "teleported_to", SUCCESS, target.name());
+            if ("public_teleport_rtp".equals(target.name())) {
+                Messages.sendMessage(player, "teleported_to", SUCCESS,
+                    target.x() + ", " + target.y() + ", " + target.z());
+            } else {
+                Messages.sendMessage(player, "teleported_to", SUCCESS, target.name());
+            }
         } else {
             Messages.sendMessage(player, "unknown_error", ERROR);
         }

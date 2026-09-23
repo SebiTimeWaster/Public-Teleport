@@ -7,8 +7,13 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import timewaster.publicteleport.records.Config;
 
+// TODO: add lines around help block
+// TODO: Automated integration testing
+// TODO: three part info in help command
+// TODO: move stuff from commands/Portals to Portals
+// TODO: clean up TeleportSafety
+// TODO: make translations uniform
 // TODO: Multi-modloader compatibility (Maybe)
-// TODO: RTP random teleport functionality
 
 /**
  * Entry point of the Public Teleport mod.

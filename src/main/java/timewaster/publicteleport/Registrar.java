@@ -29,6 +29,7 @@ import timewaster.publicteleport.commands.Back;
 import timewaster.publicteleport.commands.Help;
 import timewaster.publicteleport.commands.Homes;
 import timewaster.publicteleport.commands.Portals;
+import timewaster.publicteleport.commands.Rtp;
 import timewaster.publicteleport.commands.Spawn;
 import timewaster.publicteleport.commands.Tpa;
 import timewaster.publicteleport.commands.Warps;
@@ -151,6 +152,10 @@ public final class Registrar {
 
             if (config.enableBack()) {
                 Back.register(dispatcher);
+            }
+
+            if (config.enableRtp()) {
+                Rtp.register(dispatcher);
             }
 
             if (config.enablePortals()) {
