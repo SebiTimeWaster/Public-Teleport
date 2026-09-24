@@ -63,11 +63,9 @@ public final class Requests {
             return null;
         }
 
-        if (sender == null) {
-            sender = getPlayerByOtherPlayer(request.sender(), receiver);
-        }
+        ServerPlayer resolvedSender = sender != null ? sender : getPlayerByOtherPlayer(request.sender(), receiver);
 
-        return new ResolvedRequest(request, sender);
+        return new ResolvedRequest(request, resolvedSender);
     }
 
     @Nullable
@@ -209,22 +207,22 @@ public final class Requests {
             return false;
         }
         Request request = resolved.request();
-        sender = resolved.sender();
+        ServerPlayer resolvedSender = resolved.sender();
 
-        if (sender == null) {
+        if (resolvedSender == null) {
             Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR,
                 request.senderName());
             pendingRequests.remove(request);
             return false;
         }
 
-        Messages.sendMessage(sender, "request_accepted_sender", SUCCESS, request.receiverName());
+        Messages.sendMessage(resolvedSender, "request_accepted_sender", SUCCESS, request.receiverName());
         Messages.sendMessage(receiver, "request_accepted_receiver", SUCCESS, request.senderName());
 
         if (request.requestType == RequestType.NORMAL) {
-            Teleports.teleportPlayer(sender, receiver, false);
+            Teleports.teleportPlayer(resolvedSender, receiver, false);
         } else {
-            Teleports.teleportPlayer(receiver, sender, request.requestType == RequestType.REVERSE_ALL);
+            Teleports.teleportPlayer(receiver, resolvedSender, request.requestType == RequestType.REVERSE_ALL);
         }
 
         pendingRequests.remove(request);
@@ -247,10 +245,10 @@ public final class Requests {
             return false;
         }
         Request request = resolved.request();
-        sender = resolved.sender();
+        ServerPlayer resolvedSender = resolved.sender();
 
-        if (sender != null) {
-            Messages.sendMessage(sender, "request_denied_sender", WARNING, request.receiverName());
+        if (resolvedSender != null) {
+            Messages.sendMessage(resolvedSender, "request_denied_sender", WARNING, request.receiverName());
         }
         Messages.sendMessage(receiver, "request_denied_receiver", SUCCESS, request.senderName());
 

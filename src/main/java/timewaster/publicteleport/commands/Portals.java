@@ -165,8 +165,6 @@ public final class Portals {
     }
 
     private static boolean setPortal(ServerPlayer player, Portal portal) {
-        portal = normalisePortal(portal);
-
         if (PublicTeleport.storage.setPortal(player, portal)) {
             Level level = Utils.getLevelbyDimension(player, portal.dimension());
             Block purplePane = BuiltInRegistries.BLOCK
@@ -216,7 +214,7 @@ public final class Portals {
         }
 
         if (newPortalData.aX() > MIN && newPortalData.bX() > MIN && newPortalData.target() != null) {
-            return setPortal(player, newPortalData) ? 1 : 0;
+            return setPortal(player, normalisePortal(newPortalData)) ? 1 : 0;
         }
 
         sendSuccess(context, player, action);

@@ -33,12 +33,12 @@ public final class Rtp {
                 } else {
                     Messages.sendMessage(player, "rtp_start", WARNING);
                 }
-                rtpInProgress = true;
+                rtpInProgress = true; // NOPMD - UnusedAssignment false positive, reset asynchronously below
 
-                TeleportSafety.findRandomTeleportablePosition(player).thenAcceptAsync((blockPos) -> {
+                TeleportSafety.findRandomTeleportablePosition(player).whenCompleteAsync((blockPos, throwable) -> {
                     rtpInProgress = false;
 
-                    if (blockPos == null) {
+                    if (throwable != null || blockPos == null) {
                         Messages.sendMessage(player, "rtp_failed", ERROR);
                         return;
                     }

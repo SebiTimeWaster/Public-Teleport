@@ -169,7 +169,6 @@ public class Storage {
         }
     }
 
-    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private <T> List<T> loadFile(File file, Class<T> elementType, boolean failOnError) {
         List<T> defaultValue = new ArrayList<T>();
 
@@ -297,7 +296,6 @@ public class Storage {
      *         file error occured
      */
     @Nullable
-    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     public List<String> getTeleportNames(ServerPlayer player, boolean isWarp) {
         List<String> names = new ArrayList<String>();
         UUID uuid = player.getUUID();
