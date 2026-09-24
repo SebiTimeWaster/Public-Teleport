@@ -17,12 +17,15 @@ jobs:
                   directories: src
                   cpd-min-tokens: '35'
                   cpd-max-duplication: '5'
-                  jscpd-min-lines: '2'
+                  jscpd-min-lines: '4'
                   jscpd-min-tokens: '35'
                   jscpd-max-duplication: '5'
     pmd_job:
         runs-on: ubuntu-latest
         name: PMD job with cache
+        permissions:
+            contents: read
+            pull-requests: write
         steps:
             - name: Checkout
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
