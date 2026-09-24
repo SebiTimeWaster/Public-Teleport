@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import java.util.Objects;
+
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.ChatFormatting;
@@ -86,7 +88,6 @@ public final class Messages {
      * Incrementally builds a single chat message out of multiple parts
      */
     public static class MessageBuilder {
-        @NotNull
         private MutableComponent message = Component.literal("");
 
         /**
@@ -153,7 +154,16 @@ public final class Messages {
          * @param player the player to send the message to
          */
         public void send(ServerPlayer player) {
-            player.sendSystemMessage(message);
+            player.sendSystemMessage(Objects.requireNonNull(message));
+        }
+
+        /**
+         * Gets the internal component
+         *
+         * @return the internal component
+         */
+        public MutableComponent getComponent() {
+            return message;
         }
     }
 }

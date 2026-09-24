@@ -7,9 +7,8 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import timewaster.publicteleport.records.Config;
 
-// TODO: add lines around help block
+// TODO: fix github PMD check
 // TODO: Automated integration testing
-// TODO: three part info in help command
 // TODO: move stuff from commands/Portals to Portals
 // TODO: clean up TeleportSafety
 // TODO: make translations uniform

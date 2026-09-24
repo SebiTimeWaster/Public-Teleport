@@ -21,15 +21,15 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | ----------------------------------------------- | :-----: | ----------------------------------------------------------------------------------------------------- |
 | `/helpteleport`                                 |         | Shows information about the commands the player can use                                               |
 | **Spawn:**                                      |         |                                                                                                       |
-| `/setspawn`                                     |    ✓    | Sets the Spawn point at the player's current position (Unrelated to the Minecraft world spawn)        |
+| `/setspawn`                                     |    ✓    | Sets the Spawn point at your current position (Unrelated to the Minecraft world spawn)                |
 | `/spawn`                                        |         | Teleports to Spawn (Needs to be set via the `/setspawn` command)                                      |
 | **Warps:**                                      |         |                                                                                                       |
-| `/setwarp <name>`                               |    ✓    | Sets a Warp position at the player's current position                                                 |
+| `/setwarp <name>`                               |    ✓    | Sets a Warp position at your current position                                                         |
 | `/delwarp <name>`                               |    ✓    | Deletes a Warp                                                                                        |
 | `/warp <name>`                                  |         | Teleports to a Warp                                                                                   |
 | `/warps`                                        |         | Lists all Warps                                                                                       |
 | **Homes:**                                      |         |                                                                                                       |
-| `/sethome [<name>]`                             |         | Sets a Home position at the player's current position (Default: `home`)                               |
+| `/sethome [<name>]`                             |         | Sets a Home position at your current position (Default: `home`)                                       |
 | `/delhome <name>`                               |         | Deletes a Home                                                                                        |
 | `/home [<name>]`                                |         | Teleports to a Home (Default: `home`)                                                                 |
 | `/homes`                                        |         | Lists all your homes                                                                                  |
@@ -40,7 +40,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | **Portals:**                                    |         |                                                                                                       |
 | `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" position from the full block that is currently looked at                              |
 | `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" position from the full block that is currently looked at                                |
-| `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at the player's current position                                           |
+| `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at your current position                                                   |
 | `/setportal <name> target "<domain/ip>:<port>"` |    ✓    | Sets the "target" to another Minecraft servers URL                                                    |
 | `/delportal <name>`                             |  ✓ / ✗  | Deletes a Portal                                                                                      |
 | `/portals`                                      |  ✓ / ✗  | Lists all Portals                                                                                     |
