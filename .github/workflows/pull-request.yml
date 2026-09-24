@@ -55,7 +55,7 @@ jobs:
                   error-rules: 'AvoidDirectAccessTriggerMap,AvoidDmlStatementsInLoops,AvoidHardcodingId'
                   note-rules: 'ApexDoc'
             - name: Upload results to GitHub
-              uses: github/codeql-action/upload-sarif@v1
+              uses: github/codeql-action/upload-sarif@v2
               with:
                   sarif_file: pmd-output.sarif
             - name: No PMD Errors?
