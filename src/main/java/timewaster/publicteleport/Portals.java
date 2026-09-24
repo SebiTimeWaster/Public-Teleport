@@ -223,9 +223,17 @@ public final class Portals {
             || player.getZ() < portal.aZ() - playerWidth || player.getZ() > portal.bZ() + blockSize + playerWidth;
     }
 
+    /**
+     * Sets partial portal data while the user constructs a portal with the
+     * {@code /setportal} command, when all three parts are set the portal is
+     * automatically saved.
+     *
+     * @param context the command context
+     * @param action  what action the user is performing
+     * @return {@code 1} if successful
+     */
     public static int setPortalData(CommandContext<CommandSourceStack> context, String action) {
         ServerPlayer player = context.getSource().getPlayer();
-
         Portal newPortalData = mutateTempPortalData(context, player, action);
 
         if (newPortalData == null) {

@@ -46,12 +46,6 @@ public final class TeleportSafety {
             && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
     }
 
-    private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
-        return blockHasCollision(level, blockPos.below())
-            && isBlockEmpty(level, blockPos)
-            && isBlockEmpty(level, blockPos.above());
-    }
-
     private static int findTeleportableYBelowCeiling(ServerLevel level, int x, int z) {
         // start 6 blocks below ceiling to avoid entrapment
         int top = level.getMinY() + level.dimensionType().logicalHeight() - 6;
@@ -64,6 +58,71 @@ public final class TeleportSafety {
         }
 
         return Integer.MIN_VALUE;
+    }
+
+    private static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
+        boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
+        boolean isBlockedByPlayer = false;
+
+        if (isBlockAvailable) {
+            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(level);
+
+            for (ServerPlayer onlinePlayer : onlinePlayers) {
+                // player width/height
+                if (onlinePlayer != player
+                    && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
+                    isBlockedByPlayer = true;
+                }
+            }
+        }
+
+        return isBlockAvailable && !isBlockedByPlayer;
+
+    }
+
+    private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
+        return blockHasCollision(level, blockPos.below())
+            && isBlockEmpty(level, blockPos)
+            && isBlockEmpty(level, blockPos.above());
+    }
+
+    private static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
+        double clearanceXZ, double clearanceY) {
+
+        return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
+            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
+            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
+            || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
+    }
+
+    /**
+     * Checks if a specified {@link BlockPos} is a valid teleport target.
+     *
+     * @param player the player to be teleported
+     * @param target the position to check
+     * @return {@code true} is position is clear to use
+     */
+    public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
+        BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
+        Level level = Utils.getLevelbyDimension(player, target.dimension());
+
+        return isBlockTeleportable(level, blockPos);
+    }
+
+    /**
+     * Checks if a player position and a {@link Teleport} target intersect within
+     * specified clearances
+     *
+     * @param player      the player whos position to check
+     * @param target      the position to check
+     * @param clearanceXZ the minimum clearance in the X and Z directions needed
+     * @param clearanceY  the minimum clearance in the Y direction needed
+     * @return
+     */
+    public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ,
+        double clearanceY) {
+        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(),
+            clearanceXZ, clearanceY);
     }
 
     /**
@@ -86,34 +145,6 @@ public final class TeleportSafety {
         }
 
         return PublicTeleport.storage.setTeleport(player, target, isWarp);
-    }
-
-    /**
-     * Checks if {@code blockPos} is a safe place to stand on and if it is not
-     * occupied by other players.
-     *
-     * @param player   the player trying to teleport here
-     * @param level    the level of the block to test
-     * @param blockPos the block position to check
-     * @return {@code true} if safe
-     */
-    public static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
-        boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
-        boolean isBlockedByPlayer = false;
-
-        if (isBlockAvailable) {
-            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(level);
-
-            for (ServerPlayer onlinePlayer : onlinePlayers) {
-                // player width/height
-                if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
-                    isBlockedByPlayer = true;
-                }
-            }
-        }
-
-        return isBlockAvailable && !isBlockedByPlayer;
     }
 
     /**
@@ -175,55 +206,6 @@ public final class TeleportSafety {
     }
 
     /**
-     * Checks if the player's position collides with a block positions plus a
-     * specified clearance around it.
-     *
-     * @param player      the player to check
-     * @param blockPos    the block position to check
-     * @param dimension   the dimension the block position is in
-     * @param clearanceXZ the clearance in the X and Z directions
-     * @param clearanceY  the clearance in the Y direction
-     * @return {@code true} if player clears the area
-     */
-    public static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
-        double clearanceXZ, double clearanceY) {
-
-        return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
-            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
-            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
-            || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
-    }
-
-    /**
-     * Gets the players int position and rounds up fractional Y positions.
-     *
-     * @param player the player whos position to get
-     * @return the position with corrected Y position
-     */
-    public static BlockPos getPlayerBlockPos(ServerPlayer player) {
-        double playerY = player.getY();
-        double fractionY = playerY - Math.floor(playerY);
-        // prevent weird scaffolding Y = x.00032, a carpet is 0.0625 high
-        double realY = fractionY > 0.06 ? Math.ceil(playerY) : Math.floor(playerY);
-
-        return new BlockPos((int) Math.floor(player.getX()), (int) realY, (int) Math.floor(player.getZ()));
-    }
-
-    /**
-     * Checks if a specified {@link BlockPos} is a valid teleport target.
-     *
-     * @param player the player to be teleported
-     * @param target the position to check
-     * @return {@code true} is position is clear to use
-     */
-    public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
-        BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
-        Level level = Utils.getLevelbyDimension(player, target.dimension());
-
-        return isBlockTeleportable(level, blockPos);
-    }
-
-    /**
      * Checks if any of the blocks in a certain radius around the given
      * {@link target} position is a valid teleport target and if no other player is
      * currently blocking it.
@@ -269,21 +251,5 @@ public final class TeleportSafety {
         }
 
         return target;
-    }
-
-    /**
-     * Checks if a player position and a {@link Teleport} target intersect within
-     * specified clearances
-     *
-     * @param player      the player whos position to check
-     * @param target      the position to check
-     * @param clearanceXZ the minimum clearance in the X and Z directions needed
-     * @param clearanceY  the minimum clearance in the Y direction needed
-     * @return
-     */
-    public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ,
-        double clearanceY) {
-        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(),
-            clearanceXZ, clearanceY);
     }
 }

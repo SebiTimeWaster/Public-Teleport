@@ -1,8 +1,6 @@
 package timewaster.publicteleport.records;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Utils;
 
 /**
@@ -33,13 +31,16 @@ public record Teleport(
      * @return the teleport destination created
      */
     public static Teleport create(ServerPlayer player, String name) {
-        BlockPos playerPos = TeleportSafety.getPlayerBlockPos(player);
+        double playerY = player.getY();
+        double fractionY = playerY - Math.floor(playerY);
+        // prevent weird scaffolding Y = x.00032, a carpet is 0.0625 high
+        double realY = fractionY > 0.06 ? Math.ceil(playerY) : Math.floor(playerY);
 
         return new Teleport(
             name,
-            playerPos.getX(),
-            playerPos.getY(),
-            playerPos.getZ(),
+            (int) Math.floor(player.getX()),
+            (int) realY,
+            (int) Math.floor(player.getZ()),
             (Float) player.getYRot(),
             (Float) player.getXRot(),
             Utils.getDimensionNameByLevel(player.level()));
