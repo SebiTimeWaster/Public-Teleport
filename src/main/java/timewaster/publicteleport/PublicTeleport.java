@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import timewaster.publicteleport.records.Config;
 
 // TODO: Automated integration testing
-// TODO: move stuff from commands/Portals to Portals
 // TODO: clean up TeleportSafety
 // TODO: make translations uniform
 // TODO: Multi-modloader compatibility (Maybe)
