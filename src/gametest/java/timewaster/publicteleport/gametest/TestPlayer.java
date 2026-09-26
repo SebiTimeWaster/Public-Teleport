@@ -26,6 +26,7 @@ import net.minecraft.world.phys.Vec3;
  * chat message and dialog it receives, so tests can check what the mod told
  * the player.
  */
+@SuppressWarnings("null")
 public final class TestPlayer extends ServerPlayer {
     private final List<Component> messages = new ArrayList<>();
     private Dialog lastDialog;
@@ -50,13 +51,15 @@ public final class TestPlayer extends ServerPlayer {
         String name = "test-" + uuid.toString().substring(0, 8);
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(uuid, name), false);
         TestPlayer player = new TestPlayer(level.getServer(), level, cookie);
-        // fully qualified: inside a ServerPlayer subclass "Connection" means WaypointTransmitter.Connection
+        // fully qualified: inside a ServerPlayer subclass "Connection" means
+        // WaypointTransmitter.Connection
         net.minecraft.network.Connection connection = new net.minecraft.network.Connection(PacketFlow.SERVERBOUND);
 
         new EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         player.moveTo(helper, relativePos);
-        // without this, a test that fails halfway would leave its players on the server, where they would
+        // without this, a test that fails halfway would leave its players on the
+        // server, where they would
         // receive e.g. /tpahereall requests of later tests
         TestUtils.onTestEnd(helper, player::leave);
 

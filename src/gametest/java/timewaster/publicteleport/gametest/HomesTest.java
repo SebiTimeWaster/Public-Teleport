@@ -18,6 +18,7 @@ import timewaster.publicteleport.PublicTeleport;
 /**
  * The "Homes" section of manual-testing.txt.
  */
+@SuppressWarnings("null")
 public class HomesTest {
     private static void assertHomes(GameTestHelper helper, TestPlayer player, String... expected) {
         assertEqual(helper, PublicTeleport.storage.getTeleportNames(player, false), List.of(expected), "homes");

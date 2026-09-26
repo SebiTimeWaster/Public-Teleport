@@ -17,6 +17,7 @@ import timewaster.publicteleport.PublicTeleport;
  * The "Warps" section of manual-testing.txt. Warps are shared by all players,
  * so every test uses its own Warp names.
  */
+@SuppressWarnings("null")
 public class WarpsTest {
     private static boolean warpExists(TestPlayer player, String name) {
         return PublicTeleport.storage.getTeleportNames(player, true).contains(name);

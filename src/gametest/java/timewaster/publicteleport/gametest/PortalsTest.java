@@ -28,10 +28,14 @@ import timewaster.publicteleport.records.Portal;
  * players and teleport anyone who walks into them, so every test uses its own
  * Portal names and deletes its Portals at the end.
  */
+@SuppressWarnings("null")
 public class PortalsTest {
     /** The block the player looks at for "from" and "to" of a one block Portal. */
     private static final BlockPos PORTAL_BLOCK = new BlockPos(3, 2, 5);
-    /** Where to stand to look at {@link #PORTAL_BLOCK}: 3 blocks north of it, facing south. */
+    /**
+     * Where to stand to look at {@link #PORTAL_BLOCK}: 3 blocks north of it, facing
+     * south.
+     */
     private static final BlockPos LOOK_AT_PORTAL = new BlockPos(3, 1, 2);
 
     private static Portal findPortal(String name) {
@@ -43,7 +47,10 @@ public class PortalsTest {
         PublicTeleport.storage.deletePortal(player, name);
     }
 
-    /** Builds a one block Portal at {@link #PORTAL_BLOCK} that leads to {@link TestUtils#STAND_FAR}. */
+    /**
+     * Builds a one block Portal at {@link #PORTAL_BLOCK} that leads to
+     * {@link TestUtils#STAND_FAR}.
+     */
     private static void buildPortal(GameTestHelper helper, TestPlayer player, String name) {
         helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
         player.moveTo(helper, LOOK_AT_PORTAL);
@@ -59,7 +66,8 @@ public class PortalsTest {
         TestPlayer player = setup(helper);
         String name = uniqueName("p");
 
-        // a 3 wide, 2 high wall; "from" is the top right corner, "to" the bottom left one
+        // a 3 wide, 2 high wall; "from" is the top right corner, "to" the bottom left
+        // one
         for (int x = 3; x <= 5; x++) {
             helper.setBlock(x, 1, 5, Blocks.STONE);
             helper.setBlock(x, 2, 5, Blocks.STONE);
@@ -96,14 +104,18 @@ public class PortalsTest {
         helper.succeed();
     }
 
-    /** "from" and "to" must use the block looked at, whichever of its six faces the player looks at. */
+    /**
+     * "from" and "to" must use the block looked at, whichever of its six faces the
+     * player looks at.
+     */
     @GameTest
     public void setportalFromAnySide(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         BlockPos block = new BlockPos(3, 3, 3);
         record Side(String name, BlockPos stand, float yaw, float pitch) {
         }
-        // standing at y = 2 puts the eyes (1.62 above the feet) at the height of the block
+        // standing at y = 2 puts the eyes (1.62 above the feet) at the height of the
+        // block
         List<Side> sides = List.of(
             new Side("north", new BlockPos(3, 2, 0), 0, 0),
             new Side("south", new BlockPos(3, 2, 6), 180, 0),
@@ -226,7 +238,8 @@ public class PortalsTest {
         buildPortal(helper, player, name);
 
         helper.startSequence()
-            // Portals are checked every 5 ticks; the first check has to see the player outside the Portal
+            // Portals are checked every 5 ticks; the first check has to see the player
+            // outside the Portal
             .thenIdle(10)
             .thenExecute(() -> player.moveTo(helper, new BlockPos(PORTAL_BLOCK.getX(), 1, PORTAL_BLOCK.getZ())))
             .thenWaitUntil(() -> {
@@ -259,7 +272,10 @@ public class PortalsTest {
         helper.succeed();
     }
 
-    /** "/portals" lists the Portals of all players, so this test runs in its own batch. */
+    /**
+     * "/portals" lists the Portals of all players, so this test runs in its own
+     * batch.
+     */
     @GameTest(environment = "public-teleport-gametest:portals_list")
     public void portalsNoneAndList(GameTestHelper helper) {
         TestPlayer player = setup(helper);

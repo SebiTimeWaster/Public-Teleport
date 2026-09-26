@@ -25,10 +25,14 @@ import timewaster.publicteleport.PublicTeleport;
  * section are in {@link RequestsTest}, "target not found" is covered by
  * {@link HomesTest#homeDoesNotExist}.
  */
+@SuppressWarnings("null")
 public class TeleportsTest {
     /** A standing position 4 blocks in the air, on top of {@link #PILLAR}. */
     private static final BlockPos HIGH = new BlockPos(4, 4, 4);
-    /** The single block that makes {@link #HIGH} safe; without it no block within 2 blocks is safe. */
+    /**
+     * The single block that makes {@link #HIGH} safe; without it no block within 2
+     * blocks is safe.
+     */
     private static final BlockPos PILLAR = new BlockPos(4, 3, 4);
 
     private static String name(TestPlayer player) {

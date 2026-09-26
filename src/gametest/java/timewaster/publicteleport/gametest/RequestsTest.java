@@ -28,7 +28,10 @@ public class RequestsTest {
         return player.getName().getString();
     }
 
-    /** Checks that {@code player} ended up at most {@code distance} blocks (horizontally) from {@code target}. */
+    /**
+     * Checks that {@code player} ended up at most {@code distance} blocks
+     * (horizontally) from {@code target}.
+     */
     private static void assertNear(GameTestHelper helper, TestPlayer player, TestPlayer target, int distance) {
         BlockPos pos = player.blockPosition();
         BlockPos targetPos = target.blockPosition();

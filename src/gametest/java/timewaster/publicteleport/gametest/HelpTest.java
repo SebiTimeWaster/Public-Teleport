@@ -24,6 +24,7 @@ import timewaster.publicteleport.records.Config;
  * sections the help shows, is decided when Minecraft builds its commands: on
  * server start and on every {@code /reload}.
  */
+@SuppressWarnings("null")
 public class HelpTest {
     /** The config option of each feature and its commands. */
     private static final Map<String, List<String>> FEATURE_COMMANDS = Map.of(
@@ -95,7 +96,10 @@ public class HelpTest {
         }
     }
 
-    /** Checks that the commands of the {@code enabled} features exist and all others don't. */
+    /**
+     * Checks that the commands of the {@code enabled} features exist and all others
+     * don't.
+     */
     private static void assertCommands(GameTestHelper helper, List<String> enabled, boolean hasHelp) {
         var root = helper.getLevel().getServer().getCommands().getDispatcher().getRoot();
 
@@ -124,7 +128,8 @@ public class HelpTest {
         AtomicReference<CompletableFuture<Void>> reloading = new AtomicReference<>();
         Runnable waitForReload = () -> helper.assertTrue(reloading.get().isDone(), "Expected /reload to be done");
 
-        // if the test fails halfway, don't leave later batches with features switched off
+        // if the test fails halfway, don't leave later batches with features switched
+        // off
         TestUtils.onTestEnd(helper, () -> {
             if (PublicTeleport.storage.getConfig() != original) {
                 PublicTeleport.storage.setConfig(original);

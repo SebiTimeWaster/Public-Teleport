@@ -25,15 +25,20 @@ import timewaster.publicteleport.records.Teleport;
  * {@code commands.Rtp} and {@code TeleportSafety}. Only one RTP can run at a
  * time on the whole server, so every test runs in its own batch.
  */
+@SuppressWarnings("null")
 public class RtpTest {
-    /** The message RTP sends when it's done, with the coordinates of where the player is now. */
+    /**
+     * The message RTP sends when it's done, with the coordinates of where the
+     * player is now.
+     */
     private static void assertTeleported(GameTestHelper helper, TestPlayer player) {
         BlockPos pos = player.blockPosition();
 
         assertLastMessage(helper, player, "teleported_to", SUCCESS, pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
     }
 
-    // the real limit is the timeout in seconds below, see TestUtils.succeedWithinSeconds
+    // the real limit is the timeout in seconds below, see
+    // TestUtils.succeedWithinSeconds
     @GameTest(environment = "public-teleport-gametest:rtp", maxTicks = 10_000_000)
     public void rtp(GameTestHelper helper) {
         TestPlayer player = setup(helper);
@@ -51,7 +56,8 @@ public class RtpTest {
             assertTeleported(helper, player);
             BlockPos pos = player.blockPosition();
 
-            // at least 128 blocks away, within "rtpRadius" of the world spawn (+ 2 for moving to a safe block)
+            // at least 128 blocks away, within "rtpRadius" of the world spawn (+ 2 for
+            // moving to a safe block)
             helper.assertTrue(Math.abs(pos.getX() - start.getX()) > 128 || Math.abs(pos.getZ() - start.getZ()) > 128,
                 "Expected the player to be more than 128 blocks away from " + start + ", but was at " + pos);
             double distance = Math.hypot(pos.getX() - center.getX(), pos.getZ() - center.getZ());
@@ -68,7 +74,8 @@ public class RtpTest {
     public void rtpFailed(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         BlockPos center = helper.getLevel().getRespawnData().pos();
-        // with a radius of 0 the only possible target is the world spawn, which is too close to the player
+        // with a radius of 0 the only possible target is the world spawn, which is too
+        // close to the player
         Runnable rtpAtSpawn = () -> {
             player.teleportTo(helper.getLevel(), center.getX() + 0.5, center.getY(), center.getZ() + 0.5, Set.of(), 0,
                 0, true);
@@ -78,7 +85,8 @@ public class RtpTest {
         helper.startSequence()
             .thenExecute(rtpAtSpawn)
             .thenWaitUntil(() -> assertLastMessage(helper, player, "rtp_failed", ERROR))
-            // a failed RTP must not block the next one (it can fail within the command, so count the messages)
+            // a failed RTP must not block the next one (it can fail within the command, so
+            // count the messages)
             .thenExecute(rtpAtSpawn)
             .thenWaitUntil(() -> {
                 assertEqual(helper, TestUtils.countMessages(player, "rtp_start"), 2L, "number of \"rtp_start\"");
@@ -88,7 +96,10 @@ public class RtpTest {
             .thenSucceed();
     }
 
-    /** The Nether has a ceiling, so RTP searches downwards from below it instead of using the height map. */
+    /**
+     * The Nether has a ceiling, so RTP searches downwards from below it instead of
+     * using the height map.
+     */
     @GameTest(environment = "public-teleport-gametest:rtp_nether", maxTicks = 10_000_000)
     public void rtpInNether(GameTestHelper helper) {
         TestPlayer player = setup(helper);

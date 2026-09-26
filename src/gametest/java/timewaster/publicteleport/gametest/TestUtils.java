@@ -29,10 +29,17 @@ import timewaster.publicteleport.records.Teleport;
 /**
  * Shared helpers for the game tests.
  */
+@SuppressWarnings("null")
 public final class TestUtils {
-    /** Where test players stand: one block above the floor built by {@link #buildFloor}. */
+    /**
+     * Where test players stand: one block above the floor built by
+     * {@link #buildFloor}.
+     */
     public static final BlockPos STAND = new BlockPos(1, 1, 1);
-    /** A second standing position, far enough from {@link #STAND} (more than 2 blocks) to teleport between. */
+    /**
+     * A second standing position, far enough from {@link #STAND} (more than 2
+     * blocks) to teleport between.
+     */
     public static final BlockPos STAND_FAR = new BlockPos(6, 1, 6);
     private static final String KEY_PREFIX = PublicTeleport.MOD_ID + ".";
 
@@ -183,7 +190,10 @@ public final class TestUtils {
         return modMessages.getLast();
     }
 
-    /** Messages from this mod, without vanilla ones like "player joined the game" from other tests' players. */
+    /**
+     * Messages from this mod, without vanilla ones like "player joined the game"
+     * from other tests' players.
+     */
     private static List<Component> modMessages(TestPlayer player) {
         return player.getMessages().stream().filter(message -> translatedParts(message).stream()
             .anyMatch(part -> ((TranslatableContents) part.getContents()).getKey().startsWith(KEY_PREFIX)))
