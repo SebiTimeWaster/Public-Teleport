@@ -1,6 +1,5 @@
 package timewaster.publicteleport.gametest;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,9 +11,6 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInfo;
-import net.minecraft.gametest.framework.GameTestListener;
-import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
@@ -60,47 +56,11 @@ public final class TestPlayer extends ServerPlayer {
         new EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         player.moveTo(helper, relativePos);
-        leaveWhenTestEnds(helper, player);
+        // without this, a test that fails halfway would leave its players on the server, where they would
+        // receive e.g. /tpahereall requests of later tests
+        TestUtils.onTestEnd(helper, player::leave);
 
         return player;
-    }
-
-    /**
-     * Makes the player leave when the test ends. Without this, a test that
-     * fails halfway would leave its players on the server, where they would
-     * receive e.g. {@code /tpahereall} requests of later tests.
-     */
-    private static void leaveWhenTestEnds(GameTestHelper helper, TestPlayer player) {
-        GameTestInfo testInfo;
-
-        try {
-            // GameTestHelper has no getter for it
-            Field field = GameTestHelper.class.getDeclaredField("testInfo");
-            field.setAccessible(true);
-            testInfo = (GameTestInfo) field.get(helper);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("GameTestHelper.testInfo not found, did Minecraft rename it?", e);
-        }
-
-        testInfo.addListener(new GameTestListener() {
-            @Override
-            public void testStructureLoaded(GameTestInfo info) {
-            }
-
-            @Override
-            public void testPassed(GameTestInfo info, GameTestRunner runner) {
-                player.leave();
-            }
-
-            @Override
-            public void testFailed(GameTestInfo info, GameTestRunner runner) {
-                player.leave();
-            }
-
-            @Override
-            public void testAddedForRerun(GameTestInfo original, GameTestInfo copy, GameTestRunner runner) {
-            }
-        });
     }
 
     /**

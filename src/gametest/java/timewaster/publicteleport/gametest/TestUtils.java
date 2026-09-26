@@ -1,5 +1,6 @@
 package timewaster.publicteleport.gametest;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +11,9 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.gametest.framework.GameTestListener;
+import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.level.block.Blocks;
@@ -216,27 +220,83 @@ public final class TestUtils {
 
     /**
      * Waits until {@code asserter} stops failing, like
-     * {@code GameTestHelper.succeedWhen}, but with a timeout in real seconds.
-     * The test server runs ticks as fast as it can, so a timeout in ticks
-     * says nothing about how long work outside the tick loop, like loading
-     * chunks, may take. Give the test a {@code maxTicks} high enough to never
-     * be reached first.
+     * {@code GameTestHelper.succeedWhen}, but with a timeout in real seconds,
+     * see {@link #withinSeconds}.
      *
      * @param helper   the test's helper
      * @param seconds  how long to wait at most
      * @param asserter the checks that have to pass
      */
     public static void succeedWithinSeconds(GameTestHelper helper, int seconds, Runnable asserter) {
-        long deadline = System.nanoTime() + seconds * 1_000_000_000L;
+        helper.succeedWhen(withinSeconds(helper, seconds, asserter));
+    }
 
-        helper.succeedWhen(() -> {
+    /**
+     * Wraps {@code asserter} for {@code GameTestSequence.thenWaitUntil}, so the
+     * wait has a timeout in real seconds, counted from the first check. The
+     * test server runs ticks as fast as it can, so a timeout in ticks says
+     * nothing about how long work outside the tick loop, like loading chunks
+     * or {@code /reload}, may take. Give the test a {@code maxTicks} high
+     * enough to never be reached first.
+     *
+     * @param helper   the test's helper
+     * @param seconds  how long to wait at most
+     * @param asserter the checks that have to pass
+     * @return the wrapped checks
+     */
+    public static Runnable withinSeconds(GameTestHelper helper, int seconds, Runnable asserter) {
+        long[] deadline = { 0 };
+
+        return () -> {
+            if (deadline[0] == 0) {
+                deadline[0] = System.nanoTime() + seconds * 1_000_000_000L;
+            }
             try {
                 asserter.run();
             } catch (GameTestAssertException e) {
-                if (System.nanoTime() > deadline) {
+                if (System.nanoTime() > deadline[0]) {
                     helper.fail(Component.literal("Not done after " + seconds + " seconds: " + e.getMessage()));
                 }
                 throw e;
+            }
+        };
+    }
+
+    /**
+     * Runs {@code cleanup} when the test ends, whether it passed or failed.
+     *
+     * @param helper  the test's helper
+     * @param cleanup what to do
+     */
+    public static void onTestEnd(GameTestHelper helper, Runnable cleanup) {
+        GameTestInfo testInfo;
+
+        try {
+            // GameTestHelper has no getter for it
+            Field field = GameTestHelper.class.getDeclaredField("testInfo");
+            field.setAccessible(true);
+            testInfo = (GameTestInfo) field.get(helper);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("GameTestHelper.testInfo not found, did Minecraft rename it?", e);
+        }
+
+        testInfo.addListener(new GameTestListener() {
+            @Override
+            public void testStructureLoaded(GameTestInfo info) {
+            }
+
+            @Override
+            public void testPassed(GameTestInfo info, GameTestRunner runner) {
+                cleanup.run();
+            }
+
+            @Override
+            public void testFailed(GameTestInfo info, GameTestRunner runner) {
+                cleanup.run();
+            }
+
+            @Override
+            public void testAddedForRerun(GameTestInfo original, GameTestInfo copy, GameTestRunner runner) {
             }
         });
     }

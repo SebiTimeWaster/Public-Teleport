@@ -131,9 +131,8 @@ public final class Registrar {
      * Registers the mod's commands with Fabric's command dispatcher.
      */
     public static void registerCommands() {
-        Config config = PublicTeleport.storage.getConfig();
-
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            Config config = PublicTeleport.storage.getConfig();
             boolean hasCommands = false;
 
             if (config.enableSpawn()) {
