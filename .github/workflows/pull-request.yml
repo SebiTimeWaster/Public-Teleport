@@ -32,6 +32,7 @@ jobs:
             - name: Run PMD
               uses: kemsakurai/action-pmd@aafc862a11dd31e0f93c8c4d06e403fd6bbcca8b
               with:
+                  workdir: 'src/main/'
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   reporter: 'github-pr-review'
                   tool_name: 'pmd_reviewdog'
