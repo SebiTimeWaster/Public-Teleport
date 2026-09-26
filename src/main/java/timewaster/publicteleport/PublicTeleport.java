@@ -4,11 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ModInitializer;
-import timewaster.publicteleport.commands.Registrar;
-
-// TODO: multi-modloader compatibility
-// TODO: when creating warps add spawn warp with minecraft spawn data
-// TODO: add portals between dimension and in the same dimension
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import timewaster.publicteleport.records.Config;
 
 /**
  * Entry point of the Public Teleport mod.
@@ -17,14 +14,43 @@ public class PublicTeleport implements ModInitializer {
     public static final String MOD_ID = "public-teleport";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final Storage storage = new Storage();
+    private static int tickCounter = 0;
 
     @Override
     public void onInitialize() {
+        Config config = storage.getConfig();
+
         Registrar.registerCommands();
         Teleports.registerDeathEvent();
-        Requests.registerTickEvent();
 
-        LOGGER.info(prefix("Initialized!"));
+        if (config.enablePortals() || config.enableTpa()) {
+            ServerTickEvents.END_SERVER_TICK.register((server) -> {
+                tickCounter++;
+
+                // 5 ticks = 0.25 seconds
+                if (config.enablePortals() && tickCounter % 5 == 1) {
+                    Portals.check(server);
+                }
+
+                // 20 ticks = 1 second
+                if (tickCounter >= 20) {
+                    tickCounter = 0;
+
+                    if (config.enablePortals()) {
+                        Portals.emitParticles(server);
+                    }
+
+                    if (config.enableTpa()) {
+                        Requests.cleanup(server);
+                    }
+                }
+
+            });
+        }
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(prefix("Initialized!"));
+        }
     }
 
     /**

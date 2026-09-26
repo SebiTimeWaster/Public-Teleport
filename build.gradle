@@ -23,6 +23,34 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+// Game tests: "./gradlew runGameTest" starts a headless server and runs everything in src/gametest.
+// Loom also hooks this into "check", so "./gradlew build" runs the game tests too.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "public-teleport-gametest"
+		enableClientGameTests = false
+		eula = true
+	}
+}
+
+// Loom never clears the server game test run directory, so the world and the mod's config/data files would
+// carry over between runs. Delete it before (not after) each run, so it can still be inspected after a failure.
+tasks.register("cleanGameTestRunDir", Delete) {
+	delete layout.buildDirectory.dir("run/gameTest")
+}
+
+tasks.named("runGameTest") {
+	dependsOn "cleanGameTestRunDir"
+}
+
+// "./gradlew compatGameTest" runs the game tests on every Minecraft version in compat/, see settings.gradle
+tasks.register("compatGameTest") {
+	group = "verification"
+	description = "Runs the game tests with the built mod jar on every Minecraft version in compat/."
+	dependsOn subprojects.collect { "${it.path}:runGameTest" }
+}
+
 processResources {
     def expandProps = [
         "version": project.version,

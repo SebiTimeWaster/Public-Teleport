@@ -1,0 +1,42 @@
+// Shared build script of the compatibility test projects in compat/<version>/, see settings.gradle.
+// Runs the game tests from src/gametest on the Minecraft version set in compat/<version>/gradle.properties,
+// against the unchanged mod jar the root project builds for 26.1, i.e. the jar that gets published.
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "public-teleport-gametest"
+		enableClientGameTests = false
+		eula = true
+	}
+}
+
+// the tests themselves are compiled for this version, from the root project's sources
+sourceSets.gametest {
+	java.srcDirs = [rootProject.file("src/gametest/java")]
+	resources.srcDirs = [rootProject.file("src/gametest/resources")]
+}
+
+dependencies {
+	// the tests compile against the mod jar, and the test server loads it as a mod
+	gametestImplementation files(rootProject.tasks.named("jar"))
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+// same as in the root build.gradle: start every run with a fresh world and config
+tasks.register("cleanGameTestRunDir", Delete) {
+	delete layout.buildDirectory.dir("run/gameTest")
+}
+
+tasks.named("runGameTest") {
+	dependsOn "cleanGameTestRunDir"
+}
