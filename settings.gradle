@@ -11,3 +11,14 @@ pluginManagement {
 
 // Should match your modid
 rootProject.name = 'public-teleport'
+
+// Compatibility tests: every folder in compat/ is a project that runs the game tests on another Minecraft version,
+// against the mod jar built for the project version. They are only included when one of their tasks is requested
+// ("./gradlew compatGameTest" or e.g. "./gradlew :compat-26.3:runGameTest"), because every included project sets up
+// its own Minecraft version, which would slow down every other build, and "./gradlew build" would run their tests.
+if (gradle.startParameter.taskNames.any { it.startsWith("compat") || it.startsWith(":compat-") }) {
+	file("compat").eachDir { dir ->
+		include ":compat-${dir.name}"
+		project(":compat-${dir.name}").projectDir = dir
+	}
+}

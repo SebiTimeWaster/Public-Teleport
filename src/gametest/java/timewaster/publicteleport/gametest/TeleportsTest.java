@@ -202,6 +202,6 @@ public class TeleportsTest {
 
     @GameTest
     public void homeOnCarpet(GameTestHelper helper) {
-        testHomeOnTopOf(helper, Blocks.WHITE_CARPET, 0.0625);
+        testHomeOnTopOf(helper, TestUtils.block("white_carpet"), 0.0625);
     }
 }

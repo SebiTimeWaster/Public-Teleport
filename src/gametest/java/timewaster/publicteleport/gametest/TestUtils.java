@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
@@ -16,6 +17,8 @@ import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Messages.MessageType;
@@ -60,6 +63,19 @@ public final class TestUtils {
                 helper.setBlock(x, 0, z, Blocks.STONE);
             }
         }
+    }
+
+    /**
+     * Looks up a vanilla block by its ID, e.g. {@code "white_carpet"}. Used for
+     * dyed blocks: 26.3 replaced constants like {@code Blocks.WHITE_CARPET}
+     * with {@code Blocks.CARPET.white()}, but kept the IDs, so this works on
+     * every version the compatibility tests run on.
+     *
+     * @param id the block ID without the "minecraft:" prefix
+     * @return the block
+     */
+    public static Block block(String id) {
+        return BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace(id));
     }
 
     /**

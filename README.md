@@ -6,7 +6,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 
 - Homes, Warps, Portals, Back, Spawn and TPA functionality
 - Checks if teleport destinations are safe to use to prevent suffocation
-- Provides physical Portal areas that when walked into can teleport the player to a position in any dimension or to another Minecraft server altogether
+- Provides physical Portal areas that when walked into teleport the player to the associated position in any dimension or to another Minecraft server altogether
 - Usable in multiplayer (Server-side) or singleplayer (Client-side)
 - Server-side functionality does NOT require client-side installation, but see section "Languages" below
 - Minimal configuration with predefined values
@@ -57,6 +57,7 @@ Please note:
 - TPA functionality is disabled in singleplayer
 - `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point
 - `/rtp` searches in a radius that is configurable with the `rtpRadius` option (See section "Configuration" below)
+- When `/rtp` selects a never visited region a lot of chunks will be created which can influence server performance (Same as when users fly into new regions)
 - `/setportal`: See section "Portals" below
 - `/tpaccept` searches for a spawnable block around the target position to teleport the player to
 
@@ -83,7 +84,7 @@ To change these settings edit the config file and restart your server/client.
 
 ## Portals
 
-Portals are physical areas a user can walk into to be teleported to the associated target position or being redirected to the associated Minecraft server.\
+Portals are physical areas a user can walk into to be teleported to the associated target position in any dimension or being redirected to another Minecraft server.\
 When a Portal is created (Saved) the portal area is filled with Purple Stained Glass Panes, but they can be broken and replaced with any block that a user can walk into, i.e. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc.\
 Portals can have any size, but the bigger they are the more particles a client has to render, so there is a performance tradeoff with extremely large Portals.\
 Using `/setportal`:

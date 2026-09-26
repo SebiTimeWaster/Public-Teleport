@@ -88,8 +88,8 @@ public class PortalsTest {
             new BlockPos(5, 2, 5), "upper corner");
         TestUtils.assertTeleportAt(helper, portal.target(), STAND);
         for (int x = 3; x <= 5; x++) {
-            helper.assertBlockPresent(Blocks.PURPLE_STAINED_GLASS_PANE, x, 1, 5);
-            helper.assertBlockPresent(Blocks.PURPLE_STAINED_GLASS_PANE, x, 2, 5);
+            helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), x, 1, 5);
+            helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), x, 2, 5);
         }
 
         deletePortal(player, name);

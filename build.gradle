@@ -44,6 +44,13 @@ tasks.named("runGameTest") {
 	dependsOn "cleanGameTestRunDir"
 }
 
+// "./gradlew compatGameTest" runs the game tests on every Minecraft version in compat/, see settings.gradle
+tasks.register("compatGameTest") {
+	group = "verification"
+	description = "Runs the game tests with the built mod jar on every Minecraft version in compat/."
+	dependsOn subprojects.collect { "${it.path}:runGameTest" }
+}
+
 processResources {
     def expandProps = [
         "version": project.version,
