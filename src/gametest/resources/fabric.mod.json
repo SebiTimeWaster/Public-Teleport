@@ -1,0 +1,24 @@
+{
+    "schemaVersion": 1,
+    "id": "public-teleport-gametest",
+    "version": "1.0.0",
+    "name": "Public Teleport Game Tests",
+    "environment": "*",
+    "entrypoints": {
+        "fabric-gametest": [
+            "timewaster.publicteleport.gametest.BackTest",
+            "timewaster.publicteleport.gametest.HelpTest",
+            "timewaster.publicteleport.gametest.HomesTest",
+            "timewaster.publicteleport.gametest.PortalsTest",
+            "timewaster.publicteleport.gametest.RequestsTest",
+            "timewaster.publicteleport.gametest.RtpTest",
+            "timewaster.publicteleport.gametest.SpawnTest",
+            "timewaster.publicteleport.gametest.TeleportsTest",
+            "timewaster.publicteleport.gametest.WarpsTest"
+        ]
+    },
+    "depends": {
+        "public-teleport": "*",
+        "fabric-gametest-api-v1": "*"
+    }
+}

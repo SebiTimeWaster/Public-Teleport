@@ -61,8 +61,8 @@ public class Storage {
     private final File fileConfig;
     private final File fileWarps;
     private final File filePortals;
-    private final Config config;
     private final Map<String, String> translations;
+    private Config config;
     private List<Teleport> warps;
     private Map<UUID, List<Teleport>> homes = new HashMap<UUID, List<Teleport>>();
     private List<Portal> portals;
@@ -468,14 +468,39 @@ public class Storage {
         return false;
     }
 
+    /**
+     * Gets the config.
+     *
+     * @return the config
+     */
     public Config getConfig() {
         return config;
     }
 
+    /**
+     * Replaces the active config in memory without saving it. Only intended for
+     * the game tests, which need to switch features on and off at runtime.
+     *
+     * @param config the config to use from now on
+     */
+    public void setConfig(Config config) {
+        this.config = config;
+    }
+
+    /**
+     * Gets the translations.
+     *
+     * @return the translations
+     */
     public Map<String, String> getTranslations() {
         return translations;
     }
 
+    /**
+     * Gets the list of Portals.
+     *
+     * @return the list of Portals
+     */
     public List<Portal> getPortals() {
         return portals;
     }

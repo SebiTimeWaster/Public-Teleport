@@ -134,37 +134,48 @@ public final class Registrar {
         Config config = PublicTeleport.storage.getConfig();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            registerPuppets(dispatcher);
-
-            Help.register(dispatcher, config);
+            boolean hasCommands = false;
 
             if (config.enableSpawn()) {
                 Spawn.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enableWarps()) {
                 Warps.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enableHomes()) {
                 Homes.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enableBack()) {
                 Back.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enableRtp()) {
                 Rtp.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enablePortals()) {
                 Portals.register(dispatcher);
+                hasCommands = true;
             }
 
             if (config.enableTpa() && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
                 Tpa.register(dispatcher);
+                hasCommands = true;
             }
+
+            if (hasCommands) {
+                Help.register(dispatcher, config);
+            }
+
+            registerPuppets(dispatcher);
         });
     }
 

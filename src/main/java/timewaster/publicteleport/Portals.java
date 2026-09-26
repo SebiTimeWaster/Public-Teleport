@@ -44,9 +44,9 @@ public final class Portals {
     }
 
     @Nullable
-    private static Vec3 getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
+    private static BlockPos getBlockPositionPlayerLooksAt(ServerPlayer player, String action) {
         if (!"from".equals(action) && !"to".equals(action)) {
-            return new Vec3(0.0, 0.0, 0.0);
+            return BlockPos.ZERO;
         }
         Vec3 start = player.getEyePosition(1.0f);
         Vec3 dir = player.getViewVector(1.0f);
@@ -63,7 +63,9 @@ public final class Portals {
             return null;
         }
 
-        return blockHitResult.getLocation();
+        // not getLocation(): that point is on the block's surface, and flooring it gives the block in front of
+        // it when looking at a south, east or top face
+        return blockHitResult.getBlockPos();
     }
 
     @Nullable
@@ -118,7 +120,7 @@ public final class Portals {
     private static Portal mutateTempPortalData(CommandContext<CommandSourceStack> context, ServerPlayer player,
         String action) {
         String name = StringArgumentType.getString(context, "name");
-        Vec3 blockPosition = getBlockPositionPlayerLooksAt(player, action);
+        BlockPos blockPosition = getBlockPositionPlayerLooksAt(player, action);
         Teleport teleportTarget = createPortalTarget(context, player, action, name);
         if (blockPosition == null || teleportTarget == null) {
             return null;
@@ -129,12 +131,12 @@ public final class Portals {
 
         Portal newPortalData = new Portal(
             ("from".equals(action) || "to".equals(action)) ? dimensionIdentifier : existingPortalData.dimension(),
-            "from".equals(action) ? (int) Math.floor(blockPosition.x()) : existingPortalData.aX(),
-            "from".equals(action) ? (int) Math.floor(blockPosition.y()) : existingPortalData.aY(),
-            "from".equals(action) ? (int) Math.floor(blockPosition.z()) : existingPortalData.aZ(),
-            "to".equals(action) ? (int) Math.floor(blockPosition.x()) : existingPortalData.bX(),
-            "to".equals(action) ? (int) Math.floor(blockPosition.y()) : existingPortalData.bY(),
-            "to".equals(action) ? (int) Math.floor(blockPosition.z()) : existingPortalData.bZ(),
+            "from".equals(action) ? blockPosition.getX() : existingPortalData.aX(),
+            "from".equals(action) ? blockPosition.getY() : existingPortalData.aY(),
+            "from".equals(action) ? blockPosition.getZ() : existingPortalData.aZ(),
+            "to".equals(action) ? blockPosition.getX() : existingPortalData.bX(),
+            "to".equals(action) ? blockPosition.getY() : existingPortalData.bY(),
+            "to".equals(action) ? blockPosition.getZ() : existingPortalData.bZ(),
             action.startsWith("target") ? teleportTarget : existingPortalData.target());
 
         tempPortalData.put(name, newPortalData);
