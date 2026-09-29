@@ -163,15 +163,16 @@ public final class TeleportSafety {
         return findRandomTeleportablePositionAttempt(player, level, center, radius, 1);
     }
 
-    private static CompletableFuture<BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player,
-        ServerLevel level, BlockPos center, int radius, int attempt) {
+    private static CompletableFuture<BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player, ServerLevel level, BlockPos center, int radius,
+        int attempt) {
         double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * radius;
+        int dimensionRadius = level.dimension().equals(Level.NETHER) ? radius / 8 : radius;
+        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * dimensionRadius;
         int x = center.getX() + (int) Math.round(Math.cos(angle) * distance);
         int z = center.getZ() + (int) Math.round(Math.sin(angle) * distance);
         // 128 blocks = 8 chunks minimum distance
-        if (!doesPlayerClearTarget(player, new BlockPos(x, level.getSeaLevel(), z),
-            Utils.getDimensionNameByLevel(level), 128, level.getMaxY())) {
+        if (!doesPlayerClearTarget(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), Math.min(128, dimensionRadius / 2),
+            level.getMaxY())) {
             if (attempt >= 3) {
                 return CompletableFuture.completedFuture(null);
             } else {

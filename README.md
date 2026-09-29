@@ -65,20 +65,20 @@ Please note:
 
 On first run a config file is created (`config/public-teleport/config.json`) with these defaults:
 
-| Field                  | Default | Description                                                                                                               |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `defaultLanguage`      | `en_us` | The default language used, see section "Languages" below.                                                                 |
-| `enableSpawn`          | true    | When true the `/setspawn, /spawn` commands are enabled                                                                    |
-| `enableWarps`          | true    | When true the `/setwarp, /delwarp, /warp, /warps` commands are enabled                                                    |
-| `enableHomes`          | true    | When true the `/sethome, /delhome, /home, /homes` commands are enabled                                                    |
-| `enableBack`           | true    | When true the `/back` command is enabled                                                                                  |
-| `enablePortals`        | true    | When true the `/setportal, /delportal, /portals` commands are enabled and the Portals are open                            |
-| `enableTpa`            | true    | When true the `/tpa, /tpahere, /tpahereall, /tpcancel, /tpaccept, /tpdeny` commands are enabled                           |
-| `enableRtp`            | true    | When true the `/rtp` command is enabled                                                                                   |
-| `maxHomes`             | 10      | The maximum amount of homes a player can have (Set to `0` to disable limit)                                               |
-| `requestTimeout`       | 60      | How long a teleport request is active before it is removed in seconds                                                     |
-| `rtpRadius`            | 5000    | The maximum radius around the world spawn in blocks `/rtp` may teleport a player to, don't set this lower than 160 blocks |
-| `portalCommandsOnlyOp` | true    | When true only OP can use the Portal commands (Portals themselves are always usable by anyone)                            |
+| Field                  | Default | Description                                                                                     |
+| ---------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `defaultLanguage`      | `en_us` | The default language used, see section "Languages" below.                                       |
+| `enableSpawn`          | true    | When true the `/setspawn, /spawn` commands are enabled                                          |
+| `enableWarps`          | true    | When true the `/setwarp, /delwarp, /warp, /warps` commands are enabled                          |
+| `enableHomes`          | true    | When true the `/sethome, /delhome, /home, /homes` commands are enabled                          |
+| `enableBack`           | true    | When true the `/back` command is enabled                                                        |
+| `enablePortals`        | true    | When true the `/setportal, /delportal, /portals` commands are enabled and the Portals are open  |
+| `enableTpa`            | true    | When true the `/tpa, /tpahere, /tpahereall, /tpcancel, /tpaccept, /tpdeny` commands are enabled |
+| `enableRtp`            | true    | When true the `/rtp` command is enabled                                                         |
+| `maxHomes`             | 10      | The maximum amount of homes a player can have (Set to `0` to disable limit)                     |
+| `requestTimeout`       | 60      | How long a teleport request is active before it is removed in seconds                           |
+| `rtpRadius`            | 5000    | The maximum radius around the world spawn used by `/rtp` (Divided by 8 if used in the Nether)   |
+| `portalCommandsOnlyOp` | true    | When true only OP can use the Portal commands (Portals themselves are always usable by anyone)  |
 
 To change these settings edit the config file and restart your server/client.
 
