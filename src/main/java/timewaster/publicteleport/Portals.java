@@ -37,8 +37,8 @@ public final class Portals {
     private static final Pattern HOST_PATTERN = Pattern.compile(
         "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
     private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
-    private static Map<ServerPlayer, Boolean> playerStates = new HashMap<ServerPlayer, Boolean>();
-    private static Map<ServerPlayer, Vec3> playerPositions = new HashMap<ServerPlayer, Vec3>();
+    private static Map<ServerPlayer, Vec3> playersPosition = new HashMap<ServerPlayer, Vec3>();
+    private static Map<ServerPlayer, Boolean> playersInPortal = new HashMap<ServerPlayer, Boolean>();
 
     private Portals() {
     }
@@ -63,8 +63,6 @@ public final class Portals {
             return null;
         }
 
-        // not getLocation(): that point is on the block's surface, and flooring it gives the block in front of
-        // it when looking at a south, east or top face
         return blockHitResult.getBlockPos();
     }
 
@@ -205,7 +203,7 @@ public final class Portals {
                 Integer.parseInt(url.substring(splitPosition + 1)));
 
             if (oldPosition != null) {
-                player.setPos(oldPosition);
+                player.connection.teleport(oldPosition.x, oldPosition.y, oldPosition.z, player.getYRot(), player.getXRot());
             }
 
             player.connection.send(packet);
@@ -293,35 +291,45 @@ public final class Portals {
      */
     public static void check(MinecraftServer server) {
         List<Portal> portals = PublicTeleport.storage.getPortals();
-
         if (portals.isEmpty()) {
             return;
         }
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            Vec3 oldPosition = playerPositions.get(player);
+            Vec3 oldPosition = playersPosition.get(player);
             if (oldPosition != null && player.position().equals(oldPosition)) {
                 continue;
             }
-            Boolean oldState = playerStates.get(player);
-            boolean newState = false;
+            Boolean oldInPortal = playersInPortal.get(player);
+            boolean newInPortal = false;
 
             for (Portal portal : portals) {
                 if (playerIsNotInPortal(player, portal)) {
                     continue;
                 }
 
-                newState = true;
+                newInPortal = true;
 
-                if (oldState != null && !oldState) {
+                if (oldInPortal != null && !oldInPortal) {
                     teleportOrRedirectPlayer(player, portal.target(), oldPosition);
 
-                    return;
+                    break;
                 }
             }
 
-            playerPositions.put(player, player.position());
-            playerStates.put(player, newState);
+            playersPosition.put(player, player.position());
+            playersInPortal.put(player, newInPortal);
         }
+    }
+
+    /**
+     * Removes the stored portal data of a player, should be called when the
+     * player disconnects.
+     *
+     * @param player the disconnecting player
+     */
+    public static void removePlayer(ServerPlayer player) {
+        playersPosition.remove(player);
+        playersInPortal.remove(player);
     }
 }

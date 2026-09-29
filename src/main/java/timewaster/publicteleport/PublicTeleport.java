@@ -5,7 +5,14 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import timewaster.publicteleport.records.Config;
+
+// TODO:
+// - safety check treats ground +1 and +2 blocks as air when in reality magma
+// - limit portal size if not OP, no glass pane generation on gigantic portals
+// - different rtp radius in nether?
+// - teleport riding animals also?
 
 /**
  * Entry point of the Public Teleport mod.
@@ -46,6 +53,10 @@ public class PublicTeleport implements ModInitializer {
                 }
 
             });
+        }
+
+        if (config.enablePortals()) {
+            ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Portals.removePlayer(handler.player));
         }
 
         if (LOGGER.isInfoEnabled()) {
