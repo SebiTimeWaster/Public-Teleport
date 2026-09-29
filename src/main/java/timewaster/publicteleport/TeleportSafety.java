@@ -42,7 +42,7 @@ public final class TeleportSafety {
     private static boolean isBlockEmpty(Level level, @NotNull BlockPos blockPos) {
         Block block = level.getBlockState(blockPos).getBlock();
 
-        return block != Blocks.LAVA && block != Blocks.FIRE
+        return block != Blocks.LAVA && block != Blocks.FIRE && block != Blocks.MAGMA_BLOCK
             && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
     }
 
@@ -190,8 +190,6 @@ public final class TeleportSafety {
                     y = levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
                 }
                 BlockPos blockPos = new BlockPos(x, y, z);
-
-                PublicTeleport.LOGGER.info("random pos: {}", blockPos);
 
                 if (y > Integer.MIN_VALUE && isBlockTeleportableAndWithoutPlayers(player, level, blockPos)) {
                     return CompletableFuture.completedFuture(blockPos);

@@ -87,6 +87,9 @@ public final class Teleports {
             } else {
                 Messages.sendMessage(player, "teleported_to", SUCCESS, target.name());
             }
+
+            PublicTeleport.LOGGER.info(PublicTeleport.prefix("Teleported \"{}\" to target \"{}\" on position \"{}\" in dimension \"{}\""),
+                player.getName().getString(), target.name(), target.x() + ", " + target.y() + ", " + target.z(), target.dimension());
         } else {
             Messages.sendMessage(player, "unknown_error", ERROR);
         }
