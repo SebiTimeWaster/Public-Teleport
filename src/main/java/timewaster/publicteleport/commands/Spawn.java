@@ -1,50 +1,56 @@
 package timewaster.publicteleport.commands;
 
-import java.util.function.Predicate;
+import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
 
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelData.RespawnData;
 import timewaster.publicteleport.Messages;
-import timewaster.publicteleport.PublicTeleport;
-import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.Registrar;
 import timewaster.publicteleport.TeleportSafety;
+import timewaster.publicteleport.Teleports;
+import timewaster.publicteleport.Utils;
 import timewaster.publicteleport.records.Teleport;
 
 /**
  * Defines all Spawn commands, registered by {@link Registrar}.
  */
-public class Spawn {
-    private static final Predicate<CommandSourceStack> PERMISSIONS_OWNER = source -> source.permissions()
-        .hasPermission(Permissions.COMMANDS_OWNER);
+public final class Spawn {
+    private Spawn() {
+    }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("setspawn").requires(PERMISSIONS_OWNER)
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+        dispatcher.register(Commands.literal("setspawn").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 Teleport target = Teleport.create(player, "spawn");
-
-                if (!TeleportSafety.isBlockTeleportable(player, target)) {
-                    Messages.sendMessage(player, "teleport_unsafe_set", Messages.MessageType.ERROR, "Spawn");
-                    return false;
-                }
-
-                Boolean isSaved = PublicTeleport.storage.setTeleport(player, target, true);
+                Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, true, "Spawn");
 
                 if (isSaved == null) {
                     return false;
                 }
 
-                Messages.sendMessage(player, "spawn_set", Messages.MessageType.SUCCESS);
+                Messages.sendMessage(player, "spawn_set", SUCCESS);
 
                 return true;
             })));
 
         dispatcher.register(Commands.literal("spawn")
-            .executes(context -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
-                return Teleports.teleportPlayer(player, "spawn", true);
+            .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
+                RespawnData spawnData = Utils.getServerByPlayer(player).getLevel(Level.OVERWORLD).getRespawnData();
+                Teleport fallback = new Teleport(
+                    "spawn",
+                    spawnData.pos().getX(),
+                    spawnData.pos().getY(),
+                    spawnData.pos().getZ(),
+                    spawnData.yaw(),
+                    spawnData.pitch(),
+                    spawnData.dimension().identifier().toString());
+
+                return Teleports.teleportPlayer(player, "spawn", fallback, true);
             })));
     }
 }
