@@ -85,7 +85,7 @@ To change these settings edit the config file and restart your server/client.
 ## Portals
 
 Portals are physical areas a user can walk into to be teleported to the associated target position in any dimension or to be redirected to another Minecraft server.\
-When a Portal is created (Saved) the portal area is filled with Purple Stained Glass Panes, but they can be broken and replaced with any block that a user can walk into, e.g. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc.\
+When a Portal is created (Saved) the portal area is filled in with Purple Stained Glass Panes (Only if the Portal area is smaller than 1000 block³), but they can be broken and replaced with any block that a user can walk into, e.g. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc.\
 Portals can have any size, but the bigger they are the more particles a client has to render, so there is a performance tradeoff with extremely large Portals.\
 Using `/setportal`:
 
