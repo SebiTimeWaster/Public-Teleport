@@ -139,11 +139,9 @@ public final class Messages {
          * @param command    the command executed when the button is clicked
          * @return this builder, for chaining
          */
-        public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
-            @NotNull String command) {
-            message.append(buttonText.withStyle((style) -> style
-                .withClickEvent(new ClickEvent.RunCommand(command))
-                .withHoverEvent(new HoverEvent.ShowText(hoverText))));
+        public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText, @NotNull String command) {
+            message.append(
+                buttonText.withStyle((style) -> style.withClickEvent(new ClickEvent.RunCommand(command)).withHoverEvent(new HoverEvent.ShowText(hoverText))));
 
             return this;
         }

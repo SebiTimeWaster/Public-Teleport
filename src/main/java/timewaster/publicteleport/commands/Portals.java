@@ -69,17 +69,14 @@ public final class Portals {
                 if (portals.isEmpty()) {
                     Messages.sendMessage(player, "portal_none", WARNING);
                 } else {
-                    Messages.MessageBuilder builder = new Messages.MessageBuilder().append("headline_portals",
-                        HEADLINE);
+                    Messages.MessageBuilder builder = new Messages.MessageBuilder().append("headline_portals", HEADLINE);
 
                     portals.sort(Comparator.comparing((portal) -> portal.target().name()));
 
                     for (Portal portal : portals) {
                         builder.appendRaw("\n  ")
-                            .appendRawColored(Objects.requireNonNull(portal.target().name()),
-                                COMMAND)
-                            .appendRawColored("  " + portal.dimension().substring(10) + "  "
-                                + portal.aX() + " " + portal.aY() + " " + portal.aZ(), null);
+                            .appendRawColored(Objects.requireNonNull(portal.target().name()), COMMAND)
+                            .appendRawColored("  " + portal.dimension().substring(10) + "  " + portal.aX() + " " + portal.aY() + " " + portal.aZ(), null);
                     }
 
                     builder.send(player);

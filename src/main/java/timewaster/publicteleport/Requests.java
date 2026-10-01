@@ -43,11 +43,9 @@ public final class Requests {
     }
 
     private static Request getRequest(@Nullable UUID sender, @Nullable UUID receiver) {
-        return pendingRequests.stream()
-            .filter((request) -> {
-                return (sender == null || request.sender().equals(sender))
-                    && (receiver == null || request.receiver().equals(receiver));
-            }).findFirst().orElse(null);
+        return pendingRequests.stream().filter((request) -> {
+            return (sender == null || request.sender().equals(sender)) && (receiver == null || request.receiver().equals(receiver));
+        }).findFirst().orElse(null);
     }
 
     private static Request getRequest(UUID sender) {
@@ -110,12 +108,10 @@ public final class Requests {
                 ServerPlayer receiver = playerList.getPlayer(request.receiver());
 
                 if (sender != null) {
-                    Messages.sendMessage(sender, "request_timedout_sender", WARNING,
-                        request.receiverName());
+                    Messages.sendMessage(sender, "request_timedout_sender", WARNING, request.receiverName());
                 }
                 if (receiver != null) {
-                    Messages.sendMessage(receiver, "request_timedout_receiver", WARNING,
-                        request.senderName());
+                    Messages.sendMessage(receiver, "request_timedout_receiver", WARNING, request.senderName());
                 }
             }
         }
@@ -140,8 +136,7 @@ public final class Requests {
 
         Request oldRequest = getRequest(sender.getUUID());
         if (oldRequest != null) {
-            Messages.sendMessage(sender, "request_old_exist", ERROR, oldRequest.receiverName(),
-                "/tpcancel");
+            Messages.sendMessage(sender, "request_old_exist", ERROR, oldRequest.receiverName(), "/tpcancel");
             return false;
         }
 
@@ -169,8 +164,7 @@ public final class Requests {
      *         {@code false} if {@code sender} had no pending request
      */
     public static boolean cancelRequest(ServerPlayer sender) {
-        List<Request> requests = pendingRequests.stream().filter((request) -> request.sender().equals(sender.getUUID()))
-            .toList();
+        List<Request> requests = pendingRequests.stream().filter((request) -> request.sender().equals(sender.getUUID())).toList();
 
         if (requests.isEmpty()) {
             Messages.sendMessage(sender, "request_no_exist", ERROR);
@@ -181,8 +175,7 @@ public final class Requests {
             ServerPlayer receiver = getPlayerByOtherPlayer(request.receiver(), sender);
 
             if (receiver != null) {
-                Messages.sendMessage(receiver, "request_cancelled_receiver", WARNING,
-                    sender.getName().getString());
+                Messages.sendMessage(receiver, "request_cancelled_receiver", WARNING, sender.getName().getString());
             }
             Messages.sendMessage(sender, "request_cancelled_sender", SUCCESS);
 
@@ -210,8 +203,7 @@ public final class Requests {
         ServerPlayer resolvedSender = resolved.sender();
 
         if (resolvedSender == null) {
-            Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR,
-                request.senderName());
+            Messages.sendMessage(receiver, "request_sender_no_ingame", ERROR, request.senderName());
             pendingRequests.remove(request);
             return false;
         }

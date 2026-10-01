@@ -38,8 +38,7 @@ public final class Homes {
         if (isSaved) {
             Messages.sendMessage(player, "home_set" + ("home".equals(name) ? "" : "_named"), SUCCESS, name);
         } else {
-            Messages.sendMessage(player, "home_set_max_reached", WARNING,
-                PublicTeleport.storage.getConfig().maxHomes());
+            Messages.sendMessage(player, "home_set_max_reached", WARNING, PublicTeleport.storage.getConfig().maxHomes());
         }
 
         return true;

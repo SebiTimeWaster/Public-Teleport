@@ -32,8 +32,7 @@ public final class Warps {
             .then(Registrar.buildArgumentString("name", NONE, (ServerPlayer player, String argValue) -> {
                 if ("spawn".equals(argValue)) {
                     if (PublicTeleport.storage.getConfig().enableSpawn()) {
-                        Messages.sendMessage(player, "warp_reserved_spawn_set", WARNING,
-                            "/setspawn");
+                        Messages.sendMessage(player, "warp_reserved_spawn_set", WARNING, "/setspawn");
                     } else {
                         Messages.sendMessage(player, "warp_reserved_name", WARNING);
                     }

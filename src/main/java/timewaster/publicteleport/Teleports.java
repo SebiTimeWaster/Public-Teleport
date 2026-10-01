@@ -82,8 +82,7 @@ public final class Teleports {
             }
 
             if ("public_teleport_rtp".equals(target.name())) {
-                Messages.sendMessage(player, "teleported_to", SUCCESS,
-                    target.x() + ", " + target.y() + ", " + target.z());
+                Messages.sendMessage(player, "teleported_to", SUCCESS, target.x() + ", " + target.y() + ", " + target.z());
             } else {
                 Messages.sendMessage(player, "teleported_to", SUCCESS, target.name());
             }
@@ -100,8 +99,8 @@ public final class Teleports {
     }
 
     @Nullable
-    private static Teleport teleportPreflightCheck(ServerPlayer player, @Nullable ServerPlayer targetPlayer,
-        Teleport target, ServerLevel level, boolean ignorePlayers) {
+    private static Teleport teleportPreflightCheck(ServerPlayer player, @Nullable ServerPlayer targetPlayer, Teleport target, ServerLevel level,
+        boolean ignorePlayers) {
         if (level == null) {
             Messages.sendMessage(player, "level_no_exist", ERROR);
             return null;
@@ -118,10 +117,8 @@ public final class Teleports {
             if (targetPlayer == null) {
                 Messages.sendMessage(player, "teleport_unsafe", ERROR, target.name());
             } else {
-                Messages.sendMessage(player, "teleport_unsafe_tpa", ERROR,
-                    targetPlayer.getName().getString());
-                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", ERROR,
-                    player.getName().getString());
+                Messages.sendMessage(player, "teleport_unsafe_tpa", ERROR, targetPlayer.getName().getString());
+                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", ERROR, player.getName().getString());
             }
             return null;
         }
@@ -181,16 +178,14 @@ public final class Teleports {
      * @param isWarp     {@code true} if the teleport is a Warp, not a Home
      * @return {@code true} if the destination was found and the teleport succeeded
      */
-    public static boolean teleportPlayer(ServerPlayer player, String targetName, @Nullable Teleport fallback,
-        boolean isWarp) {
+    public static boolean teleportPlayer(ServerPlayer player, String targetName, @Nullable Teleport fallback, boolean isWarp) {
         Teleport teleportTarget = PublicTeleport.storage.getTeleport(player, targetName, isWarp);
         if (teleportTarget == null) {
             return false;
         }
         if ("public_teleport_not_found".equals(teleportTarget.name())) {
             if (fallback == null) {
-                Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", ERROR,
-                    targetName);
+                Messages.sendMessage(player, isWarp ? "warp_no_exist" : "home_no_exist", ERROR, targetName);
                 return false;
             } else {
                 teleportTarget = fallback;
@@ -227,8 +222,7 @@ public final class Teleports {
         if (teleportNames.isEmpty()) {
             Messages.sendMessage(player, isWarps ? "warp_none" : "home_none", WARNING);
         } else {
-            Messages.MessageBuilder builder = new Messages.MessageBuilder().append(
-                isWarps ? "headline_warps" : "headline_homes", HEADLINE);
+            Messages.MessageBuilder builder = new Messages.MessageBuilder().append(isWarps ? "headline_warps" : "headline_homes", HEADLINE);
 
             for (String name : teleportNames) {
                 MutableComponent buttonText = Messages.getMessage("button_named", BUTTON, name);

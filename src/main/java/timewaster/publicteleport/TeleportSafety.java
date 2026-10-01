@@ -69,8 +69,7 @@ public final class TeleportSafety {
 
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 // player width/height
-                if (onlinePlayer != player
-                    && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
+                if (onlinePlayer != player && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
                     isBlockedByPlayer = true;
                 }
             }
@@ -86,9 +85,7 @@ public final class TeleportSafety {
             && isBlockEmpty(level, blockPos.above());
     }
 
-    private static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension,
-        double clearanceXZ, double clearanceY) {
-
+    private static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension, double clearanceXZ, double clearanceY) {
         return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
             || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
             || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
@@ -119,10 +116,8 @@ public final class TeleportSafety {
      * @param clearanceY  the minimum clearance in the Y direction needed
      * @return
      */
-    public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ,
-        double clearanceY) {
-        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(),
-            clearanceXZ, clearanceY);
+    public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ, double clearanceY) {
+        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(), clearanceXZ, clearanceY);
     }
 
     /**
@@ -170,7 +165,7 @@ public final class TeleportSafety {
         double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * dimensionRadius;
         int x = center.getX() + (int) Math.round(Math.cos(angle) * distance);
         int z = center.getZ() + (int) Math.round(Math.sin(angle) * distance);
-        // 128 blocks = 8 chunks minimum distance
+        // 128 blocks = 8 chunks minimum distance to player
         if (!doesPlayerClearTarget(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), Math.min(128, dimensionRadius / 2),
             level.getMaxY())) {
             if (attempt >= 3) {
@@ -181,27 +176,26 @@ public final class TeleportSafety {
         }
         ChunkPos chunkPos = new ChunkPos(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
 
-        return level.getChunkSource().addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, chunkPos, 0)
-            .thenComposeAsync(ignored -> {
-                LevelChunk levelChunk = level.getChunk(chunkPos.x(), chunkPos.z());
-                int y;
-                if (level.dimensionType().hasCeiling()) {
-                    y = findTeleportableYBelowCeiling(level, x, z);
-                } else {
-                    y = levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
-                }
-                BlockPos blockPos = new BlockPos(x, y, z);
+        return level.getChunkSource().addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, chunkPos, 0).thenComposeAsync(ignored -> {
+            LevelChunk levelChunk = level.getChunk(chunkPos.x(), chunkPos.z());
+            int y;
+            if (level.dimensionType().hasCeiling()) {
+                y = findTeleportableYBelowCeiling(level, x, z);
+            } else {
+                y = levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
+            }
+            BlockPos blockPos = new BlockPos(x, y, z);
 
-                if (y > Integer.MIN_VALUE && isBlockTeleportableAndWithoutPlayers(player, level, blockPos)) {
-                    return CompletableFuture.completedFuture(blockPos);
-                }
+            if (y > Integer.MIN_VALUE && isBlockTeleportableAndWithoutPlayers(player, level, blockPos)) {
+                return CompletableFuture.completedFuture(blockPos);
+            }
 
-                if (attempt >= 3) {
-                    return CompletableFuture.completedFuture(null);
-                }
+            if (attempt >= 3) {
+                return CompletableFuture.completedFuture(null);
+            }
 
-                return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
-            }, level.getServer());
+            return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
+        }, level.getServer());
     }
 
     /**
@@ -222,8 +216,8 @@ public final class TeleportSafety {
 
         if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
             int[] orderY = { 0, 1, -1, 2, -2 };
-            List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52,
-                64, 65, 66, 67, 68); // this defines the order blocks are searched in
+            // this defines the order blocks are searched in on x and z axis
+            List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52, 64, 65, 66, 67, 68);
             Collections.shuffle(orderXZ);
 
             for (int y : orderY) {
@@ -232,8 +226,7 @@ public final class TeleportSafety {
                     int z = (i & 0x0000000F) - 2;
                     BlockPos testPos = new BlockPos(target.x() + x, target.y() + y, target.z() + z);
 
-                    if ((ignorePlayers && isBlockTeleportable(level, testPos))
-                        || isBlockTeleportableAndWithoutPlayers(player, level, testPos)) {
+                    if ((ignorePlayers && isBlockTeleportable(level, testPos)) || isBlockTeleportableAndWithoutPlayers(player, level, testPos)) {
                         return new Teleport(
                             target.name(),
                             target.x() + x,

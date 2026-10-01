@@ -40,3 +40,8 @@ tasks.register("cleanGameTestRunDir", Delete) {
 tasks.named("runGameTest") {
 	dependsOn "cleanGameTestRunDir"
 }
+
+// same as in the root build.gradle: hide the game test progress bar
+loom {
+	log4jConfigs.from(rootProject.file("gametest-log4j.xml"))
+}

@@ -48,14 +48,12 @@ public final class Registrar {
     private Registrar() {
     }
 
-    private static CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context,
-        SuggestionsBuilder builder, SuggestionType type) {
+    private static CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder, SuggestionType type) {
         ServerPlayer player = Utils.getPlayerByContext(context);
 
         if (type != SuggestionType.NONE) {
             if (type == SuggestionType.HOMES || type == SuggestionType.WARPS) {
-                List<String> teleportNames = PublicTeleport.storage.getTeleportNames(player,
-                    type == SuggestionType.WARPS);
+                List<String> teleportNames = PublicTeleport.storage.getTeleportNames(player, type == SuggestionType.WARPS);
 
                 if (teleportNames != null) {
                     for (String name : teleportNames) {
@@ -100,8 +98,7 @@ public final class Registrar {
                 .executes((context) -> contextWrapper(context, (ServerPlayer player) -> {
 
                     for (int i = 0; i < 5; i++) {
-                        Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(
-                            player.createCommandSourceStack(),
+                        Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(player.createCommandSourceStack(),
                             "/puppet " + ((Double) Math.random()).toString().substring(2, 12) + " spawn");
                     }
 
@@ -109,21 +106,19 @@ public final class Registrar {
                 })));
 
             dispatcher.register(Commands.literal("movepuppets")
-                .then(buildArgumentString("position", SuggestionType.NONE,
-                    (ServerPlayer player, String argValue) -> {
-                        String[] parts = argValue.split("p");
+                .then(buildArgumentString("position", SuggestionType.NONE, (ServerPlayer player, String argValue) -> {
+                    String[] parts = argValue.split("p");
 
-                        for (ServerPlayer onePlayer : Utils.getPlayersByLevel(player.level())) {
-                            if (onePlayer.getClass().toString().contains("PuppetPlayer")) {
-                                Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(
-                                    player.createCommandSourceStack(), "/puppet " + onePlayer.getName().getString()
-                                        + " actions run minecraft:move_to position " + parts[0] + " " + parts[1] + " "
-                                        + parts[2] + " false true");
-                            }
+                    for (ServerPlayer onePlayer : Utils.getPlayersByLevel(player.level())) {
+                        if (onePlayer.getClass().toString().contains("PuppetPlayer")) {
+                            Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(player.createCommandSourceStack(),
+                                "/puppet " + onePlayer.getName().getString() + " actions run minecraft:move_to position " + parts[0] + " " + parts[1] + " "
+                                    + parts[2] + " false true");
                         }
+                    }
 
-                        return true;
-                    })));
+                    return true;
+                })));
         }
     }
 
@@ -207,8 +202,8 @@ public final class Registrar {
      * @return the built argument node, ready to be attached under a literal
      *         command node
      */
-    public static RequiredArgumentBuilder<CommandSourceStack, String> buildArgumentString(@NotNull String argName,
-        SuggestionType suggestionType, BiFunction<ServerPlayer, String, Boolean> callback) {
+    public static RequiredArgumentBuilder<CommandSourceStack, String> buildArgumentString(@NotNull String argName, SuggestionType suggestionType,
+        BiFunction<ServerPlayer, String, Boolean> callback) {
         return Commands.argument(argName, Objects.requireNonNull(StringArgumentType.word()))
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))
             .executes((context) -> {
@@ -232,8 +227,7 @@ public final class Registrar {
      * @return the built argument node, ready to be attached under a literal
      *         command node
      */
-    public static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> buildArgumentPlayer(
-        @NotNull String argName, SuggestionType suggestionType,
+    public static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> buildArgumentPlayer(@NotNull String argName, SuggestionType suggestionType,
         BiFunction<ServerPlayer, ServerPlayer, Boolean> callback) {
         return Commands.argument(argName, EntityArgument.player())
             .suggests((context, builder) -> getSuggestions(context, builder, suggestionType))

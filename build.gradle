@@ -44,6 +44,11 @@ tasks.named("runGameTest") {
 	dependsOn "cleanGameTestRunDir"
 }
 
+// hides the game test progress bar the server logs every second, see gametest-log4j.xml
+loom {
+	log4jConfigs.from(file("gametest-log4j.xml"))
+}
+
 // "./gradlew compatGameTest" runs the game tests on every Minecraft version in compat/, see settings.gradle
 tasks.register("compatGameTest") {
 	group = "verification"

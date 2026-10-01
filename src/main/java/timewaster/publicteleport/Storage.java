@@ -122,8 +122,7 @@ public class Storage {
             return mergedConfig;
         } catch (IOException | JsonParseException e) {
             if (PublicTeleport.LOGGER.isErrorEnabled()) {
-                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load config from: {}"),
-                    fileConfig.toPath().toString());
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load config from: {}"), fileConfig.toPath().toString());
             }
 
             throw new RuntimeException(e);
@@ -161,8 +160,7 @@ public class Storage {
             return GSON.fromJson(reader, mapType);
         } catch (IOException | JsonParseException e) {
             if (PublicTeleport.LOGGER.isErrorEnabled()) {
-                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load language from: {}"),
-                    languagePath.toString());
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load language from: {}"), languagePath.toString());
             }
 
             throw new RuntimeException(e);
@@ -183,8 +181,7 @@ public class Storage {
             return GSON.fromJson(reader, listType);
         } catch (IOException | JsonParseException e) {
             if (PublicTeleport.LOGGER.isErrorEnabled()) {
-                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"),
-                    file.toPath().toString());
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"), file.toPath().toString());
             }
 
             if (failOnError) {
@@ -199,8 +196,7 @@ public class Storage {
         try {
             Path tempPath = Files.createTempFile(file.getParentFile().toPath(), "tmp-", ".json");
 
-            try (BufferedWriter writer = Files.newBufferedWriter(tempPath, StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE)) {
+            try (BufferedWriter writer = Files.newBufferedWriter(tempPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
                 GSON.toJson(data, writer);
                 writer.flush();
             }
@@ -208,8 +204,7 @@ public class Storage {
             Files.move(tempPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException | JsonIOException e) {
             if (PublicTeleport.LOGGER.isErrorEnabled()) {
-                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to save data to: {}"),
-                    file.toPath().toString());
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to save data to: {}"), file.toPath().toString());
             }
 
             if (failOnError) {
@@ -307,8 +302,7 @@ public class Storage {
         }
 
         for (Teleport teleport : teleports) {
-            if ((!isWarp && !"back".equals(teleport.name())) ||
-                (isWarp && !"spawn".equals(teleport.name()))) {
+            if ((!isWarp && !"back".equals(teleport.name())) || (isWarp && !"spawn".equals(teleport.name()))) {
                 names.add(teleport.name());
             }
         }
@@ -353,8 +347,7 @@ public class Storage {
         }
 
         if (!exists) {
-            if (!isWarp && config.maxHomes() > 0 && config.maxHomes() <= numTeleports
-                && !"back".equals(newTeleport.name())) {
+            if (!isWarp && config.maxHomes() > 0 && config.maxHomes() <= numTeleports && !"back".equals(newTeleport.name())) {
                 return false;
             }
 

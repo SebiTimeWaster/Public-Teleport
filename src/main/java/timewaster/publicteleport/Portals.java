@@ -34,8 +34,8 @@ import timewaster.publicteleport.records.Teleport;
 
 public final class Portals {
     private static final Integer MIN = Integer.MIN_VALUE;
-    private static final Pattern HOST_PATTERN = Pattern.compile(
-        "^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
+    private static final Pattern HOST_PATTERN = Pattern
+        .compile("^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
     private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
     private static Map<ServerPlayer, Vec3> playersPosition = new HashMap<ServerPlayer, Vec3>();
     private static Map<ServerPlayer, Boolean> playersInPortal = new HashMap<ServerPlayer, Boolean>();
@@ -90,8 +90,7 @@ public final class Portals {
     }
 
     @Nullable
-    private static Teleport createPortalTarget(CommandContext<CommandSourceStack> context, ServerPlayer player,
-        String action, String name) {
+    private static Teleport createPortalTarget(CommandContext<CommandSourceStack> context, ServerPlayer player, String action, String name) {
         Teleport target = Teleport.create(player, name);
 
         if ("targetPosition".equals(action) && !TeleportSafety.isBlockTeleportable(player, target)) {
@@ -115,8 +114,7 @@ public final class Portals {
     }
 
     @Nullable
-    private static Portal mutateTempPortalData(CommandContext<CommandSourceStack> context, ServerPlayer player,
-        String action) {
+    private static Portal mutateTempPortalData(CommandContext<CommandSourceStack> context, ServerPlayer player, String action) {
         String name = StringArgumentType.getString(context, "name");
         BlockPos blockPosition = getBlockPositionPlayerLooksAt(player, action);
         Teleport teleportTarget = createPortalTarget(context, player, action, name);
@@ -124,8 +122,7 @@ public final class Portals {
             return null;
         }
         String dimensionIdentifier = Utils.getDimensionNameByLevel(player.level());
-        Portal existingPortalData = tempPortalData.getOrDefault(name,
-            new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
+        Portal existingPortalData = tempPortalData.getOrDefault(name, new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
 
         Portal newPortalData = new Portal(
             ("from".equals(action) || "to".equals(action)) ? dimensionIdentifier : existingPortalData.dimension(),
@@ -157,15 +154,13 @@ public final class Portals {
     private static boolean setPortal(ServerPlayer player, Portal portal) {
         if (PublicTeleport.storage.setPortal(player, portal)) {
             Level level = Utils.getLevelbyDimension(player, portal.dimension());
-            Block purplePane = BuiltInRegistries.BLOCK
-                .getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
+            Block purplePane = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
 
             for (int x = portal.aX(); x <= portal.bX(); x++) {
                 for (int y = portal.aY(); y <= portal.bY(); y++) {
                     for (int z = portal.aZ(); z <= portal.bZ(); z++) {
                         BlockPos blockPos = new BlockPos(x, y, z);
-                        BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(),
-                            Objects.requireNonNull(level), blockPos);
+                        BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(), Objects.requireNonNull(level), blockPos);
 
                         level.setBlock(blockPos, state, Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
                     }
@@ -198,8 +193,7 @@ public final class Portals {
         if (target.dimension().startsWith("url:")) {
             String url = target.dimension().substring(4);
             int splitPosition = url.lastIndexOf(":");
-            ClientboundTransferPacket packet = new ClientboundTransferPacket(
-                Objects.requireNonNull(url.substring(0, splitPosition)),
+            ClientboundTransferPacket packet = new ClientboundTransferPacket(Objects.requireNonNull(url.substring(0, splitPosition)),
                 Integer.parseInt(url.substring(splitPosition + 1)));
 
             if (oldPosition != null) {
