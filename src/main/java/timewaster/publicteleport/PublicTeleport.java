@@ -9,9 +9,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import timewaster.publicteleport.records.Config;
 
 // TODO:
-// - limit portal size if not OP, no glass pane generation on gigantic portals
 // - teleport riding animals also?
-// - portals command better coordinates
 
 /**
  * Entry point of the Public Teleport mod.

@@ -74,9 +74,19 @@ public final class Portals {
                     portals.sort(Comparator.comparing((portal) -> portal.target().name()));
 
                     for (Portal portal : portals) {
+                        String dimensionName = portal.dimension();
+
+                        if (dimensionName.contains(":")) {
+                            dimensionName = dimensionName.substring(dimensionName.indexOf(":") + 1);
+                        }
+
                         builder.appendRaw("\n  ")
                             .appendRawColored(Objects.requireNonNull(portal.target().name()), COMMAND)
-                            .appendRawColored("  " + portal.dimension().substring(10) + "  " + portal.aX() + " " + portal.aY() + " " + portal.aZ(), null);
+                            .appendRawColored("  " + (int) (portal.aX() + (portal.bX() - portal.aX()) / 2) +
+                                ", " + (int) (portal.aY() + (portal.bY() - portal.aY()) / 2) +
+                                ", " + (int) (portal.aZ() + (portal.bZ() - portal.aZ()) / 2) +
+                                " (" + dimensionName + ")",
+                                null);
                     }
 
                     builder.send(player);

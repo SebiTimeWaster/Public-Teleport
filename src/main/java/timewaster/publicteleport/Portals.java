@@ -2,6 +2,7 @@ package timewaster.publicteleport;
 
 import static timewaster.publicteleport.Messages.MessageType.ERROR;
 import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import com.mojang.brigadier.context.CommandContext;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.common.ClientboundTransferPacket;
@@ -151,20 +153,36 @@ public final class Portals {
             portal.target());
     }
 
+    private static Vec3i getPortalSize(Portal portal) {
+        int portalW = portal.bX() - portal.aX() + 1;
+        int portalH = portal.bY() - portal.aY() + 1;
+        int portalD = portal.bZ() - portal.aZ() + 1;
+
+        return new Vec3i(portalW, portalH, portalD);
+    }
+
     private static boolean setPortal(ServerPlayer player, Portal portal) {
         if (PublicTeleport.storage.setPortal(player, portal)) {
-            Level level = Utils.getLevelbyDimension(player, portal.dimension());
-            Block purplePane = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
+            Vec3i size = getPortalSize(portal);
 
-            for (int x = portal.aX(); x <= portal.bX(); x++) {
-                for (int y = portal.aY(); y <= portal.bY(); y++) {
-                    for (int z = portal.aZ(); z <= portal.bZ(); z++) {
-                        BlockPos blockPos = new BlockPos(x, y, z);
-                        BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(), Objects.requireNonNull(level), blockPos);
+            // only fill portal if smaller than 1000 block³
+            if (size.getX() * size.getY() * size.getZ() < 1000) {
+                Level level = Utils.getLevelbyDimension(player, portal.dimension());
+                Block purplePane = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
 
-                        level.setBlock(blockPos, state, Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
+                for (int x = portal.aX(); x <= portal.bX(); x++) {
+                    for (int y = portal.aY(); y <= portal.bY(); y++) {
+                        for (int z = portal.aZ(); z <= portal.bZ(); z++) {
+                            BlockPos blockPos = new BlockPos(x, y, z);
+                            BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(), Objects.requireNonNull(level), blockPos);
+
+                            level.setBlock(blockPos, state, Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
+                        }
                     }
                 }
+            } else {
+                Messages.sendMessage(player, "portal_set_no_glass", WARNING);
+
             }
 
             tempPortalData.remove(portal.target().name());
@@ -254,22 +272,20 @@ public final class Portals {
         for (Portal portal : portals) {
             for (ServerLevel level : server.getAllLevels()) {
                 if (portal.dimension().equals(Utils.getDimensionNameByLevel(level))) {
-                    int portalW = portal.bX() - portal.aX() + 1;
-                    int portalH = portal.bY() - portal.aY() + 1;
-                    int portalD = portal.bZ() - portal.aZ() + 1;
-                    int volume = portalW * portalH * portalD;
+                    Vec3i size = getPortalSize(portal);
+                    int volume = size.getX() * size.getY() * size.getZ();
 
                     level.sendParticles(
                         ParticleTypes.PORTAL,
                         true,
                         true,
-                        portalW / 2.0 + portal.aX(),
-                        portalH / 2.0 + portal.aY() - 0.5,
-                        portalD / 2.0 + portal.aZ(),
+                        size.getX() / 2.0 + portal.aX(),
+                        size.getY() / 2.0 + portal.aY() - 0.5,
+                        size.getZ() / 2.0 + portal.aZ(),
                         volume * 2,
-                        portalW / 5.5, // 5.5 was visually determined to fit
-                        portalH / 5.5,
-                        portalD / 5.5,
+                        size.getX() / 5.5, // 5.5 was visually determined to fit
+                        size.getY() / 5.5,
+                        size.getZ() / 5.5,
                         0.25); // 0.25 was visually determined to fit
 
                 }
