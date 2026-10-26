@@ -7,6 +7,7 @@ import com.mojang.brigadier.CommandDispatcher;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Registrar;
@@ -34,11 +35,16 @@ public final class Rtp {
                     Messages.sendMessage(player, "rtp_start", WARNING);
                 }
                 rtpInProgress = true; // NOPMD - UnusedAssignment false positive, reset asynchronously below
+                ServerLevel level = player.level();
 
                 TeleportSafety.findRandomTeleportablePosition(player).whenCompleteAsync((blockPos, throwable) -> {
                     rtpInProgress = false;
 
-                    if (throwable != null || blockPos == null) {
+                    // the player may have logged out, died or changed dimension during the search
+                    if (player.isRemoved()) {
+                        return;
+                    }
+                    if (throwable != null || blockPos == null || player.level() != level) {
                         Messages.sendMessage(player, "rtp_failed", ERROR);
                         return;
                     }
@@ -50,7 +56,7 @@ public final class Rtp {
                         blockPos.getZ(),
                         null,
                         null,
-                        Utils.getDimensionNameByLevel(player.level())));
+                        Utils.getDimensionNameByLevel(level)));
                 }, Utils.getServerByPlayer(player));
 
                 return true;

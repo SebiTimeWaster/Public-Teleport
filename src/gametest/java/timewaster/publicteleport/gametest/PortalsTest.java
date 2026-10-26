@@ -68,9 +68,9 @@ public class PortalsTest {
         TestPlayer player = setup(helper);
         String name = uniqueName("p");
 
-        // a 3 wide, 2 high wall; "from" is the top right corner, "to" the bottom left
-        // one
-        for (int x = 3; x <= 5; x++) {
+        // a 3 wide, 2 high wall with an empty middle column; "from" is the top right
+        // corner, "to" the bottom left one
+        for (int x = 3; x <= 5; x += 2) {
             helper.setBlock(x, 1, 5, Blocks.STONE);
             helper.setBlock(x, 2, 5, Blocks.STONE);
         }
@@ -97,10 +97,13 @@ public class PortalsTest {
         assertEqual(helper, TestUtils.relative(helper, new BlockPos(portal.bX(), portal.bY(), portal.bZ())),
             new BlockPos(5, 2, 5), "upper corner");
         TestUtils.assertTeleportAt(helper, portal.target(), STAND);
-        for (int x = 3; x <= 5; x++) {
-            helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), x, 1, 5);
-            helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), x, 2, 5);
-        }
+        // the corners and air are replaced, other blocks are left alone
+        helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), 5, 2, 5);
+        helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), 3, 1, 5);
+        helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), 4, 1, 5);
+        helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), 4, 2, 5);
+        helper.assertBlockPresent(Blocks.STONE, 3, 2, 5);
+        helper.assertBlockPresent(Blocks.STONE, 5, 1, 5);
 
         deletePortal(player, name);
         helper.succeed();

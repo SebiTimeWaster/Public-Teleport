@@ -198,8 +198,9 @@ public class Storage {
 
         try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             Type listType = TypeToken.getParameterized(List.class, elementType).getType();
+            List<T> data = GSON.fromJson(reader, listType);
 
-            return GSON.fromJson(reader, listType);
+            return data != null ? data : defaultValue;
         } catch (IOException | JsonParseException e) {
             if (PublicTeleport.LOGGER.isErrorEnabled()) {
                 PublicTeleport.LOGGER.error(PublicTeleport.prefix("Failed to load data from: {}"), file.toPath().toString());

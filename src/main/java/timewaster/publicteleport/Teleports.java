@@ -6,7 +6,9 @@ import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
 import static timewaster.publicteleport.Messages.MessageType.SUCCESS;
 import static timewaster.publicteleport.Messages.MessageType.WARNING;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -30,6 +32,8 @@ import timewaster.publicteleport.records.Teleport;
  * Performs the mod's actual teleportation logic, and holds adjacent helpers.
  */
 public final class Teleports {
+    private static final String RESERVED_PREFIX = "public_teleport_";
+
     private Teleports() {
     }
 
@@ -69,9 +73,15 @@ public final class Teleports {
         float targetPitch = target.pitch() != null ? (float) target.pitch() : player.getXRot();
         Set<Relative> emptySet = Objects.requireNonNull(Set.of());
         Entity entity = player.getRootVehicle();
+        Map<ServerPlayer, Teleport> otherRidersBack = new HashMap<>();
         boolean result;
 
         Teleport back = Teleport.create(player, "back");
+        entity.getSelfAndPassengers().forEach(rider -> {
+            if (rider instanceof ServerPlayer otherRider && otherRider != player) {
+                otherRidersBack.put(otherRider, Teleport.create(otherRider, "back"));
+            }
+        });
 
         teleportEffect(player);
 
@@ -102,6 +112,10 @@ public final class Teleports {
             if (!"back".equals(target.name())) {
                 PublicTeleport.storage.setTeleport(player, back, false);
             }
+            otherRidersBack.forEach((otherRider, otherRiderBack) -> {
+                PublicTeleport.storage.setTeleport(otherRider, otherRiderBack, false);
+                Messages.sendMessage(otherRider, "teleported_along", SUCCESS, player.getName().getString());
+            });
 
             if ("public_teleport_rtp".equals(target.name())) {
                 Messages.sendMessage(player, "teleported_to", SUCCESS, target.x() + ", " + target.y() + ", " + target.z());
@@ -112,6 +126,9 @@ public final class Teleports {
             if (PublicTeleport.LOGGER.isInfoEnabled()) {
                 PublicTeleport.LOGGER.info(PublicTeleport.prefix("Teleported \"{}\" to target \"{}\" on position \"{}\" in dimension \"{}\""),
                     player.getName().getString(), target.name(), target.x() + ", " + target.y() + ", " + target.z(), target.dimension());
+
+                otherRidersBack.keySet().forEach(otherRider -> PublicTeleport.LOGGER.info(PublicTeleport.prefix("Teleported \"{}\" along with \"{}\""),
+                    otherRider.getName().getString(), player.getName().getString()));
             }
         } else {
             Messages.sendMessage(player, "unknown_error", ERROR);
@@ -234,6 +251,23 @@ public final class Teleports {
     }
 
     /**
+     * Checks if a Home, Warp or Portal name uses the prefix reserved for internal
+     * teleport names, if so the player is notified.
+     *
+     * @param player the player choosing the name
+     * @param name   the name to check
+     * @return {@code true} if the name cannot be used
+     */
+    public static boolean isNameReserved(ServerPlayer player, String name) {
+        if (name.startsWith(RESERVED_PREFIX)) {
+            Messages.sendMessage(player, "name_reserved_prefix", WARNING, RESERVED_PREFIX);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Checks that {@code target} is a safe place to stand on and, if so, persists
      * it as a Warp or Home.
      *
@@ -242,12 +276,12 @@ public final class Teleports {
      * @param isWarp if it is a Warp, not a Home
      * @param type   the type of teleport
      * @return {@code true} if saved; {@code false} if a new teleport would go over
-     *         the max homes limit; {@code null} if the position was unsafe or a
-     *         file error occurred
+     *         the max homes limit; {@code null} if the name is reserved, the
+     *         position was unsafe or a file error occurred
      */
     @Nullable
     public static Boolean setSafeTeleport(ServerPlayer player, Teleport target, boolean isWarp, String type) {
-        if (!TeleportSafety.isPositionToSetTeleportable(player, target, type)) {
+        if (isNameReserved(player, target.name()) || !TeleportSafety.isPositionToSetTeleportable(player, target, type)) {
             return null;
         }
 

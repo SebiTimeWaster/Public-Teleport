@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ScaffoldingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import timewaster.publicteleport.records.Teleport;
@@ -137,19 +138,48 @@ public final class TeleportSafety {
         return (coordinate & ~15) + Math.clamp(coordinate & 15, 3, 12);
     }
 
+    // picks a random position within the radius around center and at least 16
+    // blocks inside the world border, or null if there is none (Y is always 0)
+    @Nullable
+    private static BlockPos findRandomPositionInsideBorder(ServerLevel level, BlockPos center, int radius) {
+        WorldBorder border = level.getWorldBorder();
+        double minX = Math.max(center.getX() - radius, border.getMinX() + 16);
+        double maxX = Math.min(center.getX() + radius, border.getMaxX() - 16);
+        double minZ = Math.max(center.getZ() - radius, border.getMinZ() + 16);
+        double maxZ = Math.min(center.getZ() + radius, border.getMaxZ() - 16);
+
+        if (minX >= maxX || minZ >= maxZ) {
+            return null;
+        }
+
+        // positions in the corners of the box are outside the radius, so redraw them;
+        // this is cheap since no chunks are loaded, the limit prevents an endless loop
+        for (int i = 0; i < 50; i++) {
+            double x = ThreadLocalRandom.current().nextDouble(minX, maxX);
+            double z = ThreadLocalRandom.current().nextDouble(minZ, maxZ);
+
+            if (Math.pow(x - center.getX(), 2) + Math.pow(z - center.getZ(), 2) <= (double) radius * radius) {
+                return new BlockPos(moveInsideChunk((int) Math.floor(x)), 0, moveInsideChunk((int) Math.floor(z)));
+            }
+        }
+
+        return null;
+    }
+
     private static CompletableFuture<@Nullable BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player, ServerLevel level, BlockPos center,
         int dimensionRadius, int attempt) {
-        if (attempt > 3) {
+        BlockPos randomPos = findRandomPositionInsideBorder(level, center, dimensionRadius);
+        if (attempt > 3 || randomPos == null) {
             return CompletableFuture.completedFuture(null);
         }
-        double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * dimensionRadius;
-        int x = moveInsideChunk(center.getX() + (int) Math.round(Math.cos(angle) * distance));
-        int z = moveInsideChunk(center.getZ() + (int) Math.round(Math.sin(angle) * distance));
+        int x = randomPos.getX();
+        int z = randomPos.getZ();
         ChunkPos chunkPos = new ChunkPos(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
 
-        // 128 blocks = 8 chunks minimum distance to player
-        if (!Utils.doesPlayerClearTargetBlock(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), 128, level.getMaxY())) {
+        // safety net, moveInsideChunk() moves at most 3 blocks; 128 blocks = 8 chunks
+        // minimum distance to player
+        if (!level.getWorldBorder().isWithinBounds(x, z)
+            || !Utils.doesPlayerClearTargetBlock(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), 128, level.getMaxY())) {
             return findRandomTeleportablePositionAttempt(player, level, center, dimensionRadius, attempt + 1);
         }
 
@@ -227,7 +257,8 @@ public final class TeleportSafety {
 
     /**
      * Searches for a random teleportable position within {@code rtpRadius} blocks
-     * of the dimensions center (spawn) with a maximum of 3 attempts.
+     * of the dimensions center (spawn) and inside the world border with a maximum
+     * of 3 attempts.
      *
      * @param player the player to teleport
      * @return a future resolving to a random {@link BlockPos}, or to

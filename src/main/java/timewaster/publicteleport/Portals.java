@@ -40,6 +40,7 @@ import timewaster.publicteleport.records.Teleport;
 
 public final class Portals {
     private static final Integer MIN = Integer.MIN_VALUE;
+    private static final int MAX_PARTICLES = 5000;
     private static final Pattern HOST_PATTERN = Pattern
         .compile("^(\\[[0-9A-Fa-f:]+\\]|[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)$");
     private static Map<String, Portal> tempPortalData = new HashMap<String, Portal>();
@@ -118,6 +119,10 @@ public final class Portals {
         return target;
     }
 
+    private static String getTempPortalKey(ServerPlayer player, String name) {
+        return player.getStringUUID() + ":" + name;
+    }
+
     @Nullable
     private static Portal mutateTempPortalData(CommandContext<CommandSourceStack> context, ServerPlayer player, String action) {
         String name = StringArgumentType.getString(context, "name");
@@ -127,7 +132,13 @@ public final class Portals {
             return null;
         }
         String dimensionIdentifier = Utils.getDimensionNameByLevel(player.level());
-        Portal existingPortalData = tempPortalData.getOrDefault(name, new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
+        Portal existingPortalData = tempPortalData.getOrDefault(getTempPortalKey(player, name), new Portal("", MIN, MIN, MIN, MIN, MIN, MIN, null));
+        boolean otherCornerIsSet = "from".equals(action) ? existingPortalData.bX() > MIN : "to".equals(action) && existingPortalData.aX() > MIN;
+
+        if (otherCornerIsSet && !dimensionIdentifier.equals(existingPortalData.dimension())) {
+            Messages.sendMessage(player, "portal_set_other_dimension", ERROR, name);
+            return null;
+        }
 
         Portal newPortalData = new Portal(
             ("from".equals(action) || "to".equals(action)) ? dimensionIdentifier : existingPortalData.dimension(),
@@ -139,7 +150,7 @@ public final class Portals {
             "to".equals(action) ? blockPosition.getZ() : existingPortalData.bZ(),
             action.startsWith("target") ? teleportTarget : existingPortalData.target());
 
-        tempPortalData.put(name, newPortalData);
+        tempPortalData.put(getTempPortalKey(player, name), newPortalData);
 
         return newPortalData;
     }
@@ -164,19 +175,27 @@ public final class Portals {
         return new Vec3i(portalW, portalH, portalD);
     }
 
-    private static boolean setPortal(ServerPlayer player, Portal portal) {
+    private static boolean setPortal(ServerPlayer player, Portal portalData) {
+        Portal portal = normalisePortal(portalData);
+
         if (PublicTeleport.storage.setPortal(player, portal)) {
             Vec3i size = getPortalSize(portal);
 
             // only fill portal if smaller than 1000 block³
-            if (size.getX() * size.getY() * size.getZ() < 1000) {
+            if ((long) size.getX() * size.getY() * size.getZ() < 1000) {
                 Level level = Utils.getLevelbyDimension(player, portal.dimension());
                 Block purplePane = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("minecraft", "purple_stained_glass_pane"));
+                BlockPos from = new BlockPos(portalData.aX(), portalData.aY(), portalData.aZ());
+                BlockPos to = new BlockPos(portalData.bX(), portalData.bY(), portalData.bZ());
 
                 for (int x = portal.aX(); x <= portal.bX(); x++) {
                     for (int y = portal.aY(); y <= portal.bY(); y++) {
                         for (int z = portal.aZ(); z <= portal.bZ(); z++) {
                             BlockPos blockPos = new BlockPos(x, y, z);
+                            // only replace air and the corner blocks, never existing builds
+                            if (!blockPos.equals(from) && !blockPos.equals(to) && !Objects.requireNonNull(level).getBlockState(blockPos).isAir()) {
+                                continue;
+                            }
                             BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(), Objects.requireNonNull(level), blockPos);
 
                             level.setBlock(blockPos, state, Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
@@ -185,10 +204,9 @@ public final class Portals {
                 }
             } else {
                 Messages.sendMessage(player, "portal_set_no_glass", WARNING);
-
             }
 
-            tempPortalData.remove(portal.target().name());
+            tempPortalData.remove(getTempPortalKey(player, portal.target().name()));
             Messages.sendMessage(player, "portal_set", SUCCESS, portal.target().name());
 
             return true;
@@ -260,6 +278,9 @@ public final class Portals {
      */
     public static int setPortalData(CommandContext<CommandSourceStack> context, String action) {
         ServerPlayer player = context.getSource().getPlayer();
+        if (Teleports.isNameReserved(player, StringArgumentType.getString(context, "name"))) {
+            return 0;
+        }
         Portal newPortalData = mutateTempPortalData(context, player, action);
 
         if (newPortalData == null) {
@@ -267,7 +288,7 @@ public final class Portals {
         }
 
         if (newPortalData.aX() > MIN && newPortalData.bX() > MIN && newPortalData.target() != null) {
-            return setPortal(player, normalisePortal(newPortalData)) ? 1 : 0;
+            return setPortal(player, newPortalData) ? 1 : 0;
         }
 
         sendSuccess(context, player, action);
@@ -287,7 +308,7 @@ public final class Portals {
             for (ServerLevel level : server.getAllLevels()) {
                 if (portal.dimension().equals(Utils.getDimensionNameByLevel(level))) {
                     Vec3i size = getPortalSize(portal);
-                    int volume = size.getX() * size.getY() * size.getZ();
+                    long volume = (long) size.getX() * size.getY() * size.getZ();
 
                     level.sendParticles(
                         ParticleTypes.PORTAL,
@@ -296,7 +317,7 @@ public final class Portals {
                         size.getX() / 2.0 + portal.aX(),
                         size.getY() / 2.0 + portal.aY() - 0.5,
                         size.getZ() / 2.0 + portal.aZ(),
-                        volume * 2,
+                        (int) Math.min(MAX_PARTICLES, volume * 2),
                         size.getX() / 5.5, // 5.5 was visually determined to fit
                         size.getY() / 5.5,
                         size.getZ() / 5.5,
