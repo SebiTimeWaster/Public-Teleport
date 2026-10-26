@@ -74,8 +74,10 @@ public class RtpTest {
     public void rtpFailed(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         BlockPos center = helper.getLevel().getRespawnData().pos();
-        // with a radius of 0 the only possible target is the world spawn, which is too
-        // close to the player
+        // config.json does not allow a radius below 200, so this one is set directly:
+        // with a radius of 0 the only possible target is the world spawn (or up to 2
+        // blocks next to it, away from the chunk border), which is less than 128 blocks
+        // away from the player
         Runnable rtpAtSpawn = () -> {
             player.teleportTo(helper.getLevel(), center.getX() + 0.5, center.getY(), center.getZ() + 0.5, Set.of(), 0,
                 0, true);
@@ -98,12 +100,14 @@ public class RtpTest {
 
     /**
      * The Nether has a ceiling, so RTP searches downwards from below it instead of
-     * using the height map.
+     * using the height map. Distances are the same as in the Overworld, around 0,
+     * 0 instead of the world spawn.
      */
     @GameTest(environment = "public-teleport-gametest:rtp_nether", maxTicks = 10_000_000)
     public void rtpInNether(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        int radius = PublicTeleport.storage.getConfig().rtpRadius();
 
         player.teleportTo(nether, 0.5, 64, 0.5, Set.of(), 0, 0, true);
         player.run("rtp");
@@ -115,6 +119,12 @@ public class RtpTest {
             BlockPos pos = player.blockPosition();
 
             assertEqual(helper, player.level().dimension(), Level.NETHER, "dimension");
+            // the player started at 0, 0
+            helper.assertTrue(Math.abs(pos.getX()) > 128 || Math.abs(pos.getZ()) > 128,
+                "Expected the player to be more than 128 blocks away from 0, 0, but was at " + pos);
+            double distance = Math.hypot(pos.getX(), pos.getZ());
+            helper.assertTrue(distance <= radius + 2,
+                "Expected the player within " + radius + " blocks of 0, 0, but was " + (int) distance);
             // 6 blocks below the top of the Nether, + 2 for moving to a safe block
             int top = nether.getMinY() + nether.dimensionType().logicalHeight() - 6 + 2;
             helper.assertTrue(pos.getY() <= top, "Expected the player below y = " + top + ", but was at " + pos);

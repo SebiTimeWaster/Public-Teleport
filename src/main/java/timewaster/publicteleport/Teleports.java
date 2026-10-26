@@ -13,12 +13,17 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -59,20 +64,37 @@ public final class Teleports {
         if (target == null || level == null) {
             return false;
         }
+        Vec3 targetPosition = new Vec3(target.x() + 0.5, target.y() + 0.01, target.z() + 0.5); // middle point of block, slightly above ground
+        float targetYaw = target.yaw() != null ? (float) target.yaw() : player.getYRot();
+        float targetPitch = target.pitch() != null ? (float) target.pitch() : player.getXRot();
+        Set<Relative> emptySet = Objects.requireNonNull(Set.of());
+        Entity entity = player.getRootVehicle();
+        boolean result;
 
         Teleport back = Teleport.create(player, "back");
 
         teleportEffect(player);
 
-        boolean result = player.teleportTo(
-            level,
-            target.x() + 0.5, // middle point of block
-            target.y() + 0.01, // slightly above ground
-            target.z() + 0.5,
-            Objects.requireNonNull(Set.of()),
-            target.yaw() != null ? (float) target.yaw() : player.getYRot(),
-            target.pitch() != null ? (float) target.pitch() : player.getXRot(),
-            true);
+        if (entity == player) {
+            result = player.teleportTo(
+                level,
+                targetPosition.x,
+                targetPosition.y,
+                targetPosition.z,
+                emptySet,
+                targetYaw,
+                targetPitch,
+                true);
+        } else {
+            result = entity.teleport(new TeleportTransition(
+                level,
+                targetPosition,
+                Vec3.ZERO,
+                targetYaw - (player.getYRot() - entity.getYRot()),
+                targetPitch - (player.getXRot() - entity.getXRot()),
+                emptySet,
+                TeleportTransition.DO_NOTHING)) != null;
+        }
 
         if (result) {
             teleportEffect(player);
@@ -100,26 +122,27 @@ public final class Teleports {
 
     @Nullable
     private static Teleport teleportPreflightCheck(ServerPlayer player, @Nullable ServerPlayer targetPlayer, Teleport target, ServerLevel level,
-        boolean ignorePlayers) {
+        boolean ignorePlayerClipping) {
         if (level == null) {
             Messages.sendMessage(player, "level_no_exist", ERROR);
             return null;
         }
 
-        // don't teleport if already closer than 2 blocks to the target
-        if (!TeleportSafety.doesPlayerClearTarget(player, target, 2.0, 3.0)) {
+        if (!Utils.doesPlayerClearTargetBlock(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(), 4.0, 5.0)) {
             Messages.sendMessage(player, "teleport_unnecessary", WARNING, target.name());
             return null;
         }
 
-        Teleport testedTarget = TeleportSafety.findTeleportablePosition(player, target, ignorePlayers);
-        if (testedTarget == null) {
+        Teleport testedTarget = TeleportSafety.findTeleportablePosition(player, target, ignorePlayerClipping);
+        boolean fitsOnFoot = "public_teleport_teleportable_on_foot".equals(testedTarget.name());
+        if ("public_teleport_none_found".equals(testedTarget.name()) || fitsOnFoot) {
             if (targetPlayer == null) {
-                Messages.sendMessage(player, "teleport_unsafe", ERROR, target.name());
+                Messages.sendMessage(player, "teleport_unsafe" + (fitsOnFoot ? "_riding" : ""), ERROR, target.name());
             } else {
-                Messages.sendMessage(player, "teleport_unsafe_tpa", ERROR, targetPlayer.getName().getString());
-                Messages.sendMessage(targetPlayer, "teleport_unsafe_target", ERROR, player.getName().getString());
+                Messages.sendMessage(player, "teleport_unsafe_tpa" + (fitsOnFoot ? "_riding" : ""), ERROR, targetPlayer.getName().getString());
+                Messages.sendMessage(targetPlayer, "teleport_unsafe_target" + (fitsOnFoot ? "_riding" : ""), ERROR, player.getName().getString());
             }
+
             return null;
         }
 
@@ -208,6 +231,27 @@ public final class Teleports {
      */
     public static boolean teleportPlayer(ServerPlayer player, String targetName, boolean isWarp) {
         return teleportPlayer(player, targetName, null, isWarp);
+    }
+
+    /**
+     * Checks that {@code target} is a safe place to stand on and, if so, persists
+     * it as a Warp or Home.
+     *
+     * @param player the player trying to save the data
+     * @param target the {@link Teleport} to save
+     * @param isWarp if it is a Warp, not a Home
+     * @param type   the type of teleport
+     * @return {@code true} if saved; {@code false} if a new teleport would go over
+     *         the max homes limit; {@code null} if the position was unsafe or a
+     *         file error occurred
+     */
+    @Nullable
+    public static Boolean setSafeTeleport(ServerPlayer player, Teleport target, boolean isWarp, String type) {
+        if (!TeleportSafety.isPositionToSetTeleportable(player, target, type)) {
+            return null;
+        }
+
+        return PublicTeleport.storage.setTeleport(player, target, isWarp);
     }
 
     /**

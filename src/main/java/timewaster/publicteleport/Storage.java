@@ -92,6 +92,18 @@ public class Storage {
         }
     }
 
+    private boolean correctConfig(JsonObject fileObj, String key, int minValue) {
+        if (fileObj.get(key).getAsInt() < minValue) {
+            if (PublicTeleport.LOGGER.isErrorEnabled()) {
+                PublicTeleport.LOGGER.error(PublicTeleport.prefix("\"{}\" cannot be set lower than {}, corrected to {}."), key, minValue, minValue);
+            }
+            fileObj.addProperty(key, minValue);
+            return true;
+        }
+
+        return false;
+    }
+
     private Config loadConfig() {
         if (!fileConfig.exists()) {
             saveFile(fileConfig, configDefault, true);
@@ -110,9 +122,18 @@ public class Storage {
                 }
             }
 
+            if (correctConfig(fileObj, "maxHomes", 0)) {
+                changed = true;
+            }
+            if (correctConfig(fileObj, "requestTimeout", 10)) {
+                changed = true;
+            }
+            if (correctConfig(fileObj, "rtpRadius", 200)) {
+                changed = true;
+            }
+
             TypeToken<Config> configType = new TypeToken<Config>() {
             };
-
             Config mergedConfig = GSON.fromJson(fileObj, configType);
 
             if (changed) {

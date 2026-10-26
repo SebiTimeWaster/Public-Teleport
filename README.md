@@ -7,6 +7,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 - Homes, Warps, Portals, Back, Spawn and TPA functionality
 - Checks if teleport destinations are safe to use to prevent suffocation
 - Provides physical Portal areas that, when walked into, teleport the player to the associated position in any dimension or to another Minecraft server altogether
+- Players riding a Horse, Camel, Boat, Minecart, etc. are teleported together with their ride and all other passengers
 - Usable in multiplayer (Server-side) or singleplayer (Client-side)
 - Server-side functionality does NOT require client-side installation, but see section "Languages" below
 - Minimal configuration with predefined values
@@ -47,7 +48,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | **TPA:**                                        |         |                                                                                                       |
 | `/tpa <player>`                                 |         | Requests teleportation to `<player>`                                                                  |
 | `/tpahere <player>`                             |         | Requests `<player>` to teleport to you                                                                |
-| `/tpahereall`                                   |    ✓    | Requests ALL players to teleport to you                                                               |
+| `/tpahereall`                                   |    ✓    | Requests ALL players to teleport to you (Use with care on busy servers)                               |
 | `/tpcancel`                                     |         | Cancels your teleportation request                                                                    |
 | `/tpaccept [<player>]`                          |         | Accepts request from `<player>` (Default: Most recent)                                                |
 | `/tpdeny [<player>]`                            |         | Denies request from `<player>` (Default: Most recent)                                                 |
@@ -57,7 +58,7 @@ Please note:
 - TPA functionality is disabled in singleplayer
 - `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point
 - `/rtp` searches in a radius that is configurable with the `rtpRadius` option (See section "Configuration" below)
-- When `/rtp` selects a never-visited region, a lot of chunks will be created, which can influence server performance (Same as when users fly into new regions)
+- When `/rtp` selects a never-visited region, multiple chunks can be created, which can influence server performance (Same as when users fly into new regions)
 - `/setportal`: See section "Portals" below
 - `/tpaccept` searches for a spawnable block around the target position to teleport the player to
 
@@ -65,20 +66,20 @@ Please note:
 
 On first run a config file is created (`config/public-teleport/config.json`) with these defaults:
 
-| Field                  | Default | Description                                                                                     |
-| ---------------------- | ------- | ----------------------------------------------------------------------------------------------- |
-| `defaultLanguage`      | `en_us` | The default language used, see section "Languages" below                                        |
-| `enableSpawn`          | true    | When true the `/setspawn, /spawn` commands are enabled                                          |
-| `enableWarps`          | true    | When true the `/setwarp, /delwarp, /warp, /warps` commands are enabled                          |
-| `enableHomes`          | true    | When true the `/sethome, /delhome, /home, /homes` commands are enabled                          |
-| `enableBack`           | true    | When true the `/back` command is enabled                                                        |
-| `enablePortals`        | true    | When true the `/setportal, /delportal, /portals` commands are enabled and the Portals are open  |
-| `enableTpa`            | true    | When true the `/tpa, /tpahere, /tpahereall, /tpcancel, /tpaccept, /tpdeny` commands are enabled |
-| `enableRtp`            | true    | When true the `/rtp` command is enabled                                                         |
-| `maxHomes`             | 10      | The maximum number of Homes a player can have (Set to `0` to disable limit)                     |
-| `requestTimeout`       | 60      | How long a teleport request stays active before it is removed (In seconds)                      |
-| `rtpRadius`            | 5000    | The maximum radius around the world spawn used by `/rtp` (Divided by 8 if used in the Nether)   |
-| `portalCommandsOnlyOp` | true    | When true only OP can use the Portal commands (Portals themselves are always usable by anyone)  |
+| Field                  | Default   | Range                         | Description                                                                                               |
+| ---------------------- | --------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `defaultLanguage`      | `"en_us"` | See section "Languages" below | The default language used                                                                                 |
+| `enableSpawn`          | `true`    | `true` or `false`             | When true the `/setspawn`, `/spawn` commands are enabled                                                  |
+| `enableWarps`          | `true`    | `true` or `false`             | When true the `/setwarp`, `/delwarp`, `/warp`, `/warps` commands are enabled                              |
+| `enableHomes`          | `true`    | `true` or `false`             | When true the `/sethome`, `/delhome`, `/home`, `/homes` commands are enabled                              |
+| `enableBack`           | `true`    | `true` or `false`             | When true the `/back` command is enabled                                                                  |
+| `enablePortals`        | `true`    | `true` or `false`             | When true the `/setportal`, `/delportal`, `/portals` commands are enabled and the Portals are open        |
+| `enableTpa`            | `true`    | `true` or `false`             | When true the `/tpa`, `/tpahere`, `/tpahereall`, `/tpcancel`, `/tpaccept`, `/tpdeny` commands are enabled |
+| `enableRtp`            | `true`    | `true` or `false`             | When true the `/rtp` command is enabled                                                                   |
+| `maxHomes`             | `10`      | Minimum: `0`                  | The maximum number of Homes a player can have (Set to `0` to disable limit)                               |
+| `requestTimeout`       | `60`      | Minimum: `10`                 | How long a teleport request stays active before it is removed (In seconds)                                |
+| `rtpRadius`            | `5000`    | Minimum: `200`                | The maximum radius around the world spawn used by `/rtp`                                                  |
+| `portalCommandsOnlyOp` | `true`    | `true` or `false`             | When true only OP can use the Portal commands (Portals themselves are always usable by anyone)            |
 
 To change these settings edit the config file and restart your server/client.
 
@@ -98,8 +99,8 @@ Using `/setportal`:
 
 | Language | Value (`defaultLanguage` config field) |
 | -------- | -------------------------------------- |
-| English  | `en_us`                                |
-| German   | `de_de`                                |
+| English  | `"en_us"`                              |
+| German   | `"de_de"`                              |
 
 If you want to provide more translations, feel free to open an Issue.
 

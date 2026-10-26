@@ -11,7 +11,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelData.RespawnData;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Registrar;
-import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.Utils;
 import timewaster.publicteleport.records.Teleport;
@@ -27,7 +26,7 @@ public final class Spawn {
         dispatcher.register(Commands.literal("setspawn").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .executes((context) -> Registrar.contextWrapper(context, (ServerPlayer player) -> {
                 Teleport target = Teleport.create(player, "spawn");
-                Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, true, "Spawn");
+                Boolean isSaved = Teleports.setSafeTeleport(player, target, true, "Spawn");
 
                 if (isSaved == null) {
                     return false;

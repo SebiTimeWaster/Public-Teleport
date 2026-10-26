@@ -26,7 +26,7 @@ public class SpawnTest {
      */
     @GameTest(environment = "public-teleport-gametest:spawn")
     public void setspawnAndSpawn(GameTestHelper helper) {
-        BlockPos high = new BlockPos(4, 4, 4);
+        BlockPos high = new BlockPos(6, 4, 6);
         BlockPos pillar = high.below();
 
         buildFloor(helper);

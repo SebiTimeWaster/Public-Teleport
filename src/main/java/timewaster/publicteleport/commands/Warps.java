@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Registrar;
-import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
@@ -40,7 +39,7 @@ public final class Warps {
                 }
 
                 Teleport target = Teleport.create(player, argValue);
-                Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, true, "Warp");
+                Boolean isSaved = Teleports.setSafeTeleport(player, target, true, "Warp");
 
                 if (isSaved == null) {
                     return false;

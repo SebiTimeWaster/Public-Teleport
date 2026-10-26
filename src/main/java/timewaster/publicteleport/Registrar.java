@@ -1,6 +1,7 @@
 package timewaster.publicteleport;
 
 import java.lang.management.ManagementFactory;
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +26,8 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 import timewaster.publicteleport.commands.Back;
 import timewaster.publicteleport.commands.Help;
 import timewaster.publicteleport.commands.Homes;
@@ -96,7 +99,6 @@ public final class Registrar {
         if (args.contains("-DPuppetMaster=1")) {
             dispatcher.register(Commands.literal("addpuppets")
                 .executes((context) -> contextWrapper(context, (ServerPlayer player) -> {
-
                     for (int i = 0; i < 5; i++) {
                         Utils.getServerByPlayer(player).getCommands().performPrefixedCommand(player.createCommandSourceStack(),
                             "/puppet " + ((Double) Math.random()).toString().substring(2, 12) + " spawn");
@@ -119,6 +121,32 @@ public final class Registrar {
 
                     return true;
                 })));
+
+            dispatcher.register(Commands.literal("getplayersize")
+                .executes((context) -> contextWrapper(context, (ServerPlayer player) -> {
+                    DecimalFormat df = new DecimalFormat("#.##");
+                    AABB boxAll = Utils.getPlayerBoundingBox(player, true);
+
+                    Messages.MessageBuilder message = new Messages.MessageBuilder().appendRaw("-----------");
+
+                    for (Entity entity : player.getRootVehicle().getSelfAndPassengers().toList()) {
+                        AABB box = entity.getBoundingBox();
+
+                        message.appendRaw("\nName: " + entity.getName().getString().toString()
+                            + " W: " + df.format(box.getXsize())
+                            + " H: " + df.format(box.getYsize())
+                            + " D: " + df.format(box.getZsize()));
+                    }
+
+                    message.appendRaw("\nALL: "
+                        + " W: " + df.format(boxAll.getXsize())
+                        + " H: " + df.format(boxAll.getYsize())
+                        + " D: " + df.format(boxAll.getZsize()));
+                    message.send(player);
+
+                    return true;
+                })));
+
         }
     }
 

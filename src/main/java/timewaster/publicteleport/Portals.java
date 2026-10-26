@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jetbrains.annotations.Nullable;
@@ -25,10 +26,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.records.Portal;
@@ -95,8 +99,7 @@ public final class Portals {
     private static Teleport createPortalTarget(CommandContext<CommandSourceStack> context, ServerPlayer player, String action, String name) {
         Teleport target = Teleport.create(player, name);
 
-        if ("targetPosition".equals(action) && !TeleportSafety.isBlockTeleportable(player, target)) {
-            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, "Portal");
+        if ("targetPosition".equals(action) && !TeleportSafety.isPositionToSetTeleportable(player, target, "Portal")) {
             return null;
         }
 
@@ -213,26 +216,37 @@ public final class Portals {
             int splitPosition = url.lastIndexOf(":");
             ClientboundTransferPacket packet = new ClientboundTransferPacket(Objects.requireNonNull(url.substring(0, splitPosition)),
                 Integer.parseInt(url.substring(splitPosition + 1)));
+            Entity ride = player.getRootVehicle();
 
             if (oldPosition != null) {
-                player.connection.teleport(oldPosition.x, oldPosition.y, oldPosition.z, player.getYRot(), player.getXRot());
+                ride.teleport(new TeleportTransition(
+                    player.level(),
+                    oldPosition,
+                    Vec3.ZERO,
+                    ride.getYRot(),
+                    ride.getXRot(),
+                    Objects.requireNonNull(Set.of()),
+                    TeleportTransition.DO_NOTHING));
             }
 
-            player.connection.send(packet);
+            ride.getSelfAndPassengers().forEach(entity -> {
+                if (entity instanceof ServerPlayer rider) {
+                    rider.connection.send(packet);
+                }
+            });
         } else {
             Teleports.teleportPlayer(player, target);
         }
     }
 
     private static boolean playerIsNotInPortal(ServerPlayer player, Portal portal) {
-        double playerWidth = 0.3; // player is 0.6 blocks wide, but player position is middle point
-        double playerHeight = 1.8; // player is 1.8 blocks high
         double blockSize = 1.0; // width of a block to check far edges
+        AABB boundingBox = Utils.getPlayerBoundingBox(player, true);
 
         return !Utils.getDimensionNameByLevel(player.level()).equals(portal.dimension())
-            || player.getX() < portal.aX() - playerWidth || player.getX() > portal.bX() + blockSize + playerWidth
-            || player.getY() < portal.aY() - playerHeight || player.getY() > portal.bY() + blockSize
-            || player.getZ() < portal.aZ() - playerWidth || player.getZ() > portal.bZ() + blockSize + playerWidth;
+            || boundingBox.maxX <= portal.aX() || boundingBox.minX >= portal.bX() + blockSize
+            || boundingBox.maxY <= portal.aY() || boundingBox.minY >= portal.bY() + blockSize
+            || boundingBox.maxZ <= portal.aZ() || boundingBox.minZ >= portal.bZ() + blockSize;
     }
 
     /**
@@ -294,8 +308,8 @@ public final class Portals {
     }
 
     /**
-     * Checks if a player has walked into a portal and teleports the player to the
-     * associated target.
+     * Checks if a player (Or the vehicle/mob the player rides) has walked into a
+     * portal and teleports the player (And the mount) to the associated target.
      *
      * @param server the server object
      */
@@ -307,7 +321,7 @@ public final class Portals {
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             Vec3 oldPosition = playersPosition.get(player);
-            if (oldPosition != null && player.position().equals(oldPosition)) {
+            if (oldPosition != null && player.getRootVehicle().position().equals(oldPosition)) {
                 continue;
             }
             Boolean oldInPortal = playersInPortal.get(player);
@@ -327,7 +341,7 @@ public final class Portals {
                 }
             }
 
-            playersPosition.put(player, player.position());
+            playersPosition.put(player, player.getRootVehicle().position());
             playersInPortal.put(player, newInPortal);
         }
     }

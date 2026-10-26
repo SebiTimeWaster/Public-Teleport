@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerPlayer;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.Registrar;
-import timewaster.publicteleport.TeleportSafety;
 import timewaster.publicteleport.Teleports;
 import timewaster.publicteleport.records.Teleport;
 
@@ -29,7 +28,7 @@ public final class Homes {
 
     private static boolean setHome(ServerPlayer player, String name) {
         Teleport target = Teleport.create(player, name);
-        Boolean isSaved = TeleportSafety.setSpawnableTeleport(player, target, false, "Home");
+        Boolean isSaved = Teleports.setSafeTeleport(player, target, false, "Home");
 
         if (isSaved == null) {
             return false;

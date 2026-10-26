@@ -2,9 +2,10 @@ package timewaster.publicteleport;
 
 import static timewaster.publicteleport.Messages.MessageType.ERROR;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -18,12 +19,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ScaffoldingBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import timewaster.publicteleport.records.Teleport;
 
 /**
@@ -39,107 +41,188 @@ public final class TeleportSafety {
         return blockState.getBlock() != Blocks.MAGMA_BLOCK && !blockState.getCollisionShape(level, blockPos).isEmpty();
     }
 
-    private static boolean isBlockEmpty(Level level, @NotNull BlockPos blockPos) {
-        Block block = level.getBlockState(blockPos).getBlock();
+    private static boolean blockIsEmpty(Level level, @NotNull BlockPos blockPos) {
+        BlockState blockState = level.getBlockState(blockPos);
+        Block block = blockState.getBlock();
 
-        return block != Blocks.LAVA && block != Blocks.FIRE && block != Blocks.MAGMA_BLOCK
-            && (block instanceof ScaffoldingBlock || !blockHasCollision(level, blockPos));
+        return block != Blocks.LAVA && !(block instanceof BaseFireBlock) && block != Blocks.MAGMA_BLOCK
+            && (block instanceof ScaffoldingBlock || blockState.getCollisionShape(level, blockPos).isEmpty());
     }
 
-    private static int findTeleportableYBelowCeiling(ServerLevel level, int x, int z) {
-        // start 6 blocks below ceiling to avoid entrapment
-        int top = level.getMinY() + level.dimensionType().logicalHeight() - 6;
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
-
-        for (; pos.getY() > level.getMinY(); pos.move(0, -1, 0)) {
-            if (isBlockTeleportable(level, pos)) {
-                return pos.getY();
+    private static boolean blockAreaIsEmpty(Level level, @NotNull AABB boundingBox) {
+        for (BlockPos pos : BlockPos.betweenClosed(boundingBox)) {
+            if (!blockIsEmpty(level, Objects.requireNonNull(pos))) {
+                return false;
             }
         }
 
-        return Integer.MIN_VALUE;
+        return true;
     }
 
-    private static boolean isBlockTeleportableAndWithoutPlayers(ServerPlayer player, Level level, BlockPos blockPos) {
-        boolean isBlockAvailable = isBlockTeleportable(level, blockPos);
-        boolean isBlockedByPlayer = false;
+    // true=safe, false=safe on foot, null=not safe
+    @Nullable
+    private static Boolean isPositionTeleportableChecks(ServerPlayer player, Level level, AABB boundingBoxRide, AABB boundingBoxPlayer, boolean withRide,
+        boolean ignorePlayerClipping) {
+        if (!blockHasCollision(level, BlockPos.containing(boundingBoxRide.getBottomCenter()).below())
+            || !blockAreaIsEmpty(level, Objects.requireNonNull(boundingBoxPlayer))) {
+            return null;
+        }
+        if (withRide && !blockAreaIsEmpty(level, boundingBoxRide)) {
+            return false;
+        }
 
-        if (isBlockAvailable) {
-            List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(level);
-
-            for (ServerPlayer onlinePlayer : onlinePlayers) {
-                // player width/height
-                if (onlinePlayer != player && !doesPlayerClearTarget(onlinePlayer, blockPos, Utils.getDimensionNameByLevel(level), 0.6, 1.8)) {
-                    isBlockedByPlayer = true;
+        if (!ignorePlayerClipping) {
+            for (ServerPlayer onlinePlayer : Utils.getPlayersByLevel(level)) {
+                if (onlinePlayer.level() == level && onlinePlayer != player && (!withRide || onlinePlayer.getRootVehicle() != player.getRootVehicle())) {
+                    if (Utils.getPlayerBoundingBox(onlinePlayer, true).intersects(boundingBoxPlayer)) {
+                        return null;
+                    }
+                    if (withRide && Utils.getPlayerBoundingBox(onlinePlayer, true).intersects(boundingBoxRide)) {
+                        return false;
+                    }
                 }
             }
         }
 
-        return isBlockAvailable && !isBlockedByPlayer;
-
+        return true;
     }
 
-    private static boolean isBlockTeleportable(Level level, BlockPos blockPos) {
-        return blockHasCollision(level, blockPos.below())
-            && isBlockEmpty(level, blockPos)
-            && isBlockEmpty(level, blockPos.above());
-    }
-
-    private static boolean doesPlayerClearTarget(ServerPlayer player, BlockPos blockPos, String dimension, double clearanceXZ, double clearanceY) {
-        return !Utils.getDimensionNameByLevel(player.level()).equals(dimension)
-            || Math.abs(player.getX() - (blockPos.getX() + 0.5)) > clearanceXZ // middle point of block
-            || Math.abs(player.getY() - (blockPos.getY() + 0.01)) > clearanceY // slightly above ground
-            || Math.abs(player.getZ() - (blockPos.getZ() + 0.5)) > clearanceXZ;
-    }
-
-    /**
-     * Checks if a specified {@link BlockPos} is a valid teleport target.
-     *
-     * @param player the player to be teleported
-     * @param target the position to check
-     * @return {@code true} is position is clear to use
-     */
-    public static boolean isBlockTeleportable(ServerPlayer player, Teleport target) {
-        BlockPos blockPos = new BlockPos(target.x(), target.y(), target.z());
-        Level level = Utils.getLevelbyDimension(player, target.dimension());
-
-        return isBlockTeleportable(level, blockPos);
-    }
-
-    /**
-     * Checks if a player position and a {@link Teleport} target intersect within
-     * specified clearances
-     *
-     * @param player      the player whos position to check
-     * @param target      the position to check
-     * @param clearanceXZ the minimum clearance in the X and Z directions needed
-     * @param clearanceY  the minimum clearance in the Y direction needed
-     * @return
-     */
-    public static boolean doesPlayerClearTarget(ServerPlayer player, Teleport target, double clearanceXZ, double clearanceY) {
-        return doesPlayerClearTarget(player, new BlockPos(target.x(), target.y(), target.z()), target.dimension(), clearanceXZ, clearanceY);
-    }
-
-    /**
-     * Checks that {@code target} is a safe place to stand on and, if so, persists
-     * it as a Warp or Home.
-     *
-     * @param player the player trying to save the data
-     * @param target the {@link Teleport} to save
-     * @param isWarp if it is a Warp, not a Home
-     * @param type   the type of teleport
-     * @return {@code true} if saved; {@code false} if a new teleport would go over
-     *         the max homes limit; {@code null} if the position was unsafe or a
-     *         file error occured
-     */
+    // true=safe, false=safe on foot, null=not safe
     @Nullable
-    public static Boolean setSpawnableTeleport(ServerPlayer player, Teleport target, boolean isWarp, String type) {
-        if (!isBlockTeleportable(player, target)) {
-            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, type);
-            return null;
+    private static Boolean isPositionTeleportable(ServerPlayer player, int x, int y, int z, String dimension, boolean withRide, boolean ignorePlayerClipping) {
+        Level level = Utils.getLevelbyDimension(player, dimension);
+        BlockPos testBlockPos = new BlockPos(x, y, z);
+        AABB boundingBoxPlayer = Utils.moveBoundingBoxTo(Utils.getPlayerBoundingBox(player, false), testBlockPos);
+        AABB boundingBoxRide = boundingBoxPlayer;
+        if (withRide) {
+            boundingBoxRide = Utils.moveBoundingBoxTo(Utils.getPlayerBoundingBox(player, true), testBlockPos);
         }
 
-        return PublicTeleport.storage.setTeleport(player, target, isWarp);
+        return isPositionTeleportableChecks(player, level, boundingBoxRide, boundingBoxPlayer, withRide, ignorePlayerClipping);
+    }
+
+    @Nullable
+    private static BlockPos findRandomTeleportableYPosition(ServerPlayer player, ServerLevel level, ChunkPos chunkPos, int x, int z) {
+        String dimension = Utils.getDimensionNameByLevel(level);
+
+        if (level.dimensionType().hasCeiling()) {
+            int top = level.getMinY() + level.dimensionType().logicalHeight() - 6; // start 6 blocks below ceiling to avoid entrapment
+            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
+            int playerHeight = (int) Math.ceil(Utils.getPlayerBoundingBox(player, true).getYsize());
+            int numberOfAirBlocks = 0;
+
+            for (; pos.getY() > level.getMinY(); pos.move(0, -1, 0)) {
+                if (blockIsEmpty(level, pos)) {
+                    numberOfAirBlocks++;
+                } else if (numberOfAirBlocks >= playerHeight && blockHasCollision(level, pos)
+                    && Boolean.TRUE.equals(isPositionTeleportable(player, x, pos.getY() + 1, z, dimension, true, false))) {
+                    return new BlockPos(x, pos.getY() + 1, z);
+                } else {
+                    numberOfAirBlocks = 0;
+                }
+            }
+
+        } else {
+            int y = level.getChunk(chunkPos.x(), chunkPos.z()).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15) + 1;
+
+            if (Boolean.TRUE.equals(isPositionTeleportable(player, x, y, z, dimension, true, false))) {
+                return new BlockPos(x, y, z);
+            }
+        }
+
+        return null;
+    }
+
+    private static int moveInsideChunk(int coordinate) {
+        return (coordinate & ~15) + Math.clamp(coordinate & 15, 3, 12);
+    }
+
+    private static CompletableFuture<@Nullable BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player, ServerLevel level, BlockPos center,
+        int dimensionRadius, int attempt) {
+        if (attempt > 3) {
+            return CompletableFuture.completedFuture(null);
+        }
+        double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
+        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * dimensionRadius;
+        int x = moveInsideChunk(center.getX() + (int) Math.round(Math.cos(angle) * distance));
+        int z = moveInsideChunk(center.getZ() + (int) Math.round(Math.sin(angle) * distance));
+        ChunkPos chunkPos = new ChunkPos(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
+
+        // 128 blocks = 8 chunks minimum distance to player
+        if (!Utils.doesPlayerClearTargetBlock(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), 128, level.getMaxY())) {
+            return findRandomTeleportablePositionAttempt(player, level, center, dimensionRadius, attempt + 1);
+        }
+
+        return level.getChunkSource().addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, chunkPos, 0).thenComposeAsync(ignored -> {
+            BlockPos blockPos = findRandomTeleportableYPosition(player, level, chunkPos, x, z);
+            if (blockPos == null) {
+                return findRandomTeleportablePositionAttempt(player, level, center, dimensionRadius, attempt + 1);
+            }
+
+            return CompletableFuture.completedFuture(blockPos);
+        }, level.getServer());
+    }
+
+    /**
+     * Checks if a {@link Teleport} position is a valid target to be saved, if not
+     * the player is notified.
+     *
+     * @param player the player setting the teleport
+     * @param target the position to check
+     * @param type   the type of teleport, used in the error message
+     * @return {@code true} if the position is clear to use
+     */
+    public static boolean isPositionToSetTeleportable(ServerPlayer player, Teleport target, String type) {
+        Boolean isTeleportable = isPositionTeleportable(player, target.x(), target.y(), target.z(), target.dimension(), false, true);
+
+        if (isTeleportable == null) {
+            Messages.sendMessage(player, "teleport_unsafe_set", ERROR, type);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Searches the blocks within 2 blocks of {@code target} for a position that
+     * is safe for the player and their ride, and not blocked by other players.
+     *
+     * @param player               the player to be teleported
+     * @param target               the position to check
+     * @param ignorePlayerClipping if block checks should ignore players blocking
+     *                                 them to make sure /tpahereall works
+     * @return the teleportable position; if none was found a {@link Teleport}
+     *         named {@code public_teleport_teleportable_on_foot} (safe without
+     *         the ride) or {@code public_teleport_none_found}
+     */
+    public static Teleport findTeleportablePosition(ServerPlayer player, Teleport target, boolean ignorePlayerClipping) {
+        int[] orderY = { 0, 1, -1, 2, -2 };
+        // list of relative positions that are searched for around the target position;
+        // x axis=high nibble; z axis=low nibble; both add 2 so they are positive
+        List<Integer> orderXZ = new ArrayList<>(List.of(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52, 64, 65, 66, 67, 68));
+        boolean isTeleportableOnFoot = false;
+
+        Collections.shuffle(orderXZ);
+        orderXZ.addFirst(34); // position 0, 0 always needs to be checked first
+
+        for (int y : orderY) {
+            for (int i : orderXZ) {
+                int x = ((i & 0x000000F0) >>> 4) - 2; // extract high nibble and subtract 2 for correct relation
+                int z = (i & 0x0000000F) - 2; // extract low nibble and subtract 2 for correct relation
+                Boolean isTeleportable = isPositionTeleportable(player, target.x() + x, target.y() + y, target.z() + z, target.dimension(), true,
+                    (x == 0 && y == 0 && z == 0) ? false : ignorePlayerClipping);
+
+                if (isTeleportable != null) {
+                    if (isTeleportable) {
+                        return new Teleport(target.name(), target.x() + x, target.y() + y, target.z() + z, target.yaw(), target.pitch(), target.dimension());
+                    } else {
+                        isTeleportableOnFoot = true;
+                    }
+                }
+            }
+        }
+
+        return new Teleport("public_teleport_" + (isTeleportableOnFoot ? "teleportable_on_foot" : "none_found"), 0, 0, 0, 0.0f, 0.0f, "");
     }
 
     /**
@@ -147,7 +230,7 @@ public final class TeleportSafety {
      * of the dimensions center (spawn) with a maximum of 3 attempts.
      *
      * @param player the player to teleport
-     * @return a future resolving to a random {@link Teleport} position, or to
+     * @return a future resolving to a random {@link BlockPos}, or to
      *         {@code null} if none was found
      */
     public static CompletableFuture<BlockPos> findRandomTeleportablePosition(ServerPlayer player) {
@@ -156,92 +239,5 @@ public final class TeleportSafety {
         int radius = PublicTeleport.storage.getConfig().rtpRadius();
 
         return findRandomTeleportablePositionAttempt(player, level, center, radius, 1);
-    }
-
-    private static CompletableFuture<BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player, ServerLevel level, BlockPos center, int radius,
-        int attempt) {
-        double angle = ThreadLocalRandom.current().nextDouble(0, Math.PI * 2);
-        int dimensionRadius = level.dimension().equals(Level.NETHER) ? radius / 8 : radius;
-        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * dimensionRadius;
-        int x = center.getX() + (int) Math.round(Math.cos(angle) * distance);
-        int z = center.getZ() + (int) Math.round(Math.sin(angle) * distance);
-        // 128 blocks = 8 chunks minimum distance to player
-        if (!doesPlayerClearTarget(player, new BlockPos(x, level.getSeaLevel(), z), Utils.getDimensionNameByLevel(level), Math.min(128, dimensionRadius / 2),
-            level.getMaxY())) {
-            if (attempt >= 3) {
-                return CompletableFuture.completedFuture(null);
-            } else {
-                return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
-            }
-        }
-        ChunkPos chunkPos = new ChunkPos(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
-
-        return level.getChunkSource().addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, chunkPos, 0).thenComposeAsync(ignored -> {
-            LevelChunk levelChunk = level.getChunk(chunkPos.x(), chunkPos.z());
-            int y;
-            if (level.dimensionType().hasCeiling()) {
-                y = findTeleportableYBelowCeiling(level, x, z);
-            } else {
-                y = levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
-            }
-            BlockPos blockPos = new BlockPos(x, y, z);
-
-            if (y > Integer.MIN_VALUE && isBlockTeleportableAndWithoutPlayers(player, level, blockPos)) {
-                return CompletableFuture.completedFuture(blockPos);
-            }
-
-            if (attempt >= 3) {
-                return CompletableFuture.completedFuture(null);
-            }
-
-            return findRandomTeleportablePositionAttempt(player, level, center, radius, attempt + 1);
-        }, level.getServer());
-    }
-
-    /**
-     * Checks if any of the blocks in a certain radius around the given
-     * {@link target} position is a valid teleport target and if no other player is
-     * currently blocking it.
-     *
-     * @param player        the player to be teleported
-     * @param target        the position to check
-     * @param ignorePlayers if block checks around the target block should ignore
-     *                          players blocking them to make sure /tpahereall works
-     * @return {@link Teleport} the position that is teleportable to or {@code null}
-     *         is none was found
-     */
-    @Nullable
-    public static Teleport findTeleportablePosition(ServerPlayer player, Teleport target, boolean ignorePlayers) {
-        Level level = Utils.getLevelbyDimension(player, target.dimension());
-
-        if (!isBlockTeleportableAndWithoutPlayers(player, level, new BlockPos(target.x(), target.y(), target.z()))) {
-            int[] orderY = { 0, 1, -1, 2, -2 };
-            // this defines the order blocks are searched in on x and z axis
-            List<Integer> orderXZ = Arrays.asList(0, 1, 2, 3, 4, 16, 17, 18, 19, 20, 32, 33, 35, 36, 48, 49, 50, 51, 52, 64, 65, 66, 67, 68);
-            Collections.shuffle(orderXZ);
-
-            for (int y : orderY) {
-                for (int i : orderXZ) {
-                    int x = ((i & 0x000000F0) >>> 4) - 2;
-                    int z = (i & 0x0000000F) - 2;
-                    BlockPos testPos = new BlockPos(target.x() + x, target.y() + y, target.z() + z);
-
-                    if ((ignorePlayers && isBlockTeleportable(level, testPos)) || isBlockTeleportableAndWithoutPlayers(player, level, testPos)) {
-                        return new Teleport(
-                            target.name(),
-                            target.x() + x,
-                            target.y() + y,
-                            target.z() + z,
-                            target.yaw(),
-                            target.pitch(),
-                            target.dimension());
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        return target;
     }
 }

@@ -18,7 +18,9 @@ import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.records.Portal;
 
@@ -31,12 +33,12 @@ import timewaster.publicteleport.records.Portal;
 @SuppressWarnings("null")
 public class PortalsTest {
     /** The block the player looks at for "from" and "to" of a one block Portal. */
-    private static final BlockPos PORTAL_BLOCK = new BlockPos(3, 2, 5);
+    private static final BlockPos PORTAL_BLOCK = new BlockPos(3, 2, 7);
     /**
      * Where to stand to look at {@link #PORTAL_BLOCK}: 3 blocks north of it, facing
      * south.
      */
-    private static final BlockPos LOOK_AT_PORTAL = new BlockPos(3, 1, 2);
+    private static final BlockPos LOOK_AT_PORTAL = new BlockPos(3, 1, 4);
 
     private static Portal findPortal(String name) {
         return PublicTeleport.storage.getPortals().stream().filter(portal -> portal.target().name().equals(name))
@@ -49,14 +51,14 @@ public class PortalsTest {
 
     /**
      * Builds a one block Portal at {@link #PORTAL_BLOCK} that leads to
-     * {@link TestUtils#STAND_FAR}.
+     * {@link TestUtils#STAND}, far enough from the Portal to teleport to.
      */
     private static void buildPortal(GameTestHelper helper, TestPlayer player, String name) {
         helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
         player.moveTo(helper, LOOK_AT_PORTAL);
         player.runAsOwner("setportal " + name + " from");
         player.runAsOwner("setportal " + name + " to");
-        player.moveTo(helper, STAND_FAR);
+        player.moveTo(helper, STAND);
         player.runAsOwner("setportal " + name + " target");
         assertLastMessage(helper, player, "portal_set", SUCCESS, name);
     }
@@ -244,8 +246,32 @@ public class PortalsTest {
             .thenExecute(() -> player.moveTo(helper, new BlockPos(PORTAL_BLOCK.getX(), 1, PORTAL_BLOCK.getZ())))
             .thenWaitUntil(() -> {
                 assertLastMessage(helper, player, "teleported_to", SUCCESS, name);
-                assertAt(helper, player, STAND_FAR);
+                assertAt(helper, player, STAND);
             })
+            .thenExecute(() -> deletePortal(player, name))
+            .thenSucceed();
+    }
+
+    /**
+     * A Camel is so wide that the glass pane stops it before its riders reach the
+     * Portal, so the Portal is entered as soon as the Camel touches it. Both
+     * riders are teleported along and stay seated.
+     */
+    @GameTest(maxTicks = 100)
+    public void rideIntoPortal(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        TestPlayer passenger = TestPlayer.spawn(helper, STAND);
+        String name = uniqueName("p");
+
+        buildPortal(helper, player, name);
+        Entity camel = TestUtils.spawnRide(helper, TestUtils.entityType("camel"), LOOK_AT_PORTAL, player, passenger);
+
+        helper.startSequence()
+            .thenIdle(10)
+            // facing west, the riders sit one behind the other along x; the Camel (0.85 blocks to
+            // each side) reaches 0.05 blocks into the Portal, its riders (0.3 blocks) stay 0.5 blocks in front of it
+            .thenExecute(() -> TestUtils.moveRide(helper, camel, new Vec3(PORTAL_BLOCK.getX() + 0.5, 1, PORTAL_BLOCK.getZ() - 0.8), 90))
+            .thenWaitUntil(() -> TestUtils.assertRideAt(helper, camel, STAND, player, passenger))
             .thenExecute(() -> deletePortal(player, name))
             .thenSucceed();
     }

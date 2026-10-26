@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.core.BlockPos;
@@ -18,8 +19,13 @@ import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.Messages;
 import timewaster.publicteleport.Messages.MessageType;
 import timewaster.publicteleport.PublicTeleport;
@@ -37,7 +43,7 @@ public final class TestUtils {
      */
     public static final BlockPos STAND = new BlockPos(1, 1, 1);
     /**
-     * A second standing position, far enough from {@link #STAND} (more than 2
+     * A second standing position, far enough from {@link #STAND} (more than 4
      * blocks) to teleport between.
      */
     public static final BlockPos STAND_FAR = new BlockPos(6, 1, 6);
@@ -73,6 +79,64 @@ public final class TestUtils {
     }
 
     /**
+     * Spawns a ride (e.g. an adult Camel without AI, so it stays where it is
+     * put, or a Boat) and seats the players on it.
+     *
+     * @param helper      the test's helper
+     * @param type        the kind of ride
+     * @param relativePos the block it stands in, relative to the test area
+     * @param riders      the players riding it, the first one in front
+     * @return the ride
+     */
+    public static Entity spawnRide(GameTestHelper helper, EntityType<? extends Entity> type, BlockPos relativePos, TestPlayer... riders) {
+        Entity ride = helper.spawn(type, relativePos);
+
+        if (ride instanceof Mob mob) {
+            mob.removeFreeWill();
+        }
+        if (ride instanceof AgeableMob ageable) {
+            ageable.setBaby(false);
+        }
+        for (TestPlayer rider : riders) {
+            helper.assertTrue(rider.startRiding(ride, true, true), rider.getName().getString() + " could not mount the ride");
+        }
+
+        return ride;
+    }
+
+    /**
+     * Teleports a ride and everyone riding it to an exact position inside the
+     * test area.
+     *
+     * @param helper      the test's helper
+     * @param ride        the ride
+     * @param relativePos the position, relative to the test area
+     * @param yaw         the direction to face (0 = south, 90 = west, 180 = north,
+     *                        -90 = east)
+     */
+    public static void moveRide(GameTestHelper helper, Entity ride, Vec3 relativePos, float yaw) {
+        Vec3 pos = helper.absoluteVec(relativePos);
+
+        ride.teleportTo(helper.getLevel(), pos.x(), pos.y(), pos.z(), Set.of(), yaw, 0, true);
+    }
+
+    /**
+     * Checks that a ride stands in a specific block of the test area and that
+     * the players still ride it.
+     *
+     * @param helper      the test's helper
+     * @param ride        the ride
+     * @param relativePos the expected block, relative to the test area
+     * @param riders      the players that have to ride it
+     */
+    public static void assertRideAt(GameTestHelper helper, Entity ride, BlockPos relativePos, TestPlayer... riders) {
+        assertEqual(helper, relative(helper, ride.blockPosition()), relativePos, "position of the ride");
+        for (TestPlayer rider : riders) {
+            helper.assertTrue(rider.getVehicle() == ride, rider.getName().getString() + " should still ride the ride");
+        }
+    }
+
+    /**
      * Looks up a vanilla block by its ID, e.g. {@code "white_carpet"}. Used for
      * dyed blocks: 26.3 replaced constants like {@code Blocks.WHITE_CARPET}
      * with {@code Blocks.CARPET.white()}, but kept the IDs, so this works on
@@ -83,6 +147,18 @@ public final class TestUtils {
      */
     public static Block block(String id) {
         return BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace(id));
+    }
+
+    /**
+     * Looks up a vanilla entity type by its ID, e.g. {@code "camel"}. 26.2 moved
+     * the constants like {@code EntityType.CAMEL} to another class, but kept the
+     * IDs, so this works on every version the compatibility tests run on.
+     *
+     * @param id the entity type ID without the "minecraft:" prefix
+     * @return the entity type
+     */
+    public static EntityType<?> entityType(String id) {
+        return BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace(id));
     }
 
     /**
@@ -281,11 +357,24 @@ public final class TestUtils {
                 asserter.run();
             } catch (GameTestAssertException e) {
                 if (System.nanoTime() > deadline[0]) {
-                    helper.fail(Component.literal("Not done after " + seconds + " seconds: " + e.getMessage()));
+                    // a thrown exception would only make the sequence wait on, so fail the test
+                    // itself
+                    testInfo(helper).fail(Component.literal("Not done after " + seconds + " seconds: " + e.getMessage()));
                 }
                 throw e;
             }
         };
+    }
+
+    private static GameTestInfo testInfo(GameTestHelper helper) {
+        try {
+            // GameTestHelper has no getter for it
+            Field field = GameTestHelper.class.getDeclaredField("testInfo");
+            field.setAccessible(true);
+            return (GameTestInfo) field.get(helper);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("GameTestHelper.testInfo not found, did Minecraft rename it?", e);
+        }
     }
 
     /**
@@ -295,18 +384,7 @@ public final class TestUtils {
      * @param cleanup what to do
      */
     public static void onTestEnd(GameTestHelper helper, Runnable cleanup) {
-        GameTestInfo testInfo;
-
-        try {
-            // GameTestHelper has no getter for it
-            Field field = GameTestHelper.class.getDeclaredField("testInfo");
-            field.setAccessible(true);
-            testInfo = (GameTestInfo) field.get(helper);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("GameTestHelper.testInfo not found, did Minecraft rename it?", e);
-        }
-
-        testInfo.addListener(new GameTestListener() {
+        testInfo(helper).addListener(new GameTestListener() {
             @Override
             public void testStructureLoaded(GameTestInfo info) {
             }

@@ -7,6 +7,7 @@
     "entrypoints": {
         "fabric-gametest": [
             "timewaster.publicteleport.gametest.BackTest",
+            "timewaster.publicteleport.gametest.ConfigTest",
             "timewaster.publicteleport.gametest.HelpTest",
             "timewaster.publicteleport.gametest.HomesTest",
             "timewaster.publicteleport.gametest.PortalsTest",

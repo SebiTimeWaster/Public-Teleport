@@ -76,12 +76,12 @@ public class RequestsTest {
     @GameTest(environment = "public-teleport-gametest:tpahereall")
     public void tpahereallSentAndAccepted(GameTestHelper helper) {
         buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, new BlockPos(4, 1, 4));
+        TestPlayer sender = TestPlayer.spawn(helper, STAND_FAR);
         List<TestPlayer> receivers = new ArrayList<>();
 
         for (int i = 0; i < 20; i++) {
-            // all around the edge of the area, more than 2 blocks away from the sender
-            receivers.add(TestPlayer.spawn(helper, i < 10 ? new BlockPos(0, 1, i % 8) : new BlockPos(7, 1, i % 8)));
+            // in two rows at the edge of the area, more than 4 blocks away from the sender
+            receivers.add(TestPlayer.spawn(helper, new BlockPos(i < 10 ? 0 : 1, 1, i % 8)));
         }
 
         sender.runAsOwner("tpahereall");
