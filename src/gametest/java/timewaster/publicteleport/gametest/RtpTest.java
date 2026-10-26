@@ -16,7 +16,9 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.border.WorldBorder;
 import timewaster.publicteleport.PublicTeleport;
 import timewaster.publicteleport.records.Teleport;
 
@@ -130,6 +132,95 @@ public class RtpTest {
             helper.assertTrue(pos.getY() <= top, "Expected the player below y = " + top + ", but was at " + pos);
             helper.assertFalse(nether.getBlockState(pos.below()).isAir(),
                 "Expected the player to stand on a block, but was at " + pos);
+        });
+    }
+
+    /**
+     * Changes the world border until the test ends. The player is put into
+     * creative mode, since the test area may end up outside the border, where
+     * players take damage.
+     */
+    private static WorldBorder setWorldBorder(GameTestHelper helper, TestPlayer player, double centerX, double centerZ, double size) {
+        WorldBorder border = helper.getLevel().getWorldBorder();
+        double oldCenterX = border.getCenterX();
+        double oldCenterZ = border.getCenterZ();
+        double oldSize = border.getSize();
+
+        TestUtils.onTestEnd(helper, () -> {
+            border.setCenter(oldCenterX, oldCenterZ);
+            border.setSize(oldSize);
+        });
+        border.setCenter(centerX, centerZ);
+        border.setSize(size);
+        player.setGameMode(GameType.CREATIVE);
+
+        return border;
+    }
+
+    /**
+     * The world spawn is on the east edge of the world border, so only the west
+     * side can be searched, which must still work.
+     */
+    @GameTest(environment = "public-teleport-gametest:rtp_border", maxTicks = 10_000_000)
+    public void rtpWorldBorderNextToSpawn(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        BlockPos center = helper.getLevel().getRespawnData().pos();
+        int radius = PublicTeleport.storage.getConfig().rtpRadius();
+        WorldBorder border = setWorldBorder(helper, player, center.getX() - 1000, center.getZ(), 2000);
+
+        player.run("rtp");
+        assertLastMessage(helper, player, "rtp_start", WARNING);
+
+        TestUtils.succeedWithinSeconds(helper, 60, () -> {
+            assertTeleported(helper, player);
+            BlockPos pos = player.blockPosition();
+
+            // 16 blocks inside the border, - 2 for moving to a safe block
+            helper.assertTrue(border.isWithinBounds(pos.getX(), pos.getZ(), -14),
+                "Expected the player at least 14 blocks inside the world border, but was at " + pos);
+            double distance = Math.hypot(pos.getX() - center.getX(), pos.getZ() - center.getZ());
+            helper.assertTrue(distance <= radius + 2,
+                "Expected the player within " + radius + " blocks of the world spawn, but was " + (int) distance);
+        });
+    }
+
+    /**
+     * The world border is so far away from the world spawn that no position is
+     * both within "rtpRadius" and inside the border.
+     */
+    @GameTest(environment = "public-teleport-gametest:rtp_border_outside", maxTicks = 100)
+    public void rtpWorldBorderOutsideRadius(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        BlockPos center = helper.getLevel().getRespawnData().pos();
+        BlockPos start = player.blockPosition();
+
+        setWorldBorder(helper, player, center.getX() + 100_000, center.getZ(), 1000);
+        player.run("rtp");
+
+        helper.succeedWhen(() -> {
+            assertLastMessage(helper, player, "rtp_failed", ERROR);
+            assertEqual(helper, player.blockPosition(), start, "position of the player");
+        });
+    }
+
+    /**
+     * A player who changes dimension while RTP still searches is not teleported
+     * to the position found in the old dimension.
+     */
+    @GameTest(environment = "public-teleport-gametest:rtp_dimension_change", maxTicks = 10_000_000)
+    public void rtpDimensionChanged(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+
+        player.run("rtp");
+        assertLastMessage(helper, player, "rtp_start", WARNING);
+        // the search waits for chunks to load, so it finishes in a later tick
+        player.teleportTo(nether, 0.5, 64, 0.5, Set.of(), 0, 0, true);
+
+        TestUtils.succeedWithinSeconds(helper, 60, () -> {
+            assertLastMessage(helper, player, "rtp_failed", ERROR);
+            assertEqual(helper, player.level().dimension(), Level.NETHER, "dimension");
+            assertEqual(helper, player.blockPosition(), new BlockPos(0, 64, 0), "position of the player");
         });
     }
 }

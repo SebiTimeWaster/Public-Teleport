@@ -68,6 +68,16 @@ public class WarpsTest {
     }
 
     @GameTest
+    public void setwarpReservedPrefix(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.runAsOwner("setwarp public_teleport_none_found");
+        assertLastMessage(helper, player, "name_reserved_prefix", WARNING, "public_teleport_");
+        helper.assertFalse(warpExists(player, "public_teleport_none_found"), "Expected the Warp not to be set");
+        helper.succeed();
+    }
+
+    @GameTest
     public void setwarp(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         String warp = uniqueName("w");

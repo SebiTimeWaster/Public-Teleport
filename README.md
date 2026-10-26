@@ -50,8 +50,8 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | `/tpahere <player>`                             |         | Requests `<player>` to teleport to you                                                                |
 | `/tpahereall`                                   |    ✓    | Requests ALL players to teleport to you (Use with care on busy servers)                               |
 | `/tpcancel`                                     |         | Cancels your teleportation request                                                                    |
-| `/tpaccept [<player>]`                          |         | Accepts request from `<player>` (Default: Most recent)                                                |
-| `/tpdeny [<player>]`                            |         | Denies request from `<player>` (Default: Most recent)                                                 |
+| `/tpaccept [<player>]`                          |         | Accepts request from `<player>` (Default: Oldest request)                                             |
+| `/tpdeny [<player>]`                            |         | Denies request from `<player>` (Default: Oldest request)                                              |
 
 Please note:
 

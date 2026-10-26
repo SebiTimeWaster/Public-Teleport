@@ -214,6 +214,28 @@ public class RequestsTest {
         helper.succeed();
     }
 
+    /** Without a name, /tpaccept and /tpdeny answer the oldest request first. */
+    @GameTest
+    public void tpacceptTpdenyOldestFirst(GameTestHelper helper) {
+        buildFloor(helper);
+        TestPlayer first = TestPlayer.spawn(helper, STAND);
+        TestPlayer second = TestPlayer.spawn(helper, new BlockPos(1, 1, 6));
+        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+
+        first.run("tpa " + name(receiver));
+        second.run("tpa " + name(receiver));
+
+        receiver.run("tpaccept");
+        assertLastMessage(helper, receiver, "request_accepted_receiver", SUCCESS, name(first));
+        assertNear(helper, first, receiver, 2);
+        TestUtils.assertAt(helper, second, new BlockPos(1, 1, 6));
+
+        receiver.run("tpdeny");
+        assertLastMessage(helper, second, "request_denied_sender", WARNING, name(receiver));
+        TestUtils.assertAt(helper, second, new BlockPos(1, 1, 6));
+        helper.succeed();
+    }
+
     @GameTest
     public void tpdenyNoRequest(GameTestHelper helper) {
         TestPlayer player = TestUtils.setup(helper);

@@ -14,11 +14,14 @@ import static timewaster.publicteleport.gametest.TestUtils.setup;
 import static timewaster.publicteleport.gametest.TestUtils.uniqueName;
 
 import java.util.List;
+import java.util.Set;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.PublicTeleport;
@@ -167,6 +170,107 @@ public class PortalsTest {
         helper.assertTrue(findPortal(name) != null, "Expected the Portal to be saved");
 
         deletePortal(player, name);
+        helper.succeed();
+    }
+
+    /**
+     * Portals of 1000 blocks or more are saved without glass panes. Here 8 x 16 x 8
+     * = 1024 blocks, from the floor to a block high above it.
+     */
+    @GameTest
+    public void setportalTooLargeForGlass(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        String name = uniqueName("p");
+        BlockPos top = new BlockPos(7, 15, 7);
+
+        helper.setBlock(top, Blocks.STONE);
+        player.moveTo(helper, new BlockPos(0, 1, 0), 0, 90);
+        player.runAsOwner("setportal " + name + " from");
+        player.moveTo(helper, top.above(), 0, 90);
+        player.runAsOwner("setportal " + name + " to");
+        player.moveTo(helper, STAND);
+        player.runAsOwner("setportal " + name + " target");
+
+        assertLastMessage(helper, player, "portal_set", SUCCESS, name);
+        assertEqual(helper, TestUtils.countMessages(player, "portal_set_no_glass"), 1L, "number of \"portal_set_no_glass\"");
+        helper.assertBlockPresent(Blocks.STONE, 0, 0, 0);
+        helper.assertBlockPresent(Blocks.STONE, top);
+        helper.assertBlockPresent(Blocks.AIR, 3, 5, 3);
+
+        deletePortal(player, name);
+        helper.succeed();
+    }
+
+    /**
+     * Partial Portals are kept per player: another player using the same name
+     * does not complete the first player's Portal.
+     */
+    @GameTest
+    public void setportalPartsArePerPlayer(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        TestPlayer other = TestPlayer.spawn(helper, STAND_FAR);
+        String name = uniqueName("p");
+
+        helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
+        player.moveTo(helper, LOOK_AT_PORTAL);
+        player.runAsOwner("setportal " + name + " from");
+        player.runAsOwner("setportal " + name + " to");
+
+        other.runAsOwner("setportal " + name + " target");
+        assertLastMessage(helper, other, "portal_set_pos", SUCCESS, name);
+        helper.assertTrue(findPortal(name) == null, "Another player's target must not complete the Portal");
+
+        player.moveTo(helper, STAND);
+        player.runAsOwner("setportal " + name + " target");
+        assertLastMessage(helper, player, "portal_set", SUCCESS, name);
+        TestUtils.assertTeleportAt(helper, findPortal(name).target(), STAND);
+
+        deletePortal(player, name);
+        helper.succeed();
+    }
+
+    /**
+     * "from" and "to" have to be in the same dimension; setting "from" again in
+     * the other dimension starts over there.
+     */
+    @GameTest
+    public void setportalCornersInDifferentDimensions(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        String name = uniqueName("p");
+        // room to stand in the Nether, facing a block 2 blocks south at eye height
+        BlockPos netherStand = new BlockPos(8, 70, 8);
+
+        for (BlockPos pos : List.of(netherStand, netherStand.above(), netherStand.south(), netherStand.south().above())) {
+            nether.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        }
+        nether.setBlockAndUpdate(netherStand.south(2).above(), Blocks.STONE.defaultBlockState());
+
+        helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
+        player.moveTo(helper, LOOK_AT_PORTAL);
+        player.runAsOwner("setportal " + name + " from");
+        assertLastMessage(helper, player, "portal_set_from", SUCCESS, name);
+
+        player.teleportTo(nether, netherStand.getX() + 0.5, netherStand.getY(), netherStand.getZ() + 0.5, Set.of(), 0, 0, true);
+        player.runAsOwner("setportal " + name + " to");
+        assertLastMessage(helper, player, "portal_set_other_dimension", ERROR, name);
+
+        player.runAsOwner("setportal " + name + " from");
+        assertLastMessage(helper, player, "portal_set_from", SUCCESS, name);
+        player.runAsOwner("setportal " + name + " to");
+        assertLastMessage(helper, player, "portal_set_to", SUCCESS, name);
+        helper.succeed();
+    }
+
+    @GameTest
+    public void setportalReservedPrefix(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        for (String part : List.of("from", "to", "target")) {
+            player.runAsOwner("setportal public_teleport_none_found " + part);
+            assertLastMessage(helper, player, "name_reserved_prefix", WARNING, "public_teleport_");
+        }
+        helper.assertTrue(findPortal("public_teleport_none_found") == null, "Expected no Portal to be saved");
         helper.succeed();
     }
 

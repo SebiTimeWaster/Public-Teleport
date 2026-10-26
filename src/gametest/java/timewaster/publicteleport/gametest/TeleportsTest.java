@@ -82,6 +82,27 @@ public class TeleportsTest {
     }
 
     /**
+     * Another player sitting on the Camel is teleported along, is told so and can
+     * go back to where the Camel was.
+     */
+    @GameTest
+    public void homeTeleportRidingWithPassenger(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.run("sethome");
+        player.moveTo(helper, STAND_FAR);
+        TestPlayer passenger = TestPlayer.spawn(helper, STAND_FAR);
+        Entity camel = TestUtils.spawnRide(helper, TestUtils.entityType("camel"), STAND_FAR, player, passenger);
+
+        player.run("home");
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, "home");
+        assertLastMessage(helper, passenger, "teleported_along", SUCCESS, name(player));
+        TestUtils.assertRideAt(helper, camel, STAND, player, passenger);
+        assertTeleportAt(helper, PublicTeleport.storage.getTeleport(passenger, "back", false), STAND_FAR);
+        helper.succeed();
+    }
+
+    /**
      * In Boats and Minecarts the player sits lower than the bottom of the
      * vehicle, which must not count as being stuck in the floor.
      */
