@@ -13,19 +13,27 @@ import static timewaster.publicteleport.gametest.TestUtils.buildFloor;
 import static timewaster.publicteleport.gametest.TestUtils.setup;
 import static timewaster.publicteleport.gametest.TestUtils.uniqueName;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestSequence;
+import net.minecraft.network.protocol.common.ClientboundTransferPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.PublicTeleport;
+import timewaster.publicteleport.Storage;
 import timewaster.publicteleport.records.Portal;
+import timewaster.publicteleport.records.Teleport;
 
 /**
  * Portals are not in manual-testing.txt, these tests follow the code of
@@ -42,10 +50,20 @@ public class PortalsTest {
      * south.
      */
     private static final BlockPos LOOK_AT_PORTAL = new BlockPos(3, 1, 4);
+    /** Where to stand to be in the Portal at {@link #PORTAL_BLOCK} (with the head). */
+    private static final BlockPos IN_PORTAL = new BlockPos(PORTAL_BLOCK.getX(), 1, PORTAL_BLOCK.getZ());
 
     private static Portal findPortal(String name) {
         return PublicTeleport.storage.getPortals().stream().filter(portal -> portal.target().name().equals(name))
             .findFirst().orElse(null);
+    }
+
+    /**
+     * If the Portal is in portals.json: a new {@link Storage} reads the files
+     * again, like after a server restart.
+     */
+    private static boolean portalSaved(String name) {
+        return new Storage().getPortals().stream().anyMatch(portal -> portal.target().name().equals(name));
     }
 
     private static void deletePortal(TestPlayer player, String name) {
@@ -53,17 +71,40 @@ public class PortalsTest {
     }
 
     /**
-     * Builds a one block Portal at {@link #PORTAL_BLOCK} that leads to
-     * {@link TestUtils#STAND}, far enough from the Portal to teleport to.
+     * Sets "from" and "to" of a one block Portal at {@link #PORTAL_BLOCK}, the
+     * player stays at {@link #LOOK_AT_PORTAL}.
      */
-    private static void buildPortal(GameTestHelper helper, TestPlayer player, String name) {
+    private static void setPortalCorners(GameTestHelper helper, TestPlayer player, String name) {
         helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
         player.moveTo(helper, LOOK_AT_PORTAL);
         player.runAsOwner("setportal " + name + " from");
         player.runAsOwner("setportal " + name + " to");
+    }
+
+    /**
+     * Builds a one block Portal at {@link #PORTAL_BLOCK} that leads to
+     * {@link TestUtils#STAND}, far enough from the Portal to teleport to.
+     */
+    private static void buildPortal(GameTestHelper helper, TestPlayer player, String name) {
+        setPortalCorners(helper, player, name);
         player.moveTo(helper, STAND);
         player.runAsOwner("setportal " + name + " target");
         assertLastMessage(helper, player, "portal_set", SUCCESS, name);
+    }
+
+    /**
+     * Adds steps to {@code sequence}: waits until the Portals were checked with
+     * the player where they stand now (outside the Portal), then moves them into
+     * the Portal at {@link #PORTAL_BLOCK}. Portals are checked every 5 ticks.
+     */
+    private static GameTestSequence thenEnterPortal(GameTestHelper helper, GameTestSequence sequence, TestPlayer player) {
+        return sequence.thenIdle(10).thenExecute(() -> player.moveTo(helper, IN_PORTAL));
+    }
+
+    /** Checks that the Portal built by {@link #buildPortal} teleported the player. */
+    private static void assertTeleportedByPortal(GameTestHelper helper, TestPlayer player, String name) {
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, name);
+        assertAt(helper, player, STAND);
     }
 
     @GameTest
@@ -107,6 +148,7 @@ public class PortalsTest {
         helper.assertBlockPresent(TestUtils.block("purple_stained_glass_pane"), 4, 2, 5);
         helper.assertBlockPresent(Blocks.STONE, 3, 2, 5);
         helper.assertBlockPresent(Blocks.STONE, 5, 1, 5);
+        helper.assertTrue(portalSaved(name), "Expected the Portal to be saved in portals.json");
 
         deletePortal(player, name);
         helper.succeed();
@@ -211,11 +253,7 @@ public class PortalsTest {
         TestPlayer other = TestPlayer.spawn(helper, STAND_FAR);
         String name = uniqueName("p");
 
-        helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
-        player.moveTo(helper, LOOK_AT_PORTAL);
-        player.runAsOwner("setportal " + name + " from");
-        player.runAsOwner("setportal " + name + " to");
-
+        setPortalCorners(helper, player, name);
         other.runAsOwner("setportal " + name + " target");
         assertLastMessage(helper, other, "portal_set_pos", SUCCESS, name);
         helper.assertTrue(findPortal(name) == null, "Another player's target must not complete the Portal");
@@ -282,10 +320,7 @@ public class PortalsTest {
         player.runAsOwner("setportal " + name + " target \"example.com:25565\"");
         assertLastMessage(helper, player, "portal_set_url", SUCCESS, name);
 
-        helper.setBlock(PORTAL_BLOCK, Blocks.STONE);
-        player.moveTo(helper, LOOK_AT_PORTAL);
-        player.runAsOwner("setportal " + name + " from");
-        player.runAsOwner("setportal " + name + " to");
+        setPortalCorners(helper, player, name);
         assertLastMessage(helper, player, "portal_set", SUCCESS, name);
         assertEqual(helper, findPortal(name).target().dimension(), "url:example.com:25565", "Portal target");
 
@@ -346,14 +381,83 @@ public class PortalsTest {
 
         buildPortal(helper, player, name);
 
-        helper.startSequence()
-            // Portals are checked every 5 ticks; the first check has to see the player
-            // outside the Portal
-            .thenIdle(10)
-            .thenExecute(() -> player.moveTo(helper, new BlockPos(PORTAL_BLOCK.getX(), 1, PORTAL_BLOCK.getZ())))
+        thenEnterPortal(helper, helper.startSequence(), player)
+            .thenWaitUntil(() -> assertTeleportedByPortal(helper, player, name))
+            // /back leads to where the player entered the Portal
+            .thenExecute(() -> TestUtils.assertTeleportAt(helper, PublicTeleport.storage.getTeleport(player, "back", false), IN_PORTAL))
+            .thenExecute(() -> deletePortal(player, name))
+            .thenSucceed();
+    }
+
+    /**
+     * A Portal with a URL as target sends the player to the other server, and puts
+     * them back where they were before entering it, so they are not in the Portal
+     * when they come back.
+     */
+    @GameTest(maxTicks = 100)
+    public void walkIntoUrlPortal(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        String name = uniqueName("p");
+
+        player.runAsOwner("setportal " + name + " target \"example.com:25565\"");
+        setPortalCorners(helper, player, name);
+
+        thenEnterPortal(helper, helper.startSequence(), player)
             .thenWaitUntil(() -> {
-                assertLastMessage(helper, player, "teleported_to", SUCCESS, name);
-                assertAt(helper, player, STAND);
+                assertEqual(helper, player.getSentPackets(ClientboundTransferPacket.class),
+                    List.of(new ClientboundTransferPacket("example.com", 25565)), "transfers to another server");
+                assertAt(helper, player, LOOK_AT_PORTAL);
+            })
+            .thenExecute(() -> deletePortal(player, name))
+            .thenSucceed();
+    }
+
+    /**
+     * A player who is in a Portal when it is first checked, e.g. after joining the
+     * server there, is not teleported until they leave it and enter it again.
+     */
+    @GameTest(maxTicks = 100)
+    public void portalOnlyEnteredFromOutside(GameTestHelper helper) {
+        TestPlayer builder = setup(helper);
+        String name = uniqueName("p");
+
+        buildPortal(helper, builder, name);
+        // off the target, where the player would land next to them otherwise
+        builder.moveTo(helper, STAND_FAR);
+        TestPlayer player = TestPlayer.spawn(helper, IN_PORTAL);
+
+        GameTestSequence sequence = helper.startSequence()
+            .thenIdle(15)
+            .thenExecute(() -> {
+                assertAt(helper, player, IN_PORTAL);
+                TestUtils.assertNoMessage(helper, player);
+                player.moveTo(helper, LOOK_AT_PORTAL);
+            });
+        thenEnterPortal(helper, sequence, player)
+            .thenWaitUntil(() -> assertTeleportedByPortal(helper, player, name))
+            .thenExecute(() -> deletePortal(builder, name))
+            .thenSucceed();
+    }
+
+    /**
+     * A Portal only works in its own dimension, not at the same coordinates in
+     * another one.
+     */
+    @GameTest(maxTicks = 100)
+    public void portalInOtherDimension(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        String name = uniqueName("p");
+        BlockPos block = helper.absolutePos(PORTAL_BLOCK);
+
+        // like buildPortal, but in the Nether
+        PublicTeleport.storage.setPortal(player, new Portal(Level.NETHER.identifier().toString(), block.getX(), block.getY(),
+            block.getZ(), block.getX(), block.getY(), block.getZ(), Teleport.create(player, name)));
+
+        thenEnterPortal(helper, helper.startSequence(), player)
+            .thenIdle(15)
+            .thenExecute(() -> {
+                assertAt(helper, player, IN_PORTAL);
+                TestUtils.assertNoMessage(helper, player);
             })
             .thenExecute(() -> deletePortal(player, name))
             .thenSucceed();
@@ -383,15 +487,66 @@ public class PortalsTest {
             .thenSucceed();
     }
 
+    /**
+     * If {@code Portals} still stores data of this player object, read from its
+     * private maps.
+     */
+    private static boolean portalsTrack(ServerPlayer player) {
+        try {
+            for (String mapName : List.of("playersPosition", "playersInPortal")) {
+                Field field = timewaster.publicteleport.Portals.class.getDeclaredField(mapName);
+
+                field.setAccessible(true);
+                if (((Map<?, ?>) field.get(null)).containsKey(player)) {
+                    return true;
+                }
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Portals.playersPosition or playersInPortal not found, were they renamed?", e);
+        }
+
+        return false;
+    }
+
+    /**
+     * Respawning replaces the player object, the Portal data of the old one has
+     * to be removed, otherwise it stays until the server stops.
+     */
+    @GameTest(maxTicks = 100)
+    public void portalDataRemovedOnRespawn(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        PlayerList playerList = helper.getLevel().getServer().getPlayerList();
+        String name = uniqueName("p");
+
+        // Portals are only checked while there are any
+        buildPortal(helper, player, name);
+
+        helper.startSequence()
+            .thenWaitUntil(() -> helper.assertTrue(portalsTrack(player), "Expected the Portals to track the player"))
+            .thenExecute(() -> {
+                player.kill(helper.getLevel());
+                ServerPlayer respawned = playerList.respawn(player, false, Entity.RemovalReason.KILLED);
+
+                TestUtils.onTestEnd(helper, () -> playerList.remove(respawned));
+                helper.assertFalse(portalsTrack(player), "Expected the Portal data of the old player object to be removed");
+            })
+            .thenExecute(() -> deletePortal(player, name))
+            .thenSucceed();
+    }
+
     @GameTest
     public void delportal(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         String name = uniqueName("p");
 
         buildPortal(helper, player, name);
+        List<String> suggestions = player.getSuggestions("delportal ", true);
+        helper.assertTrue(suggestions.contains(name), "Expected the suggestions to contain " + name + ", but were " + suggestions);
+
         player.runAsOwner("delportal " + name);
         assertLastMessage(helper, player, "portal_deleted", SUCCESS, name);
         helper.assertTrue(findPortal(name) == null, "Expected the Portal to be deleted");
+        helper.assertFalse(portalSaved(name), "Expected the Portal to be deleted from portals.json");
         helper.succeed();
     }
 

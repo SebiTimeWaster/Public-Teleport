@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import timewaster.publicteleport.records.Config;
@@ -51,6 +52,8 @@ public class PublicTeleport implements ModInitializer {
 
         if (config.enablePortals()) {
             ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Portals.removePlayer(handler.player));
+            // respawning replaces the player object, the old one would never be removed otherwise
+            ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> Portals.removePlayer(oldPlayer));
         }
 
         if (LOGGER.isInfoEnabled()) {

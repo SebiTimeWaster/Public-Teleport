@@ -15,6 +15,7 @@
             "timewaster.publicteleport.gametest.RtpTest",
             "timewaster.publicteleport.gametest.SpawnTest",
             "timewaster.publicteleport.gametest.TeleportsTest",
+            "timewaster.publicteleport.gametest.TranslationsTest",
             "timewaster.publicteleport.gametest.WarpsTest"
         ]
     },

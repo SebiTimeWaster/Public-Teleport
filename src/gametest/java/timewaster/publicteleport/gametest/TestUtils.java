@@ -1,14 +1,24 @@
 package timewaster.publicteleport.gametest;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -19,10 +29,12 @@ import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -76,6 +88,89 @@ public final class TestUtils {
                 helper.setBlock(x, 0, z, Blocks.STONE);
             }
         }
+    }
+
+    /**
+     * Returns the Nether of the test server.
+     *
+     * @param helper the test's helper
+     * @return the Nether
+     */
+    public static ServerLevel nether(GameTestHelper helper) {
+        return helper.getLevel().getServer().getLevel(Level.NETHER);
+    }
+
+    /**
+     * Builds a closed stone room outside the test area, e.g. in the Nether, so a
+     * player can stand there safely whatever was generated there and no lava
+     * flows in. Inside it is 5 x 5 blocks and 5 blocks high, room enough for a
+     * Camel with riders. The room is not removed when the test ends, so every
+     * test needs its own position.
+     *
+     * @param level the dimension
+     * @param stand the block to stand in, in the middle of the floor, in absolute
+     *                  coordinates
+     */
+    public static void buildRoom(ServerLevel level, BlockPos stand) {
+        for (BlockPos pos : BlockPos.betweenClosed(stand.offset(-3, -1, -3), stand.offset(3, 5, 3))) {
+            boolean inside = Math.abs(pos.getX() - stand.getX()) <= 2 && Math.abs(pos.getZ() - stand.getZ()) <= 2
+                && pos.getY() >= stand.getY() && pos.getY() < stand.getY() + 5;
+
+            level.setBlockAndUpdate(pos, (inside ? Blocks.AIR : Blocks.STONE).defaultBlockState());
+        }
+    }
+
+    /**
+     * Returns a file in the mod's config directory, e.g. {@code "config.json"}
+     * or {@code "homes/<uuid>.json"}.
+     *
+     * @param name the path of the file inside the mod's config directory
+     * @return the file
+     */
+    public static Path modFile(String name) {
+        return FabricLoader.getInstance().getConfigDir().resolve(PublicTeleport.MOD_ID).resolve(name);
+    }
+
+    /**
+     * Reads a whole text file.
+     *
+     * @param file the file
+     * @return its content
+     */
+    public static String readFile(Path file) {
+        try {
+            return Files.readString(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Replaces the content of a text file, or creates it.
+     *
+     * @param file    the file
+     * @param content the new content
+     */
+    public static void writeFile(Path file, String content) {
+        try {
+            Files.writeString(file, content);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Reads one of the mod's language files, e.g. {@code "de_de"}.
+     *
+     * @param language the name of the file without ".json"
+     * @return the translations by key
+     */
+    public static Map<String, String> readTranslations(String language) {
+        Path file = FabricLoader.getInstance().getModContainer(PublicTeleport.MOD_ID).orElseThrow()
+            .findPath("assets/" + PublicTeleport.MOD_ID + "/lang/" + language + ".json").orElseThrow();
+
+        return new Gson().fromJson(readFile(file), new TypeToken<Map<String, String>>() {
+        }.getType());
     }
 
     /**
@@ -241,10 +336,27 @@ public final class TestUtils {
      * @return the number of messages
      */
     public static long countMessages(TestPlayer player, String identifier) {
+        return messagesWithKey(player, identifier).count();
+    }
+
+    /**
+     * Returns the parameters of all messages with this identifier the player
+     * received, e.g. {@code [[Steve], [Alex]]} for two messages naming a player.
+     *
+     * @param player     the player
+     * @param identifier the message identifier without the mod id prefix
+     * @return the parameters of each message, oldest message first
+     */
+    public static List<List<String>> messageParameters(TestPlayer player, String identifier) {
+        return messagesWithKey(player, identifier)
+            .map(contents -> toStrings(contents.getArgs()))
+            .toList();
+    }
+
+    private static Stream<TranslatableContents> messagesWithKey(TestPlayer player, String identifier) {
         return modMessages(player).stream()
-            .filter(message -> ((TranslatableContents) translatedParts(message).getFirst().getContents()).getKey()
-                .equals(KEY_PREFIX + identifier))
-            .count();
+            .map(message -> (TranslatableContents) translatedParts(message).getFirst().getContents())
+            .filter(contents -> contents.getKey().equals(KEY_PREFIX + identifier));
     }
 
     /**

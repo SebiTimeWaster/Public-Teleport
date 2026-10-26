@@ -6,6 +6,7 @@ import static timewaster.publicteleport.Messages.MessageType.WARNING;
 import static timewaster.publicteleport.gametest.TestUtils.STAND;
 import static timewaster.publicteleport.gametest.TestUtils.STAND_FAR;
 import static timewaster.publicteleport.gametest.TestUtils.assertAt;
+import static timewaster.publicteleport.gametest.TestUtils.assertEqual;
 import static timewaster.publicteleport.gametest.TestUtils.assertLastMessage;
 import static timewaster.publicteleport.gametest.TestUtils.assertLastMessageParts;
 import static timewaster.publicteleport.gametest.TestUtils.assertTeleportAt;
@@ -17,12 +18,15 @@ import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.PublicTeleport;
+import timewaster.publicteleport.records.Teleport;
 
 /**
  * The "Teleports" section of manual-testing.txt. The TPA cases of this
@@ -45,6 +49,13 @@ public class TeleportsTest {
     private static final BlockPos LOW = new BlockPos(5, 1, 5);
     /** A standing position far enough from {@link #LOW} to teleport to it. */
     private static final BlockPos CORNER = new BlockPos(0, 1, 0);
+    /**
+     * A standing position with room on the floor in every direction within 2
+     * blocks, where the search for a safe block stays inside the test area.
+     */
+    private static final BlockPos MIDDLE = new BlockPos(2, 1, 2);
+    /** A standing position far enough from {@link #MIDDLE} to teleport to it. */
+    private static final BlockPos FAR_CORNER = new BlockPos(7, 1, 7);
 
     private static String name(TestPlayer player) {
         return player.getName().getString();
@@ -162,15 +173,26 @@ public class TeleportsTest {
         helper.succeed();
     }
 
-    /** When the destination is not safe on foot either, dismounting is not suggested. */
-    @GameTest
-    public void homeUnsafeRiding(GameTestHelper helper) {
+    /**
+     * Sets a Home on top of {@link #PILLAR}, then removes the pillar, so no block
+     * within 2 blocks of the Home is safe anymore.
+     */
+    private static TestPlayer setUnsafeHome(GameTestHelper helper) {
         buildFloor(helper);
         helper.setBlock(PILLAR, Blocks.STONE);
         TestPlayer player = TestPlayer.spawn(helper, HIGH);
 
         player.run("sethome");
         helper.setBlock(PILLAR, Blocks.AIR);
+
+        return player;
+    }
+
+    /** When the destination is not safe on foot either, dismounting is not suggested. */
+    @GameTest
+    public void homeUnsafeRiding(GameTestHelper helper) {
+        TestPlayer player = setUnsafeHome(helper);
+
         player.moveTo(helper, STAND);
         TestUtils.spawnRide(helper, TestUtils.entityType("camel"), STAND, player);
         player.run("home");
@@ -191,6 +213,139 @@ public class TeleportsTest {
         assertLastMessage(helper, sender, "teleport_unsafe_tpa_riding", ERROR, name(receiver));
         assertLastMessage(helper, receiver, "teleport_unsafe_target_riding", ERROR, name(sender));
         TestUtils.assertRideAt(helper, camel, CORNER, sender);
+        helper.succeed();
+    }
+
+    /**
+     * Builds a room at {@code home} in the Nether, sets the Home there and goes
+     * back to {@link TestUtils#STAND} in the Overworld.
+     */
+    private static void sethomeInNether(GameTestHelper helper, TestPlayer player, BlockPos home) {
+        ServerLevel nether = TestUtils.nether(helper);
+
+        TestUtils.buildRoom(nether, home);
+        player.moveTo(nether, home);
+        player.run("sethome");
+        player.moveTo(helper, STAND);
+    }
+
+    /**
+     * A Home in the Nether is reached from the Overworld, and /back leads back to
+     * the Overworld.
+     */
+    @GameTest
+    public void homeInOtherDimension(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        BlockPos home = new BlockPos(40, 70, 40);
+
+        sethomeInNether(helper, player, home);
+        player.run("home");
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, "home");
+        assertEqual(helper, player.level().dimension(), Level.NETHER, "dimension");
+        assertEqual(helper, player.blockPosition(), home, "position");
+
+        player.run("back");
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, "back");
+        assertEqual(helper, player.level().dimension(), Level.OVERWORLD, "dimension");
+        assertAt(helper, player, STAND);
+        helper.succeed();
+    }
+
+    /**
+     * Changing the dimension replaces the Camel with a new one in the other
+     * dimension, both players have to end up riding the new Camel.
+     */
+    @GameTest
+    public void homeInOtherDimensionRiding(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        TestPlayer passenger = TestPlayer.spawn(helper, STAND);
+        BlockPos home = new BlockPos(60, 70, 40);
+
+        sethomeInNether(helper, player, home);
+        Entity camel = TestUtils.spawnRide(helper, TestUtils.entityType("camel"), STAND, player, passenger);
+
+        player.run("home");
+        Entity netherCamel = player.getVehicle();
+        if (netherCamel != null && netherCamel != camel) {
+            // outside the test area, so it would not be removed with the test
+            TestUtils.onTestEnd(helper, netherCamel::discard);
+        }
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, "home");
+        assertLastMessage(helper, passenger, "teleported_along", SUCCESS, name(player));
+        helper.assertTrue(netherCamel != null && netherCamel.getType() == camel.getType(), "Expected the player to still ride a Camel");
+        assertEqual(helper, netherCamel.level().dimension(), Level.NETHER, "dimension of the Camel");
+        assertEqual(helper, netherCamel.blockPosition(), home, "position of the Camel");
+        helper.assertTrue(passenger.getVehicle() == netherCamel, "Expected the passenger to still ride the Camel");
+        helper.succeed();
+    }
+
+    /** A Home keeps the direction the player looked in when setting it. */
+    @GameTest
+    public void homeKeepsFacing(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.moveTo(helper, STAND, 90, 30);
+        player.run("sethome");
+        player.moveTo(helper, STAND_FAR, -90, -10);
+        player.run("home");
+        assertAt(helper, player, STAND);
+        assertEqual(helper, player.getYRot(), 90.0f, "yaw");
+        assertEqual(helper, player.getXRot(), 30.0f, "pitch");
+        helper.succeed();
+    }
+
+    /** Another player standing on the Home: the player lands next to them. */
+    @GameTest
+    public void homeOccupiedByPlayer(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.moveTo(helper, MIDDLE);
+        player.run("sethome");
+        TestPlayer other = TestPlayer.spawn(helper, MIDDLE);
+        assertHomeNextToMiddle(helper, player);
+        helper.assertFalse(player.getBoundingBox().intersects(other.getBoundingBox()), "Expected the players not to stand inside each other");
+        helper.succeed();
+    }
+
+    /** A block built where the Home is: the player lands on the floor next to it. */
+    @GameTest
+    public void homeBlocked(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.moveTo(helper, MIDDLE);
+        player.run("sethome");
+        helper.setBlock(MIDDLE, Blocks.STONE);
+        assertHomeNextToMiddle(helper, player);
+        assertEqual(helper, TestUtils.relative(helper, player.blockPosition()).getY(), MIDDLE.getY(), "height");
+        helper.succeed();
+    }
+
+    /**
+     * Runs "/home" for a Home at {@link #MIDDLE}, which has to lead to a block at
+     * most 2 blocks away, but not {@link #MIDDLE} itself.
+     */
+    private static void assertHomeNextToMiddle(GameTestHelper helper, TestPlayer player) {
+        player.moveTo(helper, FAR_CORNER);
+        player.run("home");
+        assertLastMessage(helper, player, "teleported_to", SUCCESS, "home");
+        BlockPos actual = TestUtils.relative(helper, player.blockPosition());
+
+        helper.assertTrue(!actual.equals(MIDDLE) && actual.distChessboard(MIDDLE) <= 2,
+            "Expected the player next to " + MIDDLE + ", but was at " + actual);
+    }
+
+    /**
+     * A Home in a dimension the server does not have (anymore), e.g. one added
+     * by a removed data pack.
+     */
+    @GameTest
+    public void homeInMissingDimension(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        PublicTeleport.storage.setTeleport(player, new Teleport("gone", 0, 64, 0, 0.0f, 0.0f, "public-teleport-gametest:removed"), false);
+        player.run("home gone");
+        assertLastMessage(helper, player, "level_no_exist", ERROR);
+        assertAt(helper, player, STAND);
         helper.succeed();
     }
 
@@ -224,39 +379,41 @@ public class TeleportsTest {
 
     @GameTest
     public void homeUnsafe(GameTestHelper helper) {
-        buildFloor(helper);
-        helper.setBlock(PILLAR, Blocks.STONE);
-        TestPlayer player = TestPlayer.spawn(helper, HIGH);
+        TestPlayer player = setUnsafeHome(helper);
 
-        player.run("sethome");
-        helper.setBlock(PILLAR, Blocks.AIR);
+        assertHomeUnsafe(helper, player);
+        helper.succeed();
+    }
+
+    /** Runs "/home" from {@link TestUtils#STAND}, which has to fail as unsafe. */
+    private static void assertHomeUnsafe(GameTestHelper helper, TestPlayer player) {
         player.moveTo(helper, STAND);
         player.run("home");
         assertLastMessage(helper, player, "teleport_unsafe", ERROR, "home");
         assertAt(helper, player, STAND);
-        helper.succeed();
     }
 
     /**
-     * Fire and soul fire are different blocks, both make the Home on top of
-     * {@link #PILLAR} unsafe.
+     * Fire, soul fire (a different block) and lava where the player would stand,
+     * or magma to stand on, make the Home on top of {@link #PILLAR} unsafe.
      */
     @GameTest
-    public void homeInFire(GameTestHelper helper) {
+    public void homeInHazards(GameTestHelper helper) {
         buildFloor(helper);
         // both kinds of fire can burn on soul soil
         helper.setBlock(PILLAR, Blocks.SOUL_SOIL);
         TestPlayer player = TestPlayer.spawn(helper, HIGH);
 
         player.run("sethome");
-        for (Block fire : List.of(Blocks.FIRE, Blocks.SOUL_FIRE)) {
-            helper.setBlock(HIGH, fire);
-            helper.assertBlockPresent(fire, HIGH);
-            player.moveTo(helper, STAND);
-            player.run("home");
-            assertLastMessage(helper, player, "teleport_unsafe", ERROR, "home");
-            assertAt(helper, player, STAND);
+        for (Block hazard : List.of(Blocks.FIRE, Blocks.SOUL_FIRE, Blocks.LAVA)) {
+            helper.setBlock(HIGH, hazard);
+            helper.assertBlockPresent(hazard, HIGH);
+            assertHomeUnsafe(helper, player);
         }
+
+        helper.setBlock(HIGH, Blocks.AIR);
+        helper.setBlock(PILLAR, Blocks.MAGMA_BLOCK);
+        assertHomeUnsafe(helper, player);
         helper.succeed();
     }
 
@@ -320,13 +477,19 @@ public class TeleportsTest {
 
         player.run("sethome zulu");
         player.run("sethome alpha");
+        // teleporting saves "back"
+        player.moveTo(helper, STAND_FAR);
+        player.run("home alpha");
         player.run("homes");
         // sorted, "back" is not listed
         assertLastMessageParts(helper, player, "headline_homes()", "button_named(alpha)", "button_named(zulu)");
         helper.succeed();
     }
 
-    /** Warps are shared by all players, so this test runs in its own batch. */
+    /**
+     * Warps and the Spawn are shared by all players, so this test runs in its own
+     * batch.
+     */
     @GameTest(environment = "public-teleport-gametest:warps_list")
     public void warpsNoneAndList(GameTestHelper helper) {
         TestPlayer player = setup(helper);
@@ -341,11 +504,14 @@ public class TeleportsTest {
 
         player.runAsOwner("setwarp zulu");
         player.runAsOwner("setwarp alpha");
+        // the Spawn is stored with the Warps, but is not listed
+        player.runAsOwner("setspawn");
         player.run("warps");
         assertLastMessageParts(helper, player, "headline_warps()", "button_named(alpha)", "button_named(zulu)");
 
         PublicTeleport.storage.deleteTeleport(player, "zulu", true);
         PublicTeleport.storage.deleteTeleport(player, "alpha", true);
+        PublicTeleport.storage.deleteTeleport(player, "spawn", true);
         helper.succeed();
     }
 

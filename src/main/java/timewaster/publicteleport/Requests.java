@@ -143,6 +143,11 @@ public final class Requests {
         if (requestType == RequestType.REVERSE_ALL) {
             List<ServerPlayer> onlinePlayers = Utils.getPlayersByLevel(sender.level());
 
+            if (onlinePlayers.size() <= 1) {
+                Messages.sendMessage(sender, "request_no_players", WARNING);
+                return false;
+            }
+
             for (ServerPlayer onlinePlayer : onlinePlayers) {
                 if (sender != onlinePlayer) {
                     createRequest(sender, onlinePlayer, requestType);
@@ -177,7 +182,7 @@ public final class Requests {
             if (receiver != null) {
                 Messages.sendMessage(receiver, "request_cancelled_receiver", WARNING, sender.getName().getString());
             }
-            Messages.sendMessage(sender, "request_cancelled_sender", SUCCESS);
+            Messages.sendMessage(sender, "request_cancelled_sender_named", SUCCESS, request.receiverName());
 
             pendingRequests.remove(request);
         }

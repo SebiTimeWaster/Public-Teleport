@@ -369,9 +369,10 @@ public final class Portals {
 
     /**
      * Removes the stored portal data of a player, should be called when the
-     * player disconnects.
+     * player disconnects or respawns (which replaces the player object).
      *
-     * @param player the disconnecting player
+     * @param player the disconnecting player, or the old object of a respawned
+     *                   player
      */
     public static void removePlayer(ServerPlayer player) {
         playersPosition.remove(player);

@@ -9,16 +9,13 @@ import static timewaster.publicteleport.gametest.TestUtils.configWith;
 import static timewaster.publicteleport.gametest.TestUtils.setup;
 import static timewaster.publicteleport.gametest.TestUtils.withConfig;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.gametest.framework.GameTestHelper;
 import timewaster.publicteleport.PublicTeleport;
+import timewaster.publicteleport.Storage;
 
 /**
  * The "Homes" section of manual-testing.txt.
@@ -27,6 +24,19 @@ import timewaster.publicteleport.PublicTeleport;
 public class HomesTest {
     private static void assertHomes(GameTestHelper helper, TestPlayer player, String... expected) {
         assertEqual(helper, PublicTeleport.storage.getTeleportNames(player, false), List.of(expected), "homes");
+    }
+
+    /** Returns "maxHomes", which the tests of the limit need to be on. */
+    private static int maxHomes(GameTestHelper helper) {
+        int maxHomes = PublicTeleport.storage.getConfig().maxHomes();
+
+        helper.assertTrue(maxHomes > 0, "this test needs maxHomes > 0 in the test config");
+
+        return maxHomes;
+    }
+
+    private static Path homesFile(TestPlayer player) {
+        return TestUtils.modFile("homes/" + player.getUUID() + ".json");
     }
 
     @GameTest
@@ -59,21 +69,68 @@ public class HomesTest {
 
         for (String content : List.of("", "null")) {
             TestPlayer player = TestPlayer.spawn(helper, TestUtils.STAND);
-            Path file = FabricLoader.getInstance().getConfigDir().resolve(PublicTeleport.MOD_ID).resolve("homes")
-                .resolve(player.getUUID() + ".json");
 
-            try {
-                // Homes are loaded on first use, so this is read by "/homes"
-                Files.writeString(file, content);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-
+            // Homes are loaded on first use, so this is read by "/homes"
+            TestUtils.writeFile(homesFile(player), content);
             player.run("homes");
             assertLastMessage(helper, player, "home_none", WARNING);
             player.run("sethome");
             assertLastMessage(helper, player, "home_set", SUCCESS, "home");
             assertHomes(helper, player, "home");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * A Homes file that is no valid JSON is a file error: no Home command works,
+     * but nothing breaks, and the file is not overwritten, so an admin can still
+     * repair it.
+     */
+    @GameTest
+    public void homesFileCorrupt(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        Path file = homesFile(player);
+        String corrupt = "[{\"name\": \"home\",";
+
+        TestUtils.writeFile(file, corrupt);
+        for (String command : List.of("homes", "home", "home base", "sethome", "delhome base")) {
+            player.run(command);
+            assertLastMessage(helper, player, "data_not_loaded", ERROR);
+        }
+        assertEqual(helper, player.getSuggestions("home ", false), List.of(), "suggestions");
+        assertEqual(helper, TestUtils.readFile(file), corrupt, "Homes file");
+        helper.succeed();
+    }
+
+    /** Homes are saved in the player's file, so they are still there after a restart. */
+    @GameTest
+    public void homesSavedToFile(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+
+        player.run("sethome base");
+        // a new Storage reads the files again, like after a server restart
+        TestUtils.assertTeleportAt(helper, new Storage().getTeleport(player, "base", false), TestUtils.STAND);
+
+        player.run("delhome base");
+        assertEqual(helper, new Storage().getTeleportNames(player, false), List.of(), "Homes after a restart");
+        helper.succeed();
+    }
+
+    /** Tab completion offers the player's own Homes, without "back". */
+    @GameTest
+    public void homeSuggestions(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        TestPlayer other = TestPlayer.spawn(helper, TestUtils.STAND_FAR);
+
+        player.run("sethome zulu");
+        player.run("sethome alpha");
+        other.run("sethome other");
+        // teleporting saves "back"
+        player.moveTo(helper, TestUtils.STAND_FAR);
+        player.run("home alpha");
+
+        for (String command : List.of("home ", "delhome ")) {
+            assertEqual(helper, player.getSuggestions(command, false), List.of("alpha", "zulu"), "suggestions for /" + command);
         }
         helper.succeed();
     }
@@ -123,9 +180,7 @@ public class HomesTest {
     @GameTest
     public void sethomeMaxReached(GameTestHelper helper) {
         TestPlayer player = setup(helper);
-
-        int maxHomes = PublicTeleport.storage.getConfig().maxHomes();
-        helper.assertTrue(maxHomes > 0, "this test needs maxHomes > 0 in the test config");
+        int maxHomes = maxHomes(helper);
 
         for (int i = 0; i < maxHomes; i++) {
             player.run("sethome home" + i);
@@ -142,6 +197,22 @@ public class HomesTest {
         helper.succeed();
     }
 
+    /** With "maxHomes" set to 0 there is no limit. */
+    @GameTest
+    public void sethomeNoLimit(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        int count = PublicTeleport.storage.getConfig().maxHomes() + 1;
+
+        withConfig(configWith("maxHomes", 0), () -> {
+            for (int i = 0; i < count; i++) {
+                player.run("sethome home" + i);
+                assertLastMessage(helper, player, "home_set_named", SUCCESS, "home" + i);
+            }
+        });
+        assertEqual(helper, PublicTeleport.storage.getTeleportNames(player, false).size(), count, "number of homes");
+        helper.succeed();
+    }
+
     /**
      * "back" does not count towards "maxHomes", and an existing Home can still be
      * moved when the limit is reached.
@@ -149,9 +220,7 @@ public class HomesTest {
     @GameTest
     public void sethomeMaxReachedBackAndExisting(GameTestHelper helper) {
         TestPlayer player = setup(helper);
-        int maxHomes = PublicTeleport.storage.getConfig().maxHomes();
-
-        helper.assertTrue(maxHomes > 0, "this test needs maxHomes > 0 in the test config");
+        int maxHomes = maxHomes(helper);
 
         // teleporting saves "back"
         player.run("sethome home0");

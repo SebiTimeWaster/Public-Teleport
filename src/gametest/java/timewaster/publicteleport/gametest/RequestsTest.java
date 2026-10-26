@@ -18,14 +18,55 @@ import java.util.List;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import timewaster.publicteleport.PublicTeleport;
 
 /**
  * The "Requests" section of manual-testing.txt, plus the TPA teleport itself
  * from the "Teleports" section.
  */
+@SuppressWarnings("null")
 public class RequestsTest {
+    /** The two players of a request. */
+    private record Players(TestPlayer sender, TestPlayer receiver) {
+    }
+
     private static String name(TestPlayer player) {
         return player.getName().getString();
+    }
+
+    /**
+     * Spawns a sender at {@link TestUtils#STAND} and a receiver at
+     * {@link TestUtils#STAND_FAR}, far enough apart to teleport between them.
+     */
+    private static Players spawnPlayers(GameTestHelper helper) {
+        buildFloor(helper);
+
+        return new Players(TestPlayer.spawn(helper, STAND), TestPlayer.spawn(helper, STAND_FAR));
+    }
+
+    /**
+     * Like {@link #spawnPlayers}, then the sender sends a request with
+     * {@code command}, i.e. "tpa" or "tpahere".
+     */
+    private static Players sendRequest(GameTestHelper helper, String command) {
+        Players players = spawnPlayers(helper);
+
+        players.sender().run(command + " " + name(players.receiver()));
+
+        return players;
+    }
+
+    /**
+     * Like {@link #sendRequest} with "tpa", then the sender goes offline.
+     */
+    private static Players sendRequestAndLeave(GameTestHelper helper) {
+        Players players = sendRequest(helper, "tpa");
+
+        players.sender().leave();
+
+        return players;
     }
 
     /**
@@ -45,26 +86,33 @@ public class RequestsTest {
 
     @GameTest
     public void tpaSent(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpa");
 
-        sender.run("tpa " + name(receiver));
-        assertLastMessage(helper, sender, "request_sent", SUCCESS, name(receiver));
-        assertLastMessage(helper, receiver, "request_received", HEADLINE, name(sender));
+        assertLastMessage(helper, players.sender(), "request_sent", SUCCESS, name(players.receiver()));
+        assertLastMessage(helper, players.receiver(), "request_received", HEADLINE, name(players.sender()));
         helper.succeed();
     }
 
     @GameTest
     public void tpahereSent(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpahere");
 
-        sender.run("tpahere " + name(receiver));
-        assertLastMessage(helper, sender, "request_sent", SUCCESS, name(receiver));
-        assertLastMessage(helper, receiver, "request_received_rev", HEADLINE, name(sender));
+        assertLastMessage(helper, players.sender(), "request_sent", SUCCESS, name(players.receiver()));
+        assertLastMessage(helper, players.receiver(), "request_received_rev", HEADLINE, name(players.sender()));
         helper.succeed();
+    }
+
+    /** Spawns the sender and 20 receivers for the /tpahereall tests. */
+    private static List<TestPlayer> spawnTpahereallReceivers(GameTestHelper helper) {
+        List<TestPlayer> receivers = new ArrayList<>();
+
+        buildFloor(helper);
+        for (int i = 0; i < 20; i++) {
+            // in two rows at the edge of the area, more than 4 blocks away from STAND_FAR
+            receivers.add(TestPlayer.spawn(helper, new BlockPos(i < 10 ? 0 : 1, 1, i % 8)));
+        }
+
+        return receivers;
     }
 
     /**
@@ -75,14 +123,8 @@ public class RequestsTest {
      */
     @GameTest(environment = "public-teleport-gametest:tpahereall")
     public void tpahereallSentAndAccepted(GameTestHelper helper) {
-        buildFloor(helper);
+        List<TestPlayer> receivers = spawnTpahereallReceivers(helper);
         TestPlayer sender = TestPlayer.spawn(helper, STAND_FAR);
-        List<TestPlayer> receivers = new ArrayList<>();
-
-        for (int i = 0; i < 20; i++) {
-            // in two rows at the edge of the area, more than 4 blocks away from the sender
-            receivers.add(TestPlayer.spawn(helper, new BlockPos(i < 10 ? 0 : 1, 1, i % 8)));
-        }
 
         sender.runAsOwner("tpahereall");
 
@@ -100,11 +142,64 @@ public class RequestsTest {
         helper.succeed();
     }
 
+    /**
+     * /tpcancel after /tpahereall withdraws the requests to all players. Runs in
+     * its own batch for the same reason as {@link #tpahereallSentAndAccepted}.
+     */
+    @GameTest(environment = "public-teleport-gametest:tpahereall_cancel")
+    public void tpahereallCancelled(GameTestHelper helper) {
+        List<TestPlayer> receivers = spawnTpahereallReceivers(helper);
+        TestPlayer sender = TestPlayer.spawn(helper, STAND_FAR);
+
+        sender.runAsOwner("tpahereall");
+        sender.run("tpcancel");
+        // one message for each receiver, naming them
+        assertEqual(helper, TestUtils.messageParameters(sender, "request_cancelled_sender_named"),
+            receivers.stream().map(receiver -> List.of(name(receiver))).toList(), "\"request_cancelled_sender_named\" messages");
+
+        for (TestPlayer receiver : receivers) {
+            assertLastMessage(helper, receiver, "request_cancelled_receiver", WARNING, name(sender));
+            receiver.run("tpaccept");
+            assertLastMessage(helper, receiver, "request_no_exist", ERROR);
+        }
+
+        // the requests are gone, so a new one can be sent
+        sender.runAsOwner("tpahereall");
+        assertLastMessage(helper, sender, "request_sent", SUCCESS, name(receivers.getLast()));
+        helper.succeed();
+    }
+
+    /**
+     * /tpahereall without any other player online. Runs in its own batch, so no
+     * players of other tests are online.
+     */
+    @GameTest(environment = "public-teleport-gametest:tpahereall_alone")
+    public void tpahereallNoOtherPlayers(GameTestHelper helper) {
+        TestPlayer player = TestUtils.setup(helper);
+
+        player.runAsOwner("tpahereall");
+        assertLastMessage(helper, player, "request_no_players", WARNING);
+        // no request was created, so there is nothing to cancel
+        player.run("tpcancel");
+        assertLastMessage(helper, player, "request_no_exist", ERROR);
+        helper.succeed();
+    }
+
+    @GameTest
+    public void tpahereallNeedsOwner(GameTestHelper helper) {
+        Players players = spawnPlayers(helper);
+
+        players.sender().run("tpahereall");
+        TestUtils.assertNoMessage(helper, players.sender());
+        TestUtils.assertNoMessage(helper, players.receiver());
+        helper.succeed();
+    }
+
     @GameTest(maxTicks = 100)
     public void tpaTimeout(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = spawnPlayers(helper);
+        TestPlayer sender = players.sender();
+        TestPlayer receiver = players.receiver();
 
         // times out at the next cleanup, which runs once per second
         withConfig(configWith("requestTimeout", 0), () -> sender.run("tpa " + name(receiver)));
@@ -124,16 +219,26 @@ public class RequestsTest {
         helper.succeed();
     }
 
+    /** Tab completion offers the other players, but not the player themselves. */
+    @GameTest
+    public void tpaSuggestions(GameTestHelper helper) {
+        Players players = spawnPlayers(helper);
+        List<String> suggestions = players.sender().getSuggestions("tpa ", false);
+
+        helper.assertTrue(suggestions.contains(name(players.receiver())),
+            "Expected the suggestions to contain " + name(players.receiver()) + ", but were " + suggestions);
+        helper.assertFalse(suggestions.contains(name(players.sender())),
+            "Expected the suggestions not to contain the player themselves, but were " + suggestions);
+        helper.succeed();
+    }
+
     @GameTest
     public void tpaRequestAlreadyExists(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpa");
         TestPlayer otherReceiver = TestPlayer.spawn(helper, new BlockPos(1, 1, 6));
 
-        sender.run("tpa " + name(receiver));
-        sender.run("tpa " + name(otherReceiver));
-        assertLastMessage(helper, sender, "request_old_exist", ERROR, name(receiver), "/tpcancel");
+        players.sender().run("tpa " + name(otherReceiver));
+        assertLastMessage(helper, players.sender(), "request_old_exist", ERROR, name(players.receiver()), "/tpcancel");
         helper.succeed();
     }
 
@@ -148,14 +253,12 @@ public class RequestsTest {
 
     @GameTest
     public void tpcancel(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpa");
+        TestPlayer receiver = players.receiver();
 
-        sender.run("tpa " + name(receiver));
-        sender.run("tpcancel");
-        assertLastMessage(helper, sender, "request_cancelled_sender", SUCCESS);
-        assertLastMessage(helper, receiver, "request_cancelled_receiver", WARNING, name(sender));
+        players.sender().run("tpcancel");
+        assertLastMessage(helper, players.sender(), "request_cancelled_sender_named", SUCCESS, name(receiver));
+        assertLastMessage(helper, receiver, "request_cancelled_receiver", WARNING, name(players.sender()));
 
         receiver.run("tpaccept");
         assertLastMessage(helper, receiver, "request_no_exist", ERROR);
@@ -173,39 +276,36 @@ public class RequestsTest {
 
     @GameTest
     public void tpacceptSenderOffline(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequestAndLeave(helper);
+        TestPlayer receiver = players.receiver();
 
-        sender.run("tpa " + name(receiver));
-        sender.leave();
         receiver.run("tpaccept");
-        assertLastMessage(helper, receiver, "request_sender_no_ingame", ERROR, name(sender));
+        assertLastMessage(helper, receiver, "request_sender_no_ingame", ERROR, name(players.sender()));
         helper.succeed();
     }
 
+    /** The sender is teleported to the receiver and can go back with /back. */
     @GameTest
     public void tpaccept(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpa");
+        TestPlayer sender = players.sender();
+        TestPlayer receiver = players.receiver();
 
-        sender.run("tpa " + name(receiver));
         receiver.run("tpaccept " + name(sender));
         assertLastMessage(helper, receiver, "request_accepted_receiver", SUCCESS, name(sender));
         assertLastMessage(helper, sender, "teleported_to", SUCCESS, name(receiver));
         assertNear(helper, sender, receiver, 2);
         TestUtils.assertAt(helper, receiver, STAND_FAR);
+        TestUtils.assertTeleportAt(helper, PublicTeleport.storage.getTeleport(sender, "back", false), STAND);
         helper.succeed();
     }
 
     @GameTest
     public void tpacceptTpahere(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpahere");
+        TestPlayer sender = players.sender();
+        TestPlayer receiver = players.receiver();
 
-        sender.run("tpahere " + name(receiver));
         receiver.run("tpaccept");
         assertLastMessage(helper, sender, "request_accepted_sender", SUCCESS, name(receiver));
         assertLastMessage(helper, receiver, "teleported_to", SUCCESS, name(sender));
@@ -214,15 +314,33 @@ public class RequestsTest {
         helper.succeed();
     }
 
+    /** The receiver is in the Nether, the sender in the Overworld. */
+    @GameTest
+    public void tpacceptOtherDimension(GameTestHelper helper) {
+        Players players = spawnPlayers(helper);
+        TestPlayer sender = players.sender();
+        TestPlayer receiver = players.receiver();
+        ServerLevel nether = TestUtils.nether(helper);
+        BlockPos room = new BlockPos(80, 70, 40);
+
+        TestUtils.buildRoom(nether, room);
+        receiver.moveTo(nether, room);
+        sender.run("tpa " + name(receiver));
+        receiver.run("tpaccept");
+        assertLastMessage(helper, sender, "teleported_to", SUCCESS, name(receiver));
+        assertEqual(helper, sender.level().dimension(), Level.NETHER, "dimension of " + name(sender));
+        assertNear(helper, sender, receiver, 2);
+        helper.succeed();
+    }
+
     /** Without a name, /tpaccept and /tpdeny answer the oldest request first. */
     @GameTest
     public void tpacceptTpdenyOldestFirst(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer first = TestPlayer.spawn(helper, STAND);
+        Players players = sendRequest(helper, "tpa");
+        TestPlayer first = players.sender();
+        TestPlayer receiver = players.receiver();
         TestPlayer second = TestPlayer.spawn(helper, new BlockPos(1, 1, 6));
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
 
-        first.run("tpa " + name(receiver));
         second.run("tpa " + name(receiver));
 
         receiver.run("tpaccept");
@@ -247,15 +365,27 @@ public class RequestsTest {
 
     @GameTest
     public void tpdeny(GameTestHelper helper) {
-        buildFloor(helper);
-        TestPlayer sender = TestPlayer.spawn(helper, STAND);
-        TestPlayer receiver = TestPlayer.spawn(helper, STAND_FAR);
+        Players players = sendRequest(helper, "tpa");
+        TestPlayer sender = players.sender();
+        TestPlayer receiver = players.receiver();
 
-        sender.run("tpa " + name(receiver));
         receiver.run("tpdeny " + name(sender));
         assertLastMessage(helper, sender, "request_denied_sender", WARNING, name(receiver));
         assertLastMessage(helper, receiver, "request_denied_receiver", SUCCESS, name(sender));
         TestUtils.assertAt(helper, sender, STAND);
+        helper.succeed();
+    }
+
+    /** A request of a player who went offline can still be denied, and is gone afterwards. */
+    @GameTest
+    public void tpdenySenderOffline(GameTestHelper helper) {
+        Players players = sendRequestAndLeave(helper);
+        TestPlayer receiver = players.receiver();
+
+        receiver.run("tpdeny");
+        assertLastMessage(helper, receiver, "request_denied_receiver", SUCCESS, name(players.sender()));
+        receiver.run("tpdeny");
+        assertLastMessage(helper, receiver, "request_no_exist", ERROR);
         helper.succeed();
     }
 }

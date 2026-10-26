@@ -39,6 +39,19 @@ public class RtpTest {
         assertLastMessage(helper, player, "teleported_to", SUCCESS, pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
     }
 
+    /**
+     * Checks that the player is within "rtpRadius" (+ 2 for moving to a safe
+     * block) of the center RTP searches around.
+     */
+    private static void assertWithinRadius(GameTestHelper helper, TestPlayer player, BlockPos center, String centerName) {
+        int radius = PublicTeleport.storage.getConfig().rtpRadius();
+        BlockPos pos = player.blockPosition();
+        double distance = Math.hypot(pos.getX() - center.getX(), pos.getZ() - center.getZ());
+
+        helper.assertTrue(distance <= radius + 2,
+            "Expected the player within " + radius + " blocks of " + centerName + ", but was " + (int) distance);
+    }
+
     // the real limit is the timeout in seconds below, see
     // TestUtils.succeedWithinSeconds
     @GameTest(environment = "public-teleport-gametest:rtp", maxTicks = 10_000_000)
@@ -47,7 +60,6 @@ public class RtpTest {
         TestPlayer other = TestPlayer.spawn(helper, STAND_FAR);
         BlockPos start = player.blockPosition();
         BlockPos center = helper.getLevel().getRespawnData().pos();
-        int radius = PublicTeleport.storage.getConfig().rtpRadius();
 
         player.run("rtp");
         assertLastMessage(helper, player, "rtp_start", WARNING);
@@ -58,13 +70,9 @@ public class RtpTest {
             assertTeleported(helper, player);
             BlockPos pos = player.blockPosition();
 
-            // at least 128 blocks away, within "rtpRadius" of the world spawn (+ 2 for
-            // moving to a safe block)
             helper.assertTrue(Math.abs(pos.getX() - start.getX()) > 128 || Math.abs(pos.getZ() - start.getZ()) > 128,
                 "Expected the player to be more than 128 blocks away from " + start + ", but was at " + pos);
-            double distance = Math.hypot(pos.getX() - center.getX(), pos.getZ() - center.getZ());
-            helper.assertTrue(distance <= radius + 2,
-                "Expected the player within " + radius + " blocks of the world spawn, but was " + (int) distance);
+            assertWithinRadius(helper, player, center, "the world spawn");
 
             // the old position is saved for /back
             Teleport back = PublicTeleport.storage.getTeleport(player, "back", false);
@@ -109,7 +117,6 @@ public class RtpTest {
     public void rtpInNether(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
-        int radius = PublicTeleport.storage.getConfig().rtpRadius();
 
         player.teleportTo(nether, 0.5, 64, 0.5, Set.of(), 0, 0, true);
         player.run("rtp");
@@ -124,9 +131,7 @@ public class RtpTest {
             // the player started at 0, 0
             helper.assertTrue(Math.abs(pos.getX()) > 128 || Math.abs(pos.getZ()) > 128,
                 "Expected the player to be more than 128 blocks away from 0, 0, but was at " + pos);
-            double distance = Math.hypot(pos.getX(), pos.getZ());
-            helper.assertTrue(distance <= radius + 2,
-                "Expected the player within " + radius + " blocks of 0, 0, but was " + (int) distance);
+            assertWithinRadius(helper, player, BlockPos.ZERO, "0, 0");
             // 6 blocks below the top of the Nether, + 2 for moving to a safe block
             int top = nether.getMinY() + nether.dimensionType().logicalHeight() - 6 + 2;
             helper.assertTrue(pos.getY() <= top, "Expected the player below y = " + top + ", but was at " + pos);
@@ -165,7 +170,6 @@ public class RtpTest {
     public void rtpWorldBorderNextToSpawn(GameTestHelper helper) {
         TestPlayer player = setup(helper);
         BlockPos center = helper.getLevel().getRespawnData().pos();
-        int radius = PublicTeleport.storage.getConfig().rtpRadius();
         WorldBorder border = setWorldBorder(helper, player, center.getX() - 1000, center.getZ(), 2000);
 
         player.run("rtp");
@@ -178,9 +182,7 @@ public class RtpTest {
             // 16 blocks inside the border, - 2 for moving to a safe block
             helper.assertTrue(border.isWithinBounds(pos.getX(), pos.getZ(), -14),
                 "Expected the player at least 14 blocks inside the world border, but was at " + pos);
-            double distance = Math.hypot(pos.getX() - center.getX(), pos.getZ() - center.getZ());
-            helper.assertTrue(distance <= radius + 2,
-                "Expected the player within " + radius + " blocks of the world spawn, but was " + (int) distance);
+            assertWithinRadius(helper, player, center, "the world spawn");
         });
     }
 

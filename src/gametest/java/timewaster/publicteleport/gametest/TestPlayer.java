@@ -6,12 +6,16 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.suggestion.Suggestion;
 
 import io.netty.channel.embedded.EmbeddedChannel;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dialog.Dialog;
@@ -31,6 +35,7 @@ public final class TestPlayer extends ServerPlayer {
     private final List<Component> messages = new ArrayList<>();
     private Dialog lastDialog;
     private boolean hasLeft;
+    private EmbeddedChannel channel;
 
     private TestPlayer(MinecraftServer server, ServerLevel level, CommonListenerCookie cookie) {
         super(server, level, cookie.gameProfile(), cookie.clientInformation());
@@ -55,7 +60,7 @@ public final class TestPlayer extends ServerPlayer {
         // WaypointTransmitter.Connection
         net.minecraft.network.Connection connection = new net.minecraft.network.Connection(PacketFlow.SERVERBOUND);
 
-        new EmbeddedChannel(connection);
+        player.channel = new EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         player.moveTo(helper, relativePos);
         // without this, a test that fails halfway would leave its players on the
@@ -105,12 +110,41 @@ public final class TestPlayer extends ServerPlayer {
     }
 
     /**
+     * Teleports the player to the middle of a block in any dimension, facing
+     * south.
+     *
+     * @param level       the dimension
+     * @param absolutePos the block to stand in, in absolute coordinates
+     */
+    public void moveTo(ServerLevel level, BlockPos absolutePos) {
+        teleportTo(level, absolutePos.getX() + 0.5, absolutePos.getY(), absolutePos.getZ() + 0.5, Set.of(), 0, 0, true);
+    }
+
+    /**
      * Runs a command as this player, exactly like typing it into chat.
      *
      * @param command the command without the leading slash
      */
     public void run(String command) {
         level().getServer().getCommands().performPrefixedCommand(createCommandSourceStack(), command);
+    }
+
+    /**
+     * Returns what tab completion offers this player for the last argument of a
+     * command, like pressing tab in chat.
+     *
+     * @param command the command typed so far, without the leading slash, e.g.
+     *                    {@code "home "}
+     * @param asOwner if the player has owner (OP level 4) permissions
+     * @return the suggested texts
+     */
+    public List<String> getSuggestions(String command, boolean asOwner) {
+        CommandDispatcher<CommandSourceStack> dispatcher = level().getServer().getCommands().getDispatcher();
+        CommandSourceStack source = asOwner ? createCommandSourceStack().withPermission(LevelBasedPermissionSet.OWNER)
+            : createCommandSourceStack();
+
+        return dispatcher.getCompletionSuggestions(dispatcher.parse(command, source)).join().getList().stream()
+            .map(Suggestion::getText).toList();
     }
 
     /**
@@ -159,5 +193,18 @@ public final class TestPlayer extends ServerPlayer {
 
     public Dialog getLastDialog() {
         return lastDialog;
+    }
+
+    /**
+     * Returns the packets of one kind the server sent to the player, e.g. the
+     * {@code ClientboundTransferPacket} that sends the player to another server.
+     * Nothing reads the fake connection, so every packet stays in its channel.
+     *
+     * @param <T>  the kind of packet
+     * @param type the class of the packets
+     * @return the packets, oldest first
+     */
+    public <T extends Packet<?>> List<T> getSentPackets(Class<T> type) {
+        return channel.outboundMessages().stream().filter(type::isInstance).map(type::cast).toList();
     }
 }
