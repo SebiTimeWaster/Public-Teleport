@@ -58,6 +58,7 @@
     "public-teleport.portal_set_url_invalid": "The URL \"%1$s\" is invalid, expected format: \"<domain/ip>:<port>\".",
     "public-teleport.portal_set_url": "URL set for Portal \"%1$s\".",
     "public-teleport.portal_set": "The Portal \"%1$s\" is complete and was saved.",
+    "public-teleport.portal_exist": "A Portal with the name \"%1$s\" exists; if you want to modify it, delete it and recreate it.",
     "public-teleport.request_accept": "Accept teleport request from %1$s",
     "public-teleport.request_accepted_receiver": "You accepted the teleport request from %1$s.",
     "public-teleport.request_accepted_sender": "%1$s has accepted your teleport request.",

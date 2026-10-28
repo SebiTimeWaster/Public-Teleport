@@ -58,6 +58,7 @@
     "public-teleport.portal_set_url_invalid": "Die URL \"%1$s\" ist ungültig, erwartetes Format: \"<domain/ip>:<port>\".",
     "public-teleport.portal_set_url": "URL für Portal \"%1$s\" gesetzt.",
     "public-teleport.portal_set": "Das Portal \"%1$s\" ist vollständig und wurde gespeichert.",
+    "public-teleport.portal_exist": "Ein Portal mit dem Namen \"%1$s\" existiert bereits. Wenn du es verändern willst, lösche es und erstelle es erneut.",
     "public-teleport.request_accept": "Teleport-Anfrage von %1$s annehmen",
     "public-teleport.request_accepted_receiver": "Du hast die Teleport-Anfrage von %1$s angenommen.",
     "public-teleport.request_accepted_sender": "%1$s hat deine Teleport-Anfrage angenommen.",

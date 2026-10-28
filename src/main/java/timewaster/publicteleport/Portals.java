@@ -192,10 +192,13 @@ public final class Portals {
                     for (int y = portal.aY(); y <= portal.bY(); y++) {
                         for (int z = portal.aZ(); z <= portal.bZ(); z++) {
                             BlockPos blockPos = new BlockPos(x, y, z);
-                            // only replace air and the corner blocks, never existing builds
-                            if (!blockPos.equals(from) && !blockPos.equals(to) && !Objects.requireNonNull(level).getBlockState(blockPos).isAir()) {
+                            BlockState blockState = level.getBlockState(blockPos);
+
+                            // only replace air and breakable corner blocks, never existing builds
+                            if (blockState.getDestroySpeed(level, blockPos) < 0 || (!blockState.isAir() && !(blockPos.equals(from) || blockPos.equals(to)))) {
                                 continue;
                             }
+
                             BlockState state = Block.updateFromNeighbourShapes(purplePane.defaultBlockState(), Objects.requireNonNull(level), blockPos);
 
                             level.setBlock(blockPos, state, Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
@@ -278,7 +281,12 @@ public final class Portals {
      */
     public static int setPortalData(CommandContext<CommandSourceStack> context, String action) {
         ServerPlayer player = context.getSource().getPlayer();
-        if (Teleports.isNameReserved(player, StringArgumentType.getString(context, "name"))) {
+        String portalName = StringArgumentType.getString(context, "name");
+        if (Teleports.isNameReserved(player, portalName)) {
+            return 0;
+        }
+        if (!PublicTeleport.storage.getPortals().stream().filter(portal -> portal.target().name().equals(portalName)).findFirst().isEmpty()) {
+            Messages.sendMessage(player, "portal_exist", ERROR, portalName);
             return 0;
         }
         Portal newPortalData = mutateTempPortalData(context, player, action);
