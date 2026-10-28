@@ -279,6 +279,47 @@ public class TeleportsTest {
         helper.succeed();
     }
 
+    /**
+     * A ride with more than one player on it that is teleported into an unloaded
+     * chunk must not be saved into that chunk when it unloads, vanilla would
+     * remove the riding players from the world with it until they reconnect.
+     */
+    @GameTest(maxTicks = 10_000_000)
+    public void homeInUnloadedChunkRidingTogether(GameTestHelper helper) {
+        TestPlayer player = setup(helper);
+        TestPlayer passenger = TestPlayer.spawn(helper, STAND);
+        ServerLevel level = helper.getLevel();
+        BlockPos home = helper.absolutePos(STAND).offset(3000, 0, 0);
+
+        TestUtils.buildRoom(level, home);
+        player.moveTo(level, home);
+        player.run("sethome");
+        player.moveTo(helper, STAND);
+        Entity camel = TestUtils.spawnRide(helper, TestUtils.entityType("camel"), STAND, player, passenger);
+        // outside the test area after the teleport, so it would not be removed with the test
+        TestUtils.onTestEnd(helper, camel::discard);
+
+        helper.startSequence()
+            .thenWaitUntil(TestUtils.withinSeconds(helper, 30,
+                () -> helper.assertFalse(level.isPositionEntityTicking(home), "Expected the chunk of the Home to be unloaded")))
+            .thenExecute(() -> {
+                player.run("home");
+                assertLastMessage(helper, player, "teleported_to", SUCCESS, "home");
+                assertLastMessage(helper, passenger, "teleported_along", SUCCESS, name(player));
+            })
+            .thenWaitUntil(TestUtils.withinSeconds(helper, 30,
+                () -> helper.assertTrue(level.isPositionEntityTicking(camel.blockPosition()), "Expected the chunk of the Camel to be loaded")))
+            // vanilla unloads the chunk 2 ticks after the teleport, give it time to do so
+            .thenIdle(20)
+            .thenExecute(() -> {
+                helper.assertFalse(player.isRemoved() || passenger.isRemoved(), "Expected the players to still be in the world");
+                assertEqual(helper, camel.blockPosition(), home, "position of the Camel");
+                helper.assertTrue(player.getVehicle() == camel, "Expected the player to still ride the Camel");
+                helper.assertTrue(passenger.getVehicle() == camel, "Expected the passenger to still ride the Camel");
+            })
+            .thenSucceed();
+    }
+
     /** A Home keeps the direction the player looked in when setting it. */
     @GameTest
     public void homeKeepsFacing(GameTestHelper helper) {

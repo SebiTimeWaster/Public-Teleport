@@ -20,6 +20,7 @@ import timewaster.publicteleport.PublicTeleport;
 /**
  * The "Back" section of manual-testing.txt.
  */
+@SuppressWarnings("null")
 public class BackTest {
     @GameTest
     public void backAfterTeleport(GameTestHelper helper) {

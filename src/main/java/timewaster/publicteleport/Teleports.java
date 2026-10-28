@@ -20,10 +20,12 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Relative;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import timewaster.publicteleport.records.Teleport;
@@ -104,6 +106,15 @@ public final class Teleports {
                 targetPitch - (player.getXRot() - entity.getXRot()),
                 emptySet,
                 TeleportTransition.DO_NOTHING)) != null;
+
+            // This temporarily fixes
+            // https://report.bugs.mojang.com/servicedesk/customer/portal/2/MC-312974
+            level.getChunkSource().addTicketWithRadius(TicketType.PORTAL, ChunkPos.containing(BlockPos.containing(targetPosition)), 1);
+            player.getRootVehicle().getSelfAndPassengers().forEach(rider -> {
+                if (rider instanceof ServerPlayer riderPlayer) {
+                    riderPlayer.level().getChunkSource().move(riderPlayer);
+                }
+            });
         }
 
         if (result) {
