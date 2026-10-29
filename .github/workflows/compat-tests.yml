@@ -1,0 +1,39 @@
+name: Compatibility Tests
+run-name: Game tests on other Minecraft versions
+# Runs the game tests with the built mod jar on every Minecraft version in compat/ ("./gradlew compatGameTest").
+# Started by adding the label "compat-tests" to a pull request, and again on every push to it while the label is on.
+on:
+    pull_request:
+        types: [labeled, synchronize]
+concurrency:
+    # a new push cancels the run for the previous commit
+    group: compat-tests-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+jobs:
+    compat-tests:
+        if: >-
+            (github.event.action == 'labeled' && github.event.label.name == 'compat-tests') ||
+            (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'compat-tests'))
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - name: checkout repository
+              uses: actions/checkout@v6
+            - name: validate gradle wrapper
+              uses: gradle/actions/wrapper-validation@v6
+            - name: setup jdk
+              uses: actions/setup-java@v5
+              with:
+                  java-version: '25'
+                  distribution: 'microsoft'
+            - name: make gradle wrapper executable
+              run: chmod +x ./gradlew
+            - name: run game tests on all versions in compat/
+              run: ./gradlew compatGameTest
+            - name: capture test server logs
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: compat-test-logs
+                  path: compat/*/build/run/gameTest/logs/

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Merged into Loom's log4j config (loom.log4jConfigs in build.gradle and compat/compat.gradle).
+	The game test server logs a progress bar like "[+++_      ]" every second while the tests run. Only let it through
+	once no test is waiting (" ") or running ("_") anymore, i.e. the final bar when all tests are done. -->
+<Configuration status="WARN">
+	<Loggers>
+		<Logger name="net.minecraft.gametest.framework.GameTestServer" level="${sys:fabric.log.level:-info}">
+			<RegexFilter regex="^\[.*[ _].*\]$" onMatch="DENY" onMismatch="NEUTRAL"/>
+		</Logger>
+	</Loggers>
+</Configuration>

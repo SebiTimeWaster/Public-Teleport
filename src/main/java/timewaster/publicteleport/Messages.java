@@ -1,5 +1,7 @@
 package timewaster.publicteleport;
 
+import java.util.Objects;
+
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.ChatFormatting;
@@ -12,9 +14,12 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Builds and sends the mod's chat messages.
  */
-public class Messages {
-    public static enum MessageType {
+public final class Messages {
+    public enum MessageType {
         SUCCESS, WARNING, ERROR, HEADLINE, BUTTON, COMMAND, COMMAND_PARAM
+    }
+
+    private Messages() {
     }
 
     @NotNull
@@ -83,7 +88,6 @@ public class Messages {
      * Incrementally builds a single chat message out of multiple parts
      */
     public static class MessageBuilder {
-        @NotNull
         private MutableComponent message = Component.literal("");
 
         /**
@@ -135,11 +139,9 @@ public class Messages {
          * @param command    the command executed when the button is clicked
          * @return this builder, for chaining
          */
-        public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText,
-            @NotNull String command) {
-            message.append(buttonText.withStyle(style -> style
-                .withClickEvent(new ClickEvent.RunCommand(command))
-                .withHoverEvent(new HoverEvent.ShowText(hoverText))));
+        public MessageBuilder button(@NotNull MutableComponent buttonText, @NotNull MutableComponent hoverText, @NotNull String command) {
+            message.append(
+                buttonText.withStyle((style) -> style.withClickEvent(new ClickEvent.RunCommand(command)).withHoverEvent(new HoverEvent.ShowText(hoverText))));
 
             return this;
         }
@@ -150,7 +152,16 @@ public class Messages {
          * @param player the player to send the message to
          */
         public void send(ServerPlayer player) {
-            player.sendSystemMessage(message);
+            player.sendSystemMessage(Objects.requireNonNull(message));
+        }
+
+        /**
+         * Gets the internal component
+         *
+         * @return the internal component
+         */
+        public MutableComponent getComponent() {
+            return message;
         }
     }
 }
