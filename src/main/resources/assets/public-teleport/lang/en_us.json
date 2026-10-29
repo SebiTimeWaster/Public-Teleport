@@ -21,7 +21,7 @@
     "public-teleport.help_rtp": "Teleports to a random location in the same dimension you are currently in",
     "public-teleport.help_sethome": "Sets a Home position at your current position (Default: \"home\")",
     "public-teleport.help_setportal_from": "Sets the \"from\" corner of the Portal from the full block that is currently looked at",
-    "public-teleport.help_setportal_target_url": "Sets the \"target\" to another Minecraft server's URL, expected format (including the double quotes): \"<domain/ip>:<port>\"",
+    "public-teleport.help_setportal_target_url": "Sets the \"target\" to another Minecraft server's URL (including the double quotes!)",
     "public-teleport.help_setportal_target": "Sets the \"target\" position at your current position",
     "public-teleport.help_setportal_three_part": "All three parts (from, to, target) need to be set for the Portal to be saved!",
     "public-teleport.help_setportal_to": "Sets the \"to\" corner of the Portal from the full block that is currently looked at",

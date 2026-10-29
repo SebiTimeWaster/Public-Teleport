@@ -3,6 +3,7 @@ package timewaster.publicteleport.commands;
 import static timewaster.publicteleport.Messages.MessageType.COMMAND;
 import static timewaster.publicteleport.Messages.MessageType.COMMAND_PARAM;
 import static timewaster.publicteleport.Messages.MessageType.HEADLINE;
+import static timewaster.publicteleport.Messages.MessageType.WARNING;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,7 +136,7 @@ public final class Help {
                     if (isOwner) {
                         createHelpLine(portals, "setportal", "setportal_target_url", "target \"<domain/ip>:<port>\"");
                     }
-                    portals.appendRaw("\n  ").append("help_setportal_three_part", null);
+                    portals.appendRaw("\n  ").append("help_setportal_three_part", WARNING);
                     createHelpLine(portals, "delportal");
                     createHelpLine(portals, "portals");
 

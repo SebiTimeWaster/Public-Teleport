@@ -21,7 +21,7 @@
     "public-teleport.help_rtp": "Teleportiert zu einer zufälligen Position in derselben Dimension, in der du dich gerade befindest",
     "public-teleport.help_sethome": "Setzt ein Home an deiner aktuellen Position (Standard: \"home\")",
     "public-teleport.help_setportal_from": "Setzt die \"from\" Ecke des Portals anhand des vollen Blocks, der aktuell angeschaut wird",
-    "public-teleport.help_setportal_target_url": "Setzt das \"target\" auf die URL eines anderen Minecraft-Servers, erwartetes Format (inklusive der doppelten Anführungsstriche): \"<domain/ip>:<port>\"",
+    "public-teleport.help_setportal_target_url": "Setzt das \"target\" auf die URL eines anderen Minecraft-Servers (inklusive der doppelten Anführungsstriche!)",
     "public-teleport.help_setportal_target": "Setzt die Position \"target\" an deiner aktuellen Position",
     "public-teleport.help_setportal_three_part": "Alle drei Teile (from, to, target) müssen gesetzt sein, damit das Portal gespeichert wird!",
     "public-teleport.help_setportal_to": "Setzt die \"to\" Ecke des Portals anhand des vollen Blocks, der aktuell angeschaut wird",

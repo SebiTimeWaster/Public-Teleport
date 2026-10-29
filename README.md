@@ -42,7 +42,7 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" corner of the Portal from the full block that is currently looked at                  |
 | `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" corner of the Portal from the full block that is currently looked at                    |
 | `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at your current position                                                   |
-| `/setportal <name> target "<domain/ip>:<port>"` |    ✓    | Sets the "target" to another Minecraft server's URL                                                   |
+| `/setportal <name> target "<domain/ip>:<port>"` |    ✓    | Sets the "target" to another Minecraft server's URL (including the double quotes!)                    |
 | `/delportal <name>`                             |  ✓ / ✗  | Deletes a Portal                                                                                      |
 | `/portals`                                      |  ✓ / ✗  | Lists all Portals                                                                                     |
 | **TPA:**                                        |         |                                                                                                       |
@@ -56,11 +56,11 @@ An easy-to-use Fabric Teleport and Portal Mod!
 Please note:
 
 - TPA functionality is disabled in singleplayer
-- `/setspawn`, `/setwarp` and `/sethome` use your current location rounded to a block position and your current viewing angle to create the teleport point
+- `/setspawn`, `/setwarp`, `/sethome` and `/setportal <name> target` use your current location rounded to a block position and your current viewing angle to create the teleport point
 - `/rtp` searches in a radius that is configurable with the `rtpRadius` option (See section "Configuration" below)
 - When `/rtp` selects a never-visited region, multiple chunks can be created, which can influence server performance (Same as when users fly into new regions)
 - `/setportal`: See section "Portals" below
-- `/tpaccept` searches for a spawnable block around the target position to teleport the player to
+- When teleporting and the target position is not safe to teleport to, a search for a safe position in a 5x5x5 area around the target position is started
 
 ## Configuration
 
@@ -87,7 +87,7 @@ To change these settings edit the config file and restart your server/client.
 
 Portals are physical areas a user can walk into to be teleported to the associated target position in any dimension or to be redirected to another Minecraft server.\
 When a Portal is created (Saved) the air blocks in the portal area and the two corner blocks (`from` and `to`) are replaced with Purple Stained Glass Panes (Only if the Portal area is smaller than 1000 block³), other blocks are left untouched. The glass panes can be broken and replaced with any block that a user can walk into, e.g. Air, Water, Honey, Powdered Snow, Cobwebs, Fences, Trapdoors, Doors, Buttons, etc.\
-Portals can have any size, the number of particles grows with the Portal volume up to a maximum of 5000 per second, so very large Portals have fewer particles per block.\
+Portals can have any size; the number of particles emitted from it grows with the Portal volume up to a maximum of 5000 per second, so very large Portals have fewer particles per block.\
 Using `/setportal`:
 
 - The command has three parts (`from`, `to`, `target`); all three parts need to be set with the same name for the Portal to be saved
