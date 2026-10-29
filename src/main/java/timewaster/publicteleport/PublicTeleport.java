@@ -9,6 +9,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import timewaster.publicteleport.records.Config;
 
+// TODO: Add /spreadplayers /spreadout command analog to https://minecraft.wiki/w/Commands/spreadplayers
+
 /**
  * Entry point of the Public Teleport mod.
  */
@@ -52,7 +54,8 @@ public class PublicTeleport implements ModInitializer {
 
         if (config.enablePortals()) {
             ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Portals.removePlayer(handler.player));
-            // respawning replaces the player object, the old one would never be removed otherwise
+            // respawning replaces the player object, the old one would never be removed
+            // otherwise
             ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> Portals.removePlayer(oldPlayer));
         }
 
