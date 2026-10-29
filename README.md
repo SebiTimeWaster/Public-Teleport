@@ -39,8 +39,8 @@ An easy-to-use Fabric Teleport and Portal Mod!
 | **RTP:**                                        |         |                                                                                                       |
 | `/rtp`                                          |         | Teleports to a random location within a certain radius of the world spawn (In your current dimension) |
 | **Portals:**                                    |         |                                                                                                       |
-| `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" position from the full block that is currently looked at                              |
-| `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" position from the full block that is currently looked at                                |
+| `/setportal <name> from`                        |  ✓ / ✗  | Sets the "from" corner of the Portal from the full block that is currently looked at                  |
+| `/setportal <name> to`                          |  ✓ / ✗  | Sets the "to" corner of the Portal from the full block that is currently looked at                    |
 | `/setportal <name> target`                      |  ✓ / ✗  | Sets the "target" position at your current position                                                   |
 | `/setportal <name> target "<domain/ip>:<port>"` |    ✓    | Sets the "target" to another Minecraft server's URL                                                   |
 | `/delportal <name>`                             |  ✓ / ✗  | Deletes a Portal                                                                                      |
