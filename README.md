@@ -114,6 +114,10 @@ If you want to provide more translations, feel free to open an Issue.
 
 The Configuration `defaultLanguage` has no effect; the client's language setting is used.
 
+## Known things
+
+Camels with saddles are arriving at the target position sitting down.
+
 ## Installation
 
 Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.

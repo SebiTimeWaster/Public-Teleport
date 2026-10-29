@@ -169,7 +169,7 @@ public final class TeleportSafety {
     private static CompletableFuture<@Nullable BlockPos> findRandomTeleportablePositionAttempt(ServerPlayer player, ServerLevel level, BlockPos center,
         int dimensionRadius, int attempt) {
         BlockPos randomPos = findRandomPositionInsideBorder(level, center, dimensionRadius);
-        if (attempt > 3 || randomPos == null) {
+        if (attempt > 5 || randomPos == null) {
             return CompletableFuture.completedFuture(null);
         }
         int x = randomPos.getX();

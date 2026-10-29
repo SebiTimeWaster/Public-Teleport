@@ -89,6 +89,13 @@ public final class Portals {
             return null;
         }
 
+        if (host.startsWith("http://")) {
+            host = host.substring(7);
+        }
+        if (host.startsWith("https://")) {
+            host = host.substring(8);
+        }
+
         if (port < 1 || port > 65535 || !HOST_PATTERN.matcher(host).matches()) {
             return null;
         }
