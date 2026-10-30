@@ -114,7 +114,7 @@ If you want to provide more translations, feel free to open an Issue.
 
 The Configuration `defaultLanguage` has no effect; the client's language setting is used.
 
-## Known things
+## Known oddities
 
 Camels with saddles are arriving at the target position sitting down.
 
