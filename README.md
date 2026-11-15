@@ -138,6 +138,11 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 - (Re)Start your server/client
 - If needed edit the configuration as described in the section "Configuration" above
 
+## Possible features to add
+
+- /spreadplayers /spreadout command analog to https://minecraft.wiki/w/Commands/spreadplayers
+- A command to add custom commands to switch servers, i.e. `/survival`, `/creative`
+
 <hr>
 
 <sub>\* Bus model by [TheJeroen](https://www.planetminecraft.com/project/bravo-public-buses-arriva-netherlands-vehicles-1-19-3/)</sub>

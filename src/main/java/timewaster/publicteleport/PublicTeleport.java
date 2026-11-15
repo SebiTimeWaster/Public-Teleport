@@ -9,8 +9,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import timewaster.publicteleport.records.Config;
 
-// TODO: Add /spreadplayers /spreadout command analog to https://minecraft.wiki/w/Commands/spreadplayers
-
 /**
  * Entry point of the Public Teleport mod.
  */
