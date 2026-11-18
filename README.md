@@ -126,10 +126,6 @@ If you want to provide more translations, feel free to open an Issue.
 
 The Configuration `defaultLanguage` has no effect; the client's language setting is used.
 
-## Known oddities
-
-Camels with saddles are arriving at the target position sitting down.
-
 ## Installation
 
 Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
@@ -138,10 +134,14 @@ Requires [Fabric API](https://modrinth.com/mod/fabric-api) to be installed.
 - (Re)Start your server/client
 - If needed edit the configuration as described in the section "Configuration" above
 
+## Known oddities
+
+- Camels with saddles are arriving at the target position sitting down.
+
 ## Possible features to add
 
-- /spreadplayers /spreadout command analog to https://minecraft.wiki/w/Commands/spreadplayers
-- A command to add custom commands to switch servers, i.e. `/survival`, `/creative`
+- A `/spreadplayers` + `/spreadout` command analog to https://minecraft.wiki/w/Commands/spreadplayers
+- A command to add custom commands to switch servers, e.g. `/setcommand survival "<domain/ip>:<port>"` to add the command `/survival`
 
 <hr>
 
